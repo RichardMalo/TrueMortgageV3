@@ -1,0 +1,450 @@
+import { AppState, Profile, Inputs } from './types.js';
+
+export interface AppSettings {
+  version: number;
+  activeProfileId: string | null;
+  comparisonProfileId: string | null;
+  compareModeActive: boolean;
+  profiles: Record<string, Profile>;
+  isDark: boolean;
+  complexity: 'simple' | 'advanced';
+  labelFormat: 'date' | 'period';
+  bankWagesView: 'wages' | 'rent' | 'rent-tax-ins';
+  chartsOrder?: (string | null)[];
+  strategyOrder?: (string | null)[];
+}
+
+export const CURRENT_ENGINE_VERSION = 2.0;
+
+// AES-GCM 256-bit client-side encryption
+export const encryptData = async (plainText: string, passcode: string): Promise<string> => {
+  const enc = new TextEncoder();
+  const salt = window.crypto.getRandomValues(new Uint8Array(16));
+  
+  const passwordKey = await window.crypto.subtle.importKey(
+    'raw',
+    enc.encode(passcode),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+  
+  const key = await window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt,
+      iterations: 100000,
+      hash: 'SHA-256'
+    },
+    passwordKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt']
+  );
+  
+  const iv = window.crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = await window.crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv },
+    key,
+    enc.encode(plainText)
+  );
+  
+  const combined = new Uint8Array(salt.byteLength + iv.byteLength + encrypted.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, salt.byteLength);
+  combined.set(new Uint8Array(encrypted), salt.byteLength + iv.byteLength);
+  
+  let binary = '';
+  for (let i = 0; i < combined.length; i++) {
+    binary += String.fromCharCode(combined[i]);
+  }
+  return btoa(binary);
+};
+
+export const decryptData = async (cipherTextBase64: string, passcode: string): Promise<string> => {
+  try {
+    const binaryStr = atob(cipherTextBase64);
+    const combined = new Uint8Array(binaryStr.length);
+    for (let i = 0; i < binaryStr.length; i++) {
+      combined[i] = binaryStr.charCodeAt(i);
+    }
+    
+    const salt = combined.slice(0, 16);
+    const iv = combined.slice(16, 28);
+    const ciphertext = combined.slice(28);
+    
+    const enc = new TextEncoder();
+    const passwordKey = await window.crypto.subtle.importKey(
+      'raw',
+      enc.encode(passcode),
+      { name: 'PBKDF2' },
+      false,
+      ['deriveKey']
+    );
+    
+    const key = await window.crypto.subtle.deriveKey(
+      {
+        name: 'PBKDF2',
+        salt,
+        iterations: 100000,
+        hash: 'SHA-256'
+      },
+      passwordKey,
+      { name: 'AES-GCM', length: 256 },
+      false,
+      ['decrypt']
+    );
+    
+    const decrypted = await window.crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv },
+      key,
+      ciphertext
+    );
+    
+    const dec = new TextDecoder();
+    return dec.decode(decrypted);
+  } catch (e) {
+    throw new Error('Invalid passcode or corrupted file', { cause: e });
+  }
+};
+
+export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profile | null => {
+  if (!profile || typeof profile !== 'object') return null;
+  const p = profile as Record<string, unknown>;
+  
+  const rawId = p.id ? String(p.id) : '';
+  const cleanId = rawId.replace(/[^a-zA-Z0-9_-]/g, '') || 'profile-' + Date.now();
+  
+  const sanitized: Profile = {
+    id: cleanId,
+    name: typeof p.name === 'string' ? p.name : 'Active Scenario',
+    currentMode: p.currentMode === 'cc' ? 'cc' : 'mortgage',
+    complexity: p.complexity === 'advanced' ? 'advanced' : 'simple',
+    isDark: p.isDark === true,
+    termRates: typeof p.termRates === 'object' && p.termRates ? (p.termRates as Record<number, number>) : {},
+    customizedYears: typeof p.customizedYears === 'object' && p.customizedYears ? (p.customizedYears as Record<number, boolean>) : {},
+    bankWagesView: ['wages', 'rent', 'rent-tax-ins'].includes(String(p.bankWagesView)) ? (p.bankWagesView as 'wages' | 'rent' | 'rent-tax-ins') : 'wages',
+    inputs: {}
+  };
+  
+  const sourceInputs = (p.inputs && typeof p.inputs === 'object' ? { ...p.inputs as Record<string, unknown> } : {}) as Record<string, unknown>;
+  
+  // Legacy migration checks
+  if (sourceInputs.interestRate !== undefined && sourceInputs.rate === undefined) {
+    sourceInputs.rate = sourceInputs.interestRate;
+  }
+  if (sourceInputs.interestRateCC !== undefined && sourceInputs.rate === undefined && sanitized.currentMode === 'cc') {
+    sourceInputs.rate = sourceInputs.interestRateCC;
+  }
+  if (sourceInputs.paymentFrequency !== undefined && sourceInputs.frequency === undefined) {
+    sourceInputs.frequency = sourceInputs.paymentFrequency;
+  }
+  if (sourceInputs.extraPayment !== undefined && sourceInputs.extra === undefined) {
+    sourceInputs.extra = sourceInputs.extraPayment;
+  }
+  if (sourceInputs.firstPaymentDate !== undefined && sourceInputs.date === undefined) {
+    sourceInputs.date = sourceInputs.firstPaymentDate;
+  }
+  if (sourceInputs.includePitiToggle !== undefined && sourceInputs.pitiToggle === undefined) {
+    sourceInputs.pitiToggle = sourceInputs.includePitiToggle;
+  }
+  if (sourceInputs.propertyTax !== undefined && sourceInputs.tax === undefined) {
+    sourceInputs.tax = sourceInputs.propertyTax;
+  }
+  if (sourceInputs.homeInsurance !== undefined && sourceInputs.ins === undefined) {
+    sourceInputs.ins = sourceInputs.homeInsurance;
+  }
+  if (sourceInputs.hoaFees !== undefined && sourceInputs.hoa === undefined) {
+    sourceInputs.hoa = sourceInputs.hoaFees;
+  }
+  if (sourceInputs.pmiRate !== undefined && sourceInputs.pmi === undefined) {
+    sourceInputs.pmi = sourceInputs.pmiRate;
+  }
+
+  if (sourceInputs.mortgageRate === undefined) {
+    sourceInputs.mortgageRate = (sanitized.currentMode !== 'cc') ? (sourceInputs.rate || '4.39') : '4.39';
+  }
+  if (sourceInputs.mortgageExtra === undefined) {
+    sourceInputs.mortgageExtra = (sanitized.currentMode !== 'cc') ? (sourceInputs.extra || '0') : '0';
+  }
+  if (sourceInputs.ccRate === undefined) {
+    sourceInputs.ccRate = (sanitized.currentMode === 'cc') ? (sourceInputs.rate || '19.99') : '19.99';
+  }
+  if (sourceInputs.ccExtra === undefined) {
+    sourceInputs.ccExtra = (sanitized.currentMode === 'cc') ? (sourceInputs.extra || '0') : '0';
+  }
+
+  const KEY_MAP: Record<string, string> = {
+    homePrice: 'homePrice',
+    downPayment: 'downPayment',
+    ccBalance: 'ccBalance',
+    province: 'province',
+    annualRate: 'rate',
+    amortizationYears: 'amortization',
+    termYears: 'term',
+    compounding: 'compounding',
+    frequency: 'frequency',
+    usePiti: 'pitiToggle',
+    taxRate: 'tax',
+    insRate: 'ins',
+    hoaRate: 'hoa',
+    pmiRate: 'pmi',
+    useOppCost: 'oppCostToggle',
+    investRate: 'investRate',
+    extraPayment: 'extra',
+    startDate: 'date',
+    rateShockEnabled: 'rateShockToggle',
+    termRates: 'termRates'
+  };
+
+  Object.keys(defaultInputs).forEach(key => {
+    const domKey = KEY_MAP[key] || key;
+    const srcVal = sourceInputs[domKey] !== undefined ? sourceInputs[domKey] : sourceInputs[key];
+    const defInputsObj = defaultInputs as unknown as Record<string, unknown>;
+    if (srcVal !== undefined) {
+      if (typeof defInputsObj[key] === 'boolean') {
+        sanitized.inputs[domKey] = srcVal === true || srcVal === 'true';
+      } else {
+        sanitized.inputs[domKey] = String(srcVal);
+      }
+    } else {
+      const defVal = defInputsObj[key];
+      sanitized.inputs[domKey] = typeof defVal === 'boolean' ? defVal : String(defVal);
+    }
+  });
+
+  // Preserve mode-specific persistent fields
+  const extraKeys = ['mortgageRate', 'mortgageExtra', 'ccRate', 'ccExtra'];
+  extraKeys.forEach(k => {
+    if (sourceInputs[k] !== undefined) {
+      sanitized.inputs[k] = String(sourceInputs[k]);
+    } else {
+      if (k === 'mortgageRate') sanitized.inputs[k] = '4.39';
+      if (k === 'mortgageExtra') sanitized.inputs[k] = '0';
+      if (k === 'ccRate') sanitized.inputs[k] = '19.99';
+      if (k === 'ccExtra') sanitized.inputs[k] = '0';
+    }
+  });
+  
+  return sanitized;
+};
+
+export const saveSettingsToStorage = (
+  state: AppState,
+  inputsMap: Record<string, HTMLInputElement | HTMLSelectElement | null>,
+  defaultInputs: Inputs,
+  skipDomSync = false
+) => {
+  try {
+    if (!state.activeProfileId || !state.profiles[state.activeProfileId]) {
+      const newId = 'profile-' + Date.now();
+      state.activeProfileId = newId;
+      state.profiles[newId] = {
+        id: newId,
+        name: 'Active Scenario',
+        currentMode: state.currentMode,
+        complexity: state.complexity,
+        isDark: state.isDark,
+        termRates: JSON.parse(JSON.stringify(state.termRates || {})),
+        customizedYears: JSON.parse(JSON.stringify(state.customizedYears || {})),
+        bankWagesView: state.bankWagesView || 'wages',
+        inputs: {}
+      };
+    }
+
+    if (!skipDomSync) {
+      const activeProfile = state.profiles[state.activeProfileId];
+      activeProfile.currentMode = state.currentMode;
+      activeProfile.complexity = state.complexity;
+      activeProfile.isDark = state.isDark;
+      activeProfile.termRates = JSON.parse(JSON.stringify(state.termRates || {}));
+      activeProfile.customizedYears = JSON.parse(JSON.stringify(state.customizedYears || {}));
+      activeProfile.bankWagesView = state.bankWagesView || 'wages';
+      
+      Object.entries(inputsMap).forEach(([key, el]) => {
+        if (el) {
+          activeProfile.inputs[key] = el.type === 'checkbox' ? (el as HTMLInputElement).checked : el.value;
+        }
+      });
+
+      if (state.currentMode === 'mortgage') {
+        activeProfile.inputs.mortgageRate = activeProfile.inputs.rate;
+        activeProfile.inputs.mortgageExtra = activeProfile.inputs.extra;
+      } else if (state.currentMode === 'cc') {
+        activeProfile.inputs.ccRate = activeProfile.inputs.rate;
+        activeProfile.inputs.ccExtra = activeProfile.inputs.extra;
+      }
+    }
+
+    const settings: AppSettings = {
+      version: CURRENT_ENGINE_VERSION,
+      activeProfileId: state.activeProfileId,
+      comparisonProfileId: state.comparisonProfileId,
+      compareModeActive: state.compareModeActive,
+      profiles: state.profiles,
+      isDark: state.isDark,
+      complexity: state.complexity,
+      labelFormat: state.labelFormat || 'date',
+      bankWagesView: state.bankWagesView || 'wages'
+    };
+    
+    // draggable cards order sync
+    const chartsContainer = document.getElementById('draggable-charts-container');
+    if (chartsContainer) {
+      settings.chartsOrder = Array.from(chartsContainer.children)
+        .map(child => {
+          const chartDiv = child.querySelector('.plotly-container');
+          return chartDiv ? chartDiv.id : null;
+        })
+        .filter(id => id !== null);
+    }
+    
+    const strategyContainer = document.getElementById('draggable-strategy-container');
+    if (strategyContainer) {
+      settings.strategyOrder = Array.from(strategyContainer.children)
+        .map(child => {
+          const chartDiv = child.querySelector('.plotly-container');
+          return chartDiv ? chartDiv.id : null;
+        })
+        .filter(id => id !== null);
+    }
+    
+    localStorage.setItem('mtg_calculator_settings', JSON.stringify(settings));
+  } catch (err) {
+    console.error('Error saving settings to localStorage:', err);
+  }
+};
+
+export const loadSettingsFromStorage = (
+  state: AppState,
+  defaultInputs: Inputs
+): AppSettings | null => {
+  const initializeDefaultState = () => {
+    const defaultId = 'profile-default';
+    state.profiles = {};
+    state.profiles[defaultId] = {
+      id: defaultId,
+      name: '30-Year Baseline',
+      currentMode: 'mortgage',
+      complexity: 'simple',
+      isDark: false,
+      termRates: {},
+      customizedYears: {},
+      bankWagesView: 'wages',
+      inputs: Object.assign({}, defaultInputs)
+    };
+    state.activeProfileId = defaultId;
+    state.comparisonProfileId = null;
+    state.compareModeActive = false;
+    state.bankWagesView = 'wages';
+    state.isDark = false;
+    state.complexity = 'simple';
+    state.labelFormat = 'date';
+  };
+
+  let settings: AppSettings | null = null;
+  try {
+    const data = localStorage.getItem('mtg_calculator_settings');
+    if (!data) {
+      initializeDefaultState();
+    } else {
+      settings = JSON.parse(data) as AppSettings;
+      if (!settings || typeof settings !== 'object') {
+        throw new Error('Invalid storage structure format');
+      }
+      
+      // Schema Migration
+      const legacySettings = settings as any;
+      if (!settings.version || settings.version < CURRENT_ENGINE_VERSION) {
+        console.warn('Outdated schema detected. Initiating state migration block.');
+        const migratedProfiles: Record<string, Profile> = {};
+        let activeId = 'profile-default';
+        
+        if (settings.profiles && typeof settings.profiles === 'object') {
+          Object.entries(settings.profiles).forEach(([_id, prof]) => {
+            const sanitized = sanitizeProfile(prof, defaultInputs);
+            if (sanitized) migratedProfiles[sanitized.id] = sanitized;
+          });
+          activeId = settings.activeProfileId || 'profile-default';
+        } else if (legacySettings.inputs && typeof legacySettings.inputs === 'object') {
+          const legacyId = 'profile-legacy';
+          const legacyProf = sanitizeProfile({
+            id: legacyId,
+            name: 'Migrated Baseline',
+            currentMode: legacySettings.currentMode,
+            complexity: legacySettings.complexity,
+            isDark: legacySettings.isDark,
+            termRates: legacySettings.termRates,
+            customizedYears: legacySettings.customizedYears,
+            bankWagesView: legacySettings.bankWagesView,
+            inputs: legacySettings.inputs
+          }, defaultInputs);
+          if (legacyProf) {
+            migratedProfiles[legacyId] = legacyProf;
+            activeId = legacyId;
+          }
+        }
+        
+        if (Object.keys(migratedProfiles).length === 0) {
+          throw new Error('No legacy data structures could be successfully migrated.');
+        }
+        
+        settings = {
+          version: CURRENT_ENGINE_VERSION,
+          activeProfileId: activeId,
+          comparisonProfileId: settings.comparisonProfileId || null,
+          compareModeActive: !!settings.compareModeActive,
+          profiles: migratedProfiles,
+          isDark: settings.isDark !== undefined ? settings.isDark : false,
+          complexity: settings.complexity || 'simple',
+          labelFormat: settings.labelFormat || 'date',
+          bankWagesView: settings.bankWagesView || 'wages',
+          chartsOrder: (settings as any).chartsOrder,
+          strategyOrder: (settings as any).strategyOrder
+        };
+      }
+      
+      state.activeProfileId = settings.activeProfileId;
+      state.comparisonProfileId = settings.comparisonProfileId;
+      state.compareModeActive = !!settings.compareModeActive;
+      state.profiles = {};
+      
+      Object.entries(settings.profiles).forEach(([_id, prof]) => {
+        const clean = sanitizeProfile(prof, defaultInputs);
+        if (clean) state.profiles[clean.id] = clean;
+      });
+      
+      if (Object.keys(state.profiles).length === 0) {
+        throw new Error('No profiles verified after schema validation');
+      }
+      if (!state.profiles[state.activeProfileId as string]) {
+        state.activeProfileId = Object.keys(state.profiles)[0];
+      }
+      
+      state.isDark = settings.isDark === true;
+      state.complexity = settings.complexity === 'advanced' ? 'advanced' : 'simple';
+      state.labelFormat = settings.labelFormat === 'period' ? 'period' : 'date';
+      state.bankWagesView = ['rent', 'rent-tax-ins'].includes(settings.bankWagesView) ? settings.bankWagesView : 'wages';
+    }
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.warn('State engine hydration halted. Emergency reset:', errMsg);
+    initializeDefaultState();
+    try {
+      localStorage.setItem('mtg_calculator_settings', JSON.stringify({
+        version: CURRENT_ENGINE_VERSION,
+        activeProfileId: state.activeProfileId,
+        comparisonProfileId: state.comparisonProfileId,
+        compareModeActive: state.compareModeActive,
+        profiles: state.profiles,
+        isDark: state.isDark,
+        complexity: state.complexity,
+        labelFormat: state.labelFormat,
+        bankWagesView: state.bankWagesView
+      }));
+    } catch (saveErr) {
+      console.error('Emergency settings save failed:', saveErr);
+    }
+  }
+  return settings;
+};

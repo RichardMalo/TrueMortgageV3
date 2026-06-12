@@ -1,0 +1,1475 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Debt Elimination Engine | Algorithmic Mortgage & Credit Card Optimizer</title>
+    <!-- SEO Optimization Meta Tags -->
+    <meta
+      name="description"
+      content="Take control of your debt with the Debt Elimination Engine. Algorithmic mortgage and credit card optimizer featuring Canadian vs US compounding, refinancing rate shocks, opportunity cost comparisons, and bento dashboard customization."
+    />
+    <!-- Open Graph Metadata -->
+    <meta property="og:title" content="Debt Elimination Engine" />
+    <meta
+      property="og:description"
+      content="Algorithmic optimization engine engineered to eliminate interest friction and accelerate your path to zero debt."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://truemortgage.com/" />
+    <!-- Twitter Card Metadata -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Debt Elimination Engine" />
+    <meta
+      name="twitter:description"
+      content="Algorithmic optimization engine engineered to eliminate interest friction and accelerate your path to zero debt."
+    />
+    <link rel="canonical" href="https://truemortgage.com/" />
+
+    <!-- Local Compiled Assets Linking -->
+    <link rel="stylesheet" href="./src/css/main.css" />
+    <script type="module" src="./src/js/index.ts"></script>
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "Debt Elimination Engine",
+        "url": "https://truemortgage.com/",
+        "description": "Algorithmic mortgage and credit card optimizer featuring Canadian vs US compounding, refinancing rate shocks, opportunity cost comparisons, and bento dashboard customization.",
+        "applicationCategory": "FinanceApplication",
+        "operatingSystem": "All",
+        "offers": {
+          "@type": "Offer",
+          "price": "0.00",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
+  </head>
+  <body class="mode-mortgage complexity-simple">
+    <div class="container">
+      <header class="app-header gsap-fade-in">
+        <div class="header-top-bar">
+          <div class="header-branding">
+            <div class="branding-text-group">
+              <h1 style="margin: 0">Debt Elimination Engine</h1>
+              <p class="branding-descriptor">
+                Algorithmic optimization engine engineered to eliminate interest friction and
+                accelerate your path to zero debt.
+              </p>
+            </div>
+          </div>
+
+          <div class="header-controls-right">
+            <!-- Mortgage/CC selector -->
+            <div class="master-mode-selector">
+              <button class="mode-btn active" data-mode="mortgage">Mortgage</button>
+              <button class="mode-btn" data-mode="cc">Credit Card</button>
+            </div>
+
+            <!-- Sandbox button -->
+            <button
+              type="button"
+              class="dropdown-trigger settings-trigger"
+              id="sandboxTrigger"
+              title="Scenario Sandbox"
+              aria-label="Open Scenario Sandbox Sidebar"
+              style="
+                width: 42px;
+                height: 42px;
+                padding: 0;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s var(--spring-easing);
+                cursor: pointer;
+              "
+            >
+              <span style="font-size: 1.15rem">📂</span>
+            </button>
+
+            <!-- Settings Gear button -->
+            <div class="custom-dropdown settings-dropdown-wrapper" id="settings-dropdown">
+              <button
+                type="button"
+                class="dropdown-trigger settings-trigger"
+                id="settingsTrigger"
+                title="Engine Tools & Settings"
+                aria-label="Open Engine Tools and Settings Menu"
+                style="
+                  width: 42px;
+                  height: 42px;
+                  padding: 0;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  transition: all 0.3s var(--spring-easing);
+                  cursor: pointer;
+                "
+              >
+                <span class="gear-icon" style="font-size: 1.15rem; display: inline-block">⚙️</span>
+              </button>
+              <div class="dropdown-menu settings-menu" id="settingsMenu">
+                <div class="settings-menu-header">Portability & Sync</div>
+                <div class="settings-item" id="settingsOptSync">
+                  <span>🔑</span> Secure Sync & Portability
+                </div>
+                <div class="settings-menu-divider"></div>
+                <div class="settings-menu-header">Engine Logic</div>
+                <div class="settings-item" id="settingsOptLimits">
+                  <span>⚙️</span> Constraints & Limits
+                </div>
+                <div class="settings-menu-divider"></div>
+
+                <div class="settings-menu-header">App Preferences</div>
+
+                <!-- Complexity Mode Selector inside dropdown -->
+                <div class="settings-item-row">
+                  <span>Complexity</span>
+                  <div class="master-mode-selector" id="complexity-selector">
+                    <button class="complexity-btn active" data-complexity="simple">Simple</button>
+                    <button class="complexity-btn" data-complexity="advanced">Advanced</button>
+                  </div>
+                </div>
+
+                <!-- Region Selector inside dropdown -->
+                <div
+                  class="settings-item-row"
+                  style="flex-direction: column; align-items: stretch; gap: 8px"
+                >
+                  <div
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      width: 100%;
+                    "
+                  >
+                    <label id="region-label" for="country-select">Region</label>
+                    <select id="country-select" style="display: none">
+                      <option value="semi">Canada</option>
+                      <option value="monthly">USA</option>
+                      <option value="monthly-uk">UK</option>
+                      <option value="monthly-au">AU</option>
+                      <option value="monthly-nz">NZ</option>
+                    </select>
+                    <div class="custom-dropdown" id="country-dropdown">
+                      <button
+                        type="button"
+                        class="dropdown-trigger"
+                        id="country-trigger"
+                        aria-labelledby="region-label country-trigger"
+                      >
+                        <img
+                          src="flags/ca.svg"
+                          class="flag-icon"
+                          id="selected-country-flag"
+                          alt="Canada Flag"
+                        />
+                        <span id="selected-country-text">Canada</span>
+                        <span class="chevron">▼</span>
+                      </button>
+                      <div class="dropdown-menu">
+                        <div class="dropdown-item selected" data-value="semi">
+                          <img src="flags/ca.svg" class="flag-icon" alt="Canada Flag" />
+                          <span>Canada</span>
+                        </div>
+                        <div class="dropdown-item" data-value="monthly">
+                          <img src="flags/us.svg" class="flag-icon" alt="USA Flag" />
+                          <span>USA</span>
+                        </div>
+                        <div class="dropdown-item" data-value="monthly-uk">
+                          <img src="flags/gb.svg" class="flag-icon" alt="UK Flag" />
+                          <span>UK</span>
+                        </div>
+                        <div class="dropdown-item" data-value="monthly-au">
+                          <img src="flags/au.svg" class="flag-icon" alt="AU Flag" />
+                          <span>AU</span>
+                        </div>
+                        <div class="dropdown-item" data-value="monthly-nz">
+                          <img src="flags/nz.svg" class="flag-icon" alt="NZ Flag" />
+                          <span>NZ</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Dark Mode Toggle inside dropdown -->
+                <div class="settings-item-row">
+                  <span>Appearance</span>
+                  <div
+                    class="mode-toggle squishy-interactive"
+                    style="
+                      background: none;
+                      padding: 0;
+                      box-shadow: none;
+                      border-radius: 0;
+                      width: auto;
+                      display: flex;
+                      align-items: center;
+                      gap: 8px;
+                    "
+                  >
+                    <label
+                      for="mode-switch"
+                      style="font-weight: 600; font-size: 0.85rem; cursor: pointer"
+                      >Dark Mode</label
+                    >
+                    <label class="switch">
+                      <input type="checkbox" id="mode-switch" role="switch" aria-checked="false" />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="settings-menu-divider"></div>
+                <div class="settings-menu-header">System Operations</div>
+                <div class="settings-item danger-action" id="settingsOptReset">
+                  <span>🔄</span> Reset Application Data
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div id="error-message"></div>
+
+      <main class="dashboard-layout">
+        <div class="column gsap-slide-up">
+          <form id="mortgageForm" autocomplete="off">
+            <div class="bento-card form-card">
+              <h2 class="section-title mortgage-only">Property & Loan</h2>
+              <h2 class="section-title cc-only">Revolving Debt</h2>
+
+              <div class="input-group-row">
+                <div class="input-group mortgage-only">
+                  <label for="homePrice"
+                    >Home Price ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The gross transactional purchase price of the real estate asset before
+                        deducting any down payment, adjustments, or transaction fees. Note: Banks
+                        may apply local valuation models which can alter exact loan
+                        calculations.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="homePrice"
+                    inputmode="decimal"
+                    value="800000"
+                    step="100"
+                    min="0"
+                  />
+                </div>
+                <div class="input-group mortgage-only">
+                  <label for="downPayment"
+                    >Down Payment ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The upfront equity capital contributed in cash. Higher thresholds mitigate
+                        initial loan-to-value (LTV) exposure and directly deflate the starting
+                        principal. Note: Exact minimum down payment requirements vary by region and
+                        property type.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="downPayment"
+                    inputmode="decimal"
+                    value="0"
+                    step="100"
+                    min="0"
+                  />
+                </div>
+                <div class="input-group cc-only">
+                  <label for="ccBalance"
+                    >Current Balance ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The aggregate statement balance currently outstanding. This is the entire
+                        volume of compounding debt subject to dangerous revolving interest rates.
+                        Note: Daily balance variations and pending charges may cause statement
+                        totals to differ slightly.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="ccBalance"
+                    inputmode="decimal"
+                    value="15000"
+                    step="100"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div class="input-group-row">
+                <div class="input-group">
+                  <label for="interestRate"
+                    >Interest Rate (APR %)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The Annual Percentage Rate charged by the lender. Fractional variations
+                        compound rapidly, scaling total lifetime borrowing friction exponentially.
+                        Note: Real APR may include lender fees not captured here. Bank calculations
+                        may vary slightly due to daily interest accrual conventions.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="interestRate"
+                    inputmode="decimal"
+                    step="0.01"
+                    required
+                    value="4.39"
+                    min="0"
+                  />
+                </div>
+                <div class="input-group mortgage-only">
+                  <label for="amortization"
+                    >Amortization (Years)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The contractual timeline required to completely eradicate the debt balance
+                        through baseline structured minimum installment payments. Note: Lender
+                        formulas and payment frequencies can affect the exact payoff timeline.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="amortization"
+                    inputmode="decimal"
+                    value="25"
+                    step="any"
+                    min="0.1"
+                  />
+                </div>
+                <div class="input-group cc-only advanced-only">
+                  <label for="province"
+                    >Province <span class="inline-tooltip-text">(Min. Payment Law)</span></label
+                  >
+                  <select id="province" class="custom-select">
+                    <option value="ON">Ontario (Standard 3%)</option>
+                    <option value="QC">Quebec (Legal 5%)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="input-group-row mortgage-only advanced-only">
+                <div class="input-group">
+                  <label for="term"
+                    >Term Length (Years)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The duration of your active interest rate contract. Upon expiration, the
+                        remaining balance must be renegotiated or renewed at prevailing market
+                        yields. Note: Local regulations may restrict term lengths or mandate
+                        specific renewal conditions.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="term"
+                    inputmode="decimal"
+                    value="5"
+                    step="any"
+                    min="0.1"
+                  />
+                </div>
+                <div class="input-group">
+                  <label for="compounding"
+                    >Compounding
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The frequency of interest calculations. Canadian law dictates semi-annual
+                        compounding for fixed mortgages, resulting in a lower Effective Annual Rate
+                        than US, UK, AU, and NZ monthly/daily compounding. Note: Some
+                        non-traditional lenders may use custom compounding models.</span
+                      ></span
+                    ></label
+                  >
+                  <select id="compounding" class="custom-select">
+                    <option value="semi">Canadian (Semi-Annual)</option>
+                    <option value="monthly">US / UK / AU / NZ (Monthly/Daily)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="bento-card form-card" style="margin-top: 24px">
+              <h2 class="section-title">Aggressive Strategy</h2>
+              <div class="input-group-row mortgage-only">
+                <div class="input-group">
+                  <label for="paymentFrequency"
+                    >Payment Frequency
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >Accelerated schedules divide standard monthly distributions into halves or
+                        quarters, non-disruptively forcing an extra full monthly installment against
+                        principal per calendar year. Note: Banks may calculate accelerated payments
+                        using slightly different formulas (e.g. dividing monthly payment by 2 vs. 26
+                        bi-weekly periods).</span
+                      ></span
+                    ></label
+                  >
+                  <select id="paymentFrequency" class="custom-select">
+                    <option value="monthly">Monthly</option>
+                    <option value="semi-monthly">Semi-Monthly (24/Year)</option>
+                    <option value="bi-weekly">Bi-Weekly (26/Year)</option>
+                    <option value="accelerated-biweekly">Accelerated Bi-Weekly</option>
+                  </select>
+                </div>
+              </div>
+              <div class="input-group-row">
+                <div class="input-group">
+                  <label for="extraPayment" class="mortgage-only"
+                    >Extra Payment Surplus ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >Discretionary capital injected straight toward principal reduction per
+                        cycle, entirely bypassing the lender's interest calculation mechanism. Note:
+                        Some lenders restrict prepayments or charge penalty fees for exceeding
+                        yearly thresholds.</span
+                      ></span
+                    ></label
+                  >
+                  <label for="extraPayment" class="cc-only"
+                    >Monthly Surplus ($) <span class="inline-tooltip-text">(Above Minimum)</span>
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >Incremental capital deployed monthly above the mandatory minimum threshold,
+                        locking in an un-leveraged, guaranteed return equal to the account APR.
+                        Note: Review your credit agreement for terms regarding surplus
+                        payments.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="extraPayment"
+                    inputmode="decimal"
+                    required
+                    value="0"
+                    step="50"
+                    min="0"
+                  />
+                </div>
+              </div>
+              <div class="input-group-row">
+                <div class="input-group advanced-only" style="flex: 1.5; min-width: 0">
+                  <label for="firstPaymentDate">Start Date</label>
+                  <input type="date" id="firstPaymentDate" />
+                </div>
+                <div class="input-group" style="flex: 1; min-width: 0">
+                  <span
+                    class="input-group-label-text"
+                    style="
+                      font-size: 0.85rem;
+                      font-weight: 700;
+                      margin-bottom: 8px;
+                      color: var(--text-color);
+                      opacity: 0.9;
+                      display: flex;
+                      align-items: center;
+                    "
+                    >Table Label
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >Choose whether the amortization schedule labels each installment by
+                        calendar date (e.g. Jun 1, 2026) or by numeric cycle period (e.g. P1, P2,
+                        P3). Note: Calendar date assumes payments occur exactly on schedule with no
+                        deferred periods.</span
+                      ></span
+                    ></span
+                  >
+                  <div
+                    class="master-mode-selector label-format-selector"
+                    role="group"
+                    aria-label="Amortization Schedule Table Label Format"
+                    style="
+                      height: 52px;
+                      padding: 4px;
+                      border-radius: 14px;
+                      display: flex;
+                      align-items: center;
+                      width: 100%;
+                    "
+                  >
+                    <button
+                      type="button"
+                      class="label-format-btn active"
+                      id="labelFormatDate"
+                      data-format="date"
+                    >
+                      DATE
+                    </button>
+                    <button
+                      type="button"
+                      class="label-format-btn"
+                      id="labelFormatPeriod"
+                      data-format="period"
+                    >
+                      PERIOD
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="section-header-with-toggle advanced-only" style="margin-top: 20px">
+                <h3 class="section-title" style="margin: 0; font-size: 0.95rem">
+                  Opportunity Cost
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >A strategic net worth comparison. Evaluates whether aggressive debt pay-down
+                      yields superior equity value versus allocating those exact liquid surpluses to
+                      market index investments. Note: Market returns are projections and not
+                      guaranteed. Historical averages are not indicative of future
+                      performance.</span
+                    ></span
+                  >
+                </h3>
+                <div class="toggle-wrapper" title="Compare paying off vs investing">
+                  <label class="switch small-switch">
+                    <input
+                      type="checkbox"
+                      id="oppCostToggle"
+                      role="switch"
+                      aria-checked="false"
+                      aria-label="Compare paying off vs investing"
+                    />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div
+                id="oppCostSection"
+                class="advanced-only"
+                style="display: none; margin-top: 15px"
+              >
+                <div class="input-group-row">
+                  <div class="input-group">
+                    <label for="investRate">Expected Investment Return (%/Year)</label>
+                    <input
+                      type="number"
+                      id="investRate"
+                      inputmode="decimal"
+                      value="7.0"
+                      step="0.1"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bento-card form-card mortgage-only advanced-only" style="margin-top: 24px">
+              <div class="section-header-with-toggle">
+                <h3 class="section-title" style="margin: 0">
+                  Taxes & Insurance
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >Integrates escrow cash flow items (PITI components) to map non-equity housing
+                      expenses that impact gross monthly liquidity. Note: Tax assessments, insurance
+                      premiums, and HOA fees fluctuate over time; calculations are close
+                      estimates.</span
+                    ></span
+                  >
+                </h3>
+                <div class="toggle-wrapper" title="Include Escrow (PITI)">
+                  <label class="switch small-switch">
+                    <input
+                      type="checkbox"
+                      id="includePitiToggle"
+                      role="switch"
+                      aria-checked="false"
+                      aria-label="Include Escrow (Taxes & Insurance)"
+                    />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div id="pitiSection" style="display: none; margin-top: 15px">
+                <div class="input-group-row">
+                  <div class="input-group">
+                    <label for="propertyTax">Property Tax ($/Year)</label>
+                    <input
+                      type="number"
+                      id="propertyTax"
+                      inputmode="decimal"
+                      value="4000"
+                      step="100"
+                      min="0"
+                    />
+                  </div>
+                  <div class="input-group">
+                    <label for="homeInsurance">Home Insurance ($/Year)</label>
+                    <input
+                      type="number"
+                      id="homeInsurance"
+                      inputmode="decimal"
+                      value="1200"
+                      step="50"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                <div class="input-group-row">
+                  <div class="input-group">
+                    <label for="hoaFees">HOA Fees ($/Month)</label>
+                    <input
+                      type="number"
+                      id="hoaFees"
+                      inputmode="decimal"
+                      value="0"
+                      step="10"
+                      min="0"
+                    />
+                  </div>
+                  <div class="input-group">
+                    <label for="pmiRate"
+                      >PMI (%/Year)
+                      <span class="inline-tooltip-text">(Drops at 80% LTV)</span></label
+                    >
+                    <input
+                      type="number"
+                      id="pmiRate"
+                      inputmode="decimal"
+                      value="0.5"
+                      step="0.01"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="bento-card form-card mortgage-only advanced-only" style="margin-top: 24px">
+              <div class="section-header-with-toggle">
+                <h3 class="section-title" style="margin: 0">
+                  Refinancing Rate Shock
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >Simulate term renewal interest rate adjustments. Each term's rate can be
+                      edited individually to project the dynamic impact on remaining amortization.
+                      Note: Rate projections are theoretical; bank calculations may differ based on
+                      dynamic refinancing terms.</span
+                    ></span
+                  >
+                </h3>
+                <div class="toggle-wrapper" title="Simulate refinancing shocks">
+                  <label class="switch small-switch">
+                    <input
+                      type="checkbox"
+                      id="rateShockToggle"
+                      role="switch"
+                      aria-checked="false"
+                      aria-label="Simulate refinancing shocks"
+                    />
+                    <span class="slider"></span>
+                  </label>
+                </div>
+              </div>
+              <div id="rateShockSection" style="display: none; margin-top: 15px">
+                <p
+                  style="
+                    font-size: 0.85rem;
+                    opacity: 0.8;
+                    margin-top: 0;
+                    margin-bottom: 15px;
+                    line-height: 1.4;
+                  "
+                >
+                  Adjust the interest rates for each term renewal. Payments stay constant, and the
+                  remaining amortization will automatically expand or shrink.
+                </p>
+                <div
+                  id="rateShockTimeline"
+                  style="display: flex; flex-direction: column; gap: 12px; width: 100%"
+                >
+                  <!-- Dynamically populated term rate boxes -->
+                </div>
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button type="button" id="clearBtn" class="squishy-btn secondary-btn">Reset</button>
+              <button type="submit" id="calcBtn" class="squishy-btn primary-btn">
+                Calculate Strategy
+              </button>
+              <button type="button" id="shareBtn" class="squishy-btn share-btn">
+                Share Strategy
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="column gsap-slide-up" style="animation-delay: 0.1s">
+          <div class="concentric-visualization-card">
+            <h2 class="section-title">
+              The Gravity of the Debt
+              <span class="help-tip"
+                >?<span class="tooltip-text"
+                  >A spatial representation of cumulative interest overhead. The relative size of
+                  the interest envelope (red) highlights capital inefficiencies over baseline asset
+                  cost (blue). Note: Calculations are close estimations; banks may use proprietary
+                  interest formulas causing minor variations.</span
+                ></span
+              >
+            </h2>
+            <div class="dynamic-concentric-stack">
+              <div class="stack-wrapper">
+                <svg
+                  viewBox="0 0 100 100"
+                  class="concentric-svg-comparison"
+                  style="width: 100%; height: 100%"
+                >
+                  <circle
+                    id="concentric-outer"
+                    cx="50"
+                    cy="50"
+                    r="0"
+                    fill="#ef4444"
+                    opacity="0.15"
+                  ></circle>
+                  <circle
+                    id="concentric-border"
+                    cx="50"
+                    cy="50"
+                    r="0"
+                    stroke="#ef4444"
+                    stroke-width="0.5"
+                    fill="none"
+                    opacity="0.3"
+                  ></circle>
+
+                  <circle cx="50" cy="50" r="20" fill="#3b82f6"></circle>
+
+                  <text
+                    id="svg-inner-principal"
+                    x="50"
+                    y="42"
+                    text-anchor="middle"
+                    font-size="5.5"
+                    font-weight="800"
+                    fill="white"
+                  >
+                    $0
+                  </text>
+                  <text
+                    x="50"
+                    y="50"
+                    text-anchor="middle"
+                    font-size="7"
+                    font-weight="800"
+                    fill="white"
+                  >
+                    +
+                  </text>
+                  <text
+                    id="svg-inner-markup"
+                    x="50"
+                    y="58"
+                    text-anchor="middle"
+                    font-size="5.5"
+                    font-weight="800"
+                    fill="white"
+                  >
+                    $0
+                  </text>
+                </svg>
+
+                <div class="blueprint-label">
+                  <div style="color: #3b82f6" id="inner-circle-label">Principal</div>
+                  <div
+                    id="out-principal-val"
+                    style="color: var(--text-color); font-size: 0.95rem; margin-top: 4px"
+                  >
+                    $0
+                  </div>
+                </div>
+                <div class="cost-label">
+                  <div style="color: #ef4444">Total Interest Overhead</div>
+                  <div
+                    id="out-markup-val"
+                    style="color: #ef4444; font-size: 0.95rem; margin-top: 4px"
+                  >
+                    $0
+                  </div>
+                </div>
+              </div>
+
+              <div
+                style="
+                  margin-top: 30px;
+                  font-weight: 700;
+                  font-size: 1.1rem;
+                  text-align: center;
+                  color: var(--text-color);
+                "
+              >
+                Actual Lifetime Paid:
+                <span id="actualLifetimePaidValue" data-val="0" style="color: var(--primary-color)"
+                  >$0</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="bento-card">
+            <h2 class="section-title">Financial Summary</h2>
+            <div class="stats-grid">
+              <div class="stat-box squishy-interactive">
+                <label id="summaryBalLabel">Original Debt</label>
+                <div class="kinetic-text" id="mortgageAmountDisplay" data-val="0">$0.00</div>
+              </div>
+              <div class="stat-box danger-box squishy-interactive cc-only">
+                <label class="danger-text"
+                  >Daily Fee to the Bank
+                  <span class="help-tip" style="background: rgba(239, 68, 68, 0.2)"
+                    ><span class="tooltip-text"
+                      >The interest accrued daily, representing a direct fee paid to the bank every
+                      24 hours. Note: Actual bank accruals may vary slightly based on calculations
+                      (e.g. 365 vs. 360 days).</span
+                    ></span
+                  ></label
+                >
+                <div class="kinetic-text danger-text" id="dailyVampireDrain" data-val="0">
+                  $0.00
+                </div>
+              </div>
+              <div class="stat-box squishy-interactive mortgage-only advanced-only">
+                <label
+                  >Balance at Term End
+                  <span class="help-tip"
+                    ><span class="tooltip-text"
+                      >The verified principal debt remaining at term end, indicating refinancing
+                      risk. Note: Assumes standard payment schedule with no pre-payments or missed
+                      payments. Bank formulas may vary slightly.</span
+                    ></span
+                  ></label
+                >
+                <div class="kinetic-text" id="balanceAtTerm" data-val="0">$0.00</div>
+              </div>
+              <div class="stat-box squishy-interactive">
+                <label>Actual Payoff Time</label>
+                <div class="kinetic-text" id="paidOffIn">0 Years</div>
+              </div>
+              <div class="stat-box highlight-box squishy-interactive">
+                <label>Interest Saved <span class="inline-tooltip-text">(vs Minimums)</span></label>
+                <div class="kinetic-text highlight-text" id="extraSavedTotal" data-val="0">
+                  $0.00
+                </div>
+              </div>
+            </div>
+
+            <div class="circles-container">
+              <div class="circle-wrapper squishy-interactive mortgage-only advanced-only">
+                <div class="true-payment-circle" id="monthlyPaymentCircle"></div>
+                <span
+                  >Periodic Payment Composition
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >Tracks structural shifts in installment ratios. Over time, reducing the
+                      principal shrinks the interest wedge. Note: Commercial bank schedules may vary
+                      slightly due to interest rounding routines.</span
+                    ></span
+                  ></span
+                >
+              </div>
+              <div class="circle-wrapper squishy-interactive">
+                <div class="payment-breakdown-circle" id="paymentBreakdownCircle"></div>
+                <span>First Month: Principal vs. Interest</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="full-width-section column gsap-slide-up" style="animation-delay: 0.2s">
+          <div class="bento-card advanced-only" id="milestoneRoadmapCard">
+            <h2 class="section-title">
+              Chronological Milestone Roadmap
+              <span class="help-tip"
+                >?<span class="tooltip-text"
+                  >A dynamic timeline highlighting critical wealth milestones. Note: Projections
+                  assume continuous, uninterrupted surplus payments as scheduled. Commercial
+                  timelines may vary due to custom bank policies.</span
+                ></span
+              >
+            </h2>
+            <div class="roadmap-timeline" id="milestoneTimelineContainer">
+              <!-- Dynamically populated timeline nodes -->
+            </div>
+          </div>
+
+          <div class="bento-card">
+            <div
+              class="section-header-with-toggle"
+              style="margin-bottom: 20px; flex-wrap: wrap; gap: 10px"
+            >
+              <h2 class="section-title" style="margin: 0">
+                Visual Analysis
+                <span class="help-tip"
+                  >?<span class="tooltip-text"
+                    >Algorithmic modeling tracking debt reduction trajectories. Note: Cards can be
+                    dragged to customize your layout. Calculations are close estimates; exact bank
+                    totals may vary due to custom formulas.</span
+                  ></span
+                >
+              </h2>
+              <div
+                class="toggle-wrapper"
+                style="gap: 10px; display: flex; align-items: center; flex-wrap: wrap"
+              >
+                <button
+                  type="button"
+                  id="expand-all-charts-btn"
+                  class="secondary-btn"
+                  style="
+                    padding: 6px 12px;
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid var(--border-color);
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    height: 32px;
+                    transition: all 0.3s var(--spring-easing);
+                    white-space: nowrap;
+                  "
+                >
+                  Expand All Charts +
+                </button>
+                <button
+                  type="button"
+                  id="collapse-all-charts-btn"
+                  class="secondary-btn"
+                  style="
+                    padding: 6px 12px;
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid var(--border-color);
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                    height: 32px;
+                    transition: all 0.3s var(--spring-easing);
+                    white-space: nowrap;
+                  "
+                >
+                  Collapse All Charts −
+                </button>
+              </div>
+            </div>
+            <div class="charts-grid" id="draggable-charts-container">
+              <div class="chart-wrapper chart-box squishy-interactive" draggable="true">
+                <div id="chart3" class="plotly-container"></div>
+              </div>
+              <div
+                class="chart-wrapper chart-box squishy-interactive advanced-only"
+                draggable="true"
+              >
+                <div id="chart" class="plotly-container"></div>
+              </div>
+              <div
+                class="chart-wrapper chart-box squishy-interactive mortgage-only advanced-only"
+                draggable="true"
+              >
+                <div id="chart4" class="plotly-container"></div>
+              </div>
+              <div
+                class="chart-wrapper chart-box squishy-interactive advanced-only"
+                draggable="true"
+              >
+                <div id="chart2" class="plotly-container"></div>
+              </div>
+              <div
+                class="chart-wrapper chart-box squishy-interactive advanced-only"
+                draggable="true"
+              >
+                <div id="chart11" class="plotly-container"></div>
+              </div>
+              <div
+                class="chart-wrapper chart-box squishy-interactive advanced-only"
+                draggable="true"
+              >
+                <div id="chart6" class="plotly-container"></div>
+              </div>
+            </div>
+
+            <!-- Bank Wages Circles Card Section -->
+            <div
+              class="bank-wages-section"
+              style="margin-top: 30px; border-top: 1px solid var(--border-color); padding-top: 25px"
+            >
+              <div class="wage-toggle-container">
+                <h4
+                  class="sub-section-title"
+                  style="
+                    margin: 0;
+                    color: var(--primary-color);
+                    font-size: 1.1rem;
+                    font-weight: 700;
+                    display: flex;
+                    align-items: center;
+                  "
+                >
+                  <span id="bankWagesTitleText"
+                    >How much do you pay towards the banks wages per year</span
+                  >
+                  <span class="help-tip"
+                    >?<span class="tooltip-text" id="bankWagesTooltip"
+                      >Annual interest payments visualized as wages paid to the bank. Circles shrink
+                      over time as you build equity. Note: Calculations are close estimations; bank
+                      calculations may vary due to proprietary interest formulas and rounding
+                      conventions.</span
+                    ></span
+                  >
+                </h4>
+                <div class="wage-toggle-selector" id="bankWagesToggle">
+                  <button class="wage-toggle-btn active" data-view="wages">Bank Wages</button>
+                  <button class="wage-toggle-btn" data-view="rent">Rent Equivalent</button>
+                  <button class="wage-toggle-btn" data-view="rent-tax-ins">
+                    Rent + Tax & Insurance
+                  </button>
+                </div>
+              </div>
+              <div class="bank-wages-container" id="bankWagesCirclesContainer">
+                <!-- Dynamic circle elements -->
+              </div>
+            </div>
+          </div>
+
+          <div
+            id="ltv-container"
+            class="bento-card mortgage-only"
+            style="display: none; margin-bottom: 24px"
+          >
+            <div class="chart-wrapper chart-box squishy-interactive" draggable="true">
+              <div id="chartLTV" class="plotly-container"></div>
+            </div>
+          </div>
+
+          <div id="oppcost-container" class="bento-card" style="display: none; margin-bottom: 24px">
+            <div class="chart-wrapper chart-box squishy-interactive" draggable="true">
+              <div id="chartOppCost" class="plotly-container"></div>
+            </div>
+          </div>
+
+          <div id="comparison-container" class="bento-card advanced-only" style="display: none">
+            <h2 class="section-title">Impact of Accelerated Strategy</h2>
+            <div class="charts-grid" id="draggable-strategy-container">
+              <div class="chart-wrapper chart-box squishy-interactive" draggable="true">
+                <div id="chart9" class="plotly-container"></div>
+              </div>
+              <div class="chart-wrapper chart-box squishy-interactive" draggable="true">
+                <div id="chart12" class="plotly-container"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="bento-card table-card" style="margin-top: 24px; position: relative">
+            <button
+              type="button"
+              class="table-expand-btn"
+              id="table-expand-btn"
+              title="Expand Table"
+            >
+              +
+            </button>
+            <h2 class="section-title">
+              Amortization Schedule
+              <span class="help-tip"
+                >?<span class="tooltip-text"
+                  >A granular ledger mapping principal pay-down and interest decay curves. Note:
+                  Minor variances can occur based on how individual lenders round daily interest and
+                  process extra payments.</span
+                ></span
+              >
+            </h2>
+            <div class="table-responsive">
+              <table id="amortization-table">
+                <thead>
+                  <tr>
+                    <th>Date / #</th>
+                    <th>Total Payment</th>
+                    <th>Principal</th>
+                    <th>Interest</th>
+                    <th id="escrowTh" style="display: none">Escrow (Tax/Ins)</th>
+                    <th>Extra</th>
+                    <th>Balance</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Share Modal -->
+    <div id="shareModal" class="modal-overlay">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Share Your Strategy</h3>
+          <button id="closeModalBtn" class="close-btn" aria-label="Close Share Modal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>
+            Export your customized debt payoff strategy and share it with others or save it for your
+            records.
+          </p>
+
+          <div class="share-options-grid">
+            <button id="downloadPdfOption" class="share-option-card">
+              <div class="option-icon">📄</div>
+              <div class="option-title">Save PDF</div>
+              <div class="option-desc">Download strategy report to your device</div>
+            </button>
+            <button id="nativeShareOption" class="share-option-card">
+              <div class="option-icon">📤</div>
+              <div class="option-title">System Share</div>
+              <div class="option-desc">Share PDF to WhatsApp, Messenger, etc.</div>
+            </button>
+            <button id="whatsappOption" class="share-option-card">
+              <div class="option-icon">💬</div>
+              <div class="option-title">WhatsApp Text</div>
+              <div class="option-desc">Send strategy text summary directly</div>
+            </button>
+            <button id="copyTextOption" class="share-option-card">
+              <div class="option-icon">📋</div>
+              <div class="option-title">Copy Summary</div>
+              <div class="option-desc">Copy formatted summary to clipboard</div>
+            </button>
+          </div>
+
+          <div id="shareStatus" class="share-status" style="display: none"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secure Sync & Portability Modal -->
+    <div id="syncModal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 450px">
+        <div class="modal-header">
+          <h3 style="margin: 0; display: flex; align-items: center; font-size: 1.1rem">
+            <span style="margin-right: 8px">🔑</span> Secure Sync & Portability
+          </h3>
+          <button id="closeSyncModalBtn" class="close-btn" aria-label="Close Sync Modal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 0.8rem; margin-bottom: 20px; line-height: 1.45">
+            Export or restore your strategy blueprint as a secure JSON file to back up your custom
+            scenarios and sync easily across your phone, tablet, or PC. All data remains 100%
+            private in local storage.
+          </p>
+
+          <div style="display: flex; flex-direction: column; gap: 14px">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <label style="font-size: 0.75rem; font-weight: 700; opacity: 0.8"
+                >Security Mode</label
+              >
+              <div
+                class="master-mode-selector"
+                style="display: flex; width: 100%; box-sizing: border-box"
+              >
+                <button type="button" class="format-btn active" data-format="plain">
+                  Plain JSON
+                </button>
+                <button type="button" class="format-btn" data-format="encrypted">
+                  Encrypted 🔒
+                </button>
+              </div>
+            </div>
+
+            <div id="passcodeWrapper" class="passcode-wrapper">
+              <div class="input-group" style="margin-bottom: 0">
+                <label for="blueprintPasscode" style="font-size: 0.75rem; font-weight: 700"
+                  >Blueprint Encryption Passcode</label
+                >
+                <input
+                  type="password"
+                  id="blueprintPasscode"
+                  placeholder="Enter a secure passcode"
+                  style="
+                    font-size: 0.85rem;
+                    padding: 10px 12px;
+                    border-radius: 12px;
+                    border: 1px solid var(--border-color);
+                    background-color: var(--input-bg);
+                    color: var(--text-color);
+                    width: 100%;
+                    box-sizing: border-box;
+                  "
+                />
+              </div>
+            </div>
+
+            <button
+              type="button"
+              id="exportBlueprintBtn"
+              class="squishy-btn primary-btn"
+              aria-label="Export Strategy Blueprint as JSON file"
+              style="
+                width: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+                margin-top: 6px;
+                padding: 12px;
+                font-size: 0.85rem;
+                border-radius: 14px;
+                border: none;
+                cursor: pointer;
+                transition: all 0.3s var(--spring-easing);
+              "
+            >
+              <span>📤</span> Export Strategy Blueprint
+            </button>
+
+            <div
+              style="
+                border-top: 1px dashed var(--border-color);
+                margin-top: 10px;
+                padding-top: 15px;
+              "
+            >
+              <span
+                style="
+                  font-size: 0.75rem;
+                  font-weight: 700;
+                  opacity: 0.8;
+                  display: block;
+                  margin-bottom: 6px;
+                "
+                >Restore Strategy Blueprint</span
+              >
+              <div
+                class="blueprint-dropzone"
+                id="blueprintDropzone"
+                tabindex="0"
+                role="button"
+                aria-label="Dropzone to upload Blueprint JSON files"
+              >
+                <input
+                  type="file"
+                  id="blueprintFileInput"
+                  accept=".json"
+                  style="display: none"
+                  aria-hidden="true"
+                />
+                <div class="dropzone-icon">📥</div>
+                <p>Drag & drop blueprint file here</p>
+                <span>or click to browse local files</span>
+                <div id="dropzoneFeedback" class="dropzone-feedback"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Engine Constraints & Limits Modal -->
+    <div id="limitsModal" class="modal-overlay">
+      <div class="modal-card" style="max-width: 450px">
+        <div class="modal-header">
+          <h3 style="margin: 0; display: flex; align-items: center; font-size: 1.1rem">
+            <span style="margin-right: 8px">⚙️</span> Constraints & Limits
+          </h3>
+          <button id="closeLimitsModalBtn" class="close-btn" aria-label="Close Constraints Modal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 0.8rem; margin-bottom: 20px; line-height: 1.45">
+            The mathematical calculation engine enforces the following validation boundaries to
+            ensure stable calculations, thread protection, and realistic projections.
+          </p>
+
+          <div
+            class="limits-grid"
+            style="display: grid; grid-template-columns: 1fr; gap: 12px; font-size: 0.8rem"
+          >
+            <div
+              class="mortgage-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Amortization Span</span>
+              <strong style="color: var(--primary-color)">0.1 to 100 Years</strong>
+            </div>
+            <div
+              class="mortgage-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Interest Rate Bounds</span>
+              <strong style="color: var(--primary-color)">0.0% to 100.0% APR</strong>
+            </div>
+            <div
+              class="mortgage-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Down Payment Threshold</span>
+              <strong style="color: var(--primary-color)">Must be &lt; Home Price</strong>
+            </div>
+            <div
+              class="mortgage-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Refinance Term Bounds</span>
+              <strong style="color: var(--primary-color)"
+                >Must be &gt; 0 and &le; Amortization</strong
+              >
+            </div>
+            <div
+              class="mortgage-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Rate Shock Density Guard</span>
+              <strong style="color: var(--primary-color)">Max 50 Refinance Terms</strong>
+            </div>
+
+            <div
+              class="cc-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Minimum Starting Balance</span>
+              <strong style="color: var(--primary-color)">&gt; $0.00</strong>
+            </div>
+            <div
+              class="cc-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Interest Rate Bounds</span>
+              <strong style="color: var(--primary-color)">0.0% to 200.0% APR</strong>
+            </div>
+            <div
+              class="cc-only limit-item"
+              style="
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px solid var(--border-color);
+              "
+            >
+              <span style="opacity: 0.8">Province Min. Payment Laws</span>
+              <strong style="color: var(--primary-color)">Ontario (3%) / Quebec (5%)</strong>
+            </div>
+
+            <div
+              class="limit-item"
+              style="display: flex; justify-content: space-between; padding: 8px 0"
+            >
+              <span style="opacity: 0.8">Discretionary Payment</span>
+              <strong style="color: var(--primary-color)">Non-negative (&ge; $0)</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario Sandbox Sidebar & Backdrop -->
+    <div
+      id="scenarioSidebar"
+      class="scenario-sidebar"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="sandboxHeaderTitle"
+    >
+      <div class="sidebar-header">
+        <h3 id="sandboxHeaderTitle"><span>📂</span> Scenario Sandbox</h3>
+        <button
+          type="button"
+          class="sidebar-close-btn"
+          id="closeSidebarBtn"
+          title="Close Panel"
+          aria-label="Close Scenario Sandbox Panel"
+        >
+          &times;
+        </button>
+      </div>
+      <div
+        class="sidebar-content"
+        style="display: flex; flex-direction: column; gap: 16px; height: 100%; overflow: hidden"
+      >
+        <div class="create-profile-group">
+          <label for="newProfileName" class="sr-only">New Scenario Name</label>
+          <input
+            type="text"
+            id="newProfileName"
+            placeholder="New Scenario Name..."
+            autocomplete="off"
+          />
+          <button
+            type="button"
+            class="squishy-btn primary-btn create-profile-btn"
+            id="createProfileBtn"
+            title="Save Current Scenario"
+            aria-label="Save Current Scenario"
+          >
+            +
+          </button>
+        </div>
+
+        <div id="profilesScrollContainer" class="profiles-list" role="list">
+          <!-- Profile items will be injected dynamically -->
+        </div>
+      </div>
+    </div>
+    <div id="sidebarOverlay" class="sidebar-overlay"></div>
+  </body>
+</html>
