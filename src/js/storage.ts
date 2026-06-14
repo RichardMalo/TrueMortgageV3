@@ -285,29 +285,10 @@ export const saveSettingsToStorage = (
       isDark: state.isDark,
       complexity: state.complexity,
       labelFormat: state.labelFormat || 'date',
-      bankWagesView: state.bankWagesView || 'wages'
+      bankWagesView: state.bankWagesView || 'wages',
+      chartsOrder: state.chartsOrder,
+      strategyOrder: state.strategyOrder
     };
-    
-    // draggable cards order sync
-    const chartsContainer = document.getElementById('draggable-charts-container');
-    if (chartsContainer) {
-      settings.chartsOrder = Array.from(chartsContainer.children)
-        .map(child => {
-          const chartDiv = child.querySelector('.plotly-container');
-          return chartDiv ? chartDiv.id : null;
-        })
-        .filter(id => id !== null);
-    }
-    
-    const strategyContainer = document.getElementById('draggable-strategy-container');
-    if (strategyContainer) {
-      settings.strategyOrder = Array.from(strategyContainer.children)
-        .map(child => {
-          const chartDiv = child.querySelector('.plotly-container');
-          return chartDiv ? chartDiv.id : null;
-        })
-        .filter(id => id !== null);
-    }
     
     localStorage.setItem('mtg_calculator_settings', JSON.stringify(settings));
   } catch (err) {
@@ -425,6 +406,8 @@ export const loadSettingsFromStorage = (
       state.complexity = settings.complexity === 'advanced' ? 'advanced' : 'simple';
       state.labelFormat = settings.labelFormat === 'period' ? 'period' : 'date';
       state.bankWagesView = ['rent', 'rent-tax-ins'].includes(settings.bankWagesView) ? settings.bankWagesView : 'wages';
+      state.chartsOrder = settings.chartsOrder;
+      state.strategyOrder = settings.strategyOrder;
     }
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);

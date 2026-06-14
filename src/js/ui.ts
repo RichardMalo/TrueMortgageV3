@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { AppState, Inputs } from './types.js';
+import { AppState, Inputs, ScheduleResult, ScheduleRow } from './types.js';
 import { getCalculationsInputs } from './form.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -281,6 +281,13 @@ export const setupDragAndDrop = (onReorder: () => void) => {
   const wrappers = document.querySelectorAll('[draggable="true"]');
   wrappers.forEach(item => {
     const el = item as HTMLElement;
+    
+    // Accessibility: programmatically establish keyboard focus and semantic button roles
+    el.setAttribute('tabindex', '0');
+    el.setAttribute('role', 'button');
+    const cardTitle = el.querySelector('.section-title')?.textContent || el.querySelector('.plotly-container')?.id || 'Dashboard Card';
+    el.setAttribute('aria-label', `Dashboard card: ${cardTitle}. Press Enter or Space to select and swap layout position.`);
+
     el.addEventListener('dragstart', handleDragStart, false);
     el.addEventListener('dragenter', handleDragEnter, false);
     el.addEventListener('dragover', handleDragOver, false);
@@ -288,18 +295,39 @@ export const setupDragAndDrop = (onReorder: () => void) => {
     el.addEventListener('drop', handleDrop, false);
     el.addEventListener('dragend', handleDragEnd, false);
     el.addEventListener('click', handleCardClick, false);
+    
+    // Keyboard reordering interactions
+    el.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        handleCardClick(e as unknown as MouseEvent);
+      }
+    });
   });
 };
 
-export const generateReportHtml = (inputs: Inputs, isMortgage: boolean, _state: AppState): string => {
+export const generateReportHtml = (
+  inputs: Inputs,
+  isMortgage: boolean,
+  actualData: ScheduleResult,
+  baseData: ScheduleResult
+): string => {
   const reportDate = new Date().toLocaleString();
   
-  const balanceVal = document.getElementById('mortgageAmountDisplay')?.textContent || '$0';
-  const payoffVal = document.getElementById('paidOffIn')?.textContent || '0';
-  const savedVal = document.getElementById('extraSavedTotal')?.textContent || '$0';
-  const actualLifetimeVal = document.getElementById('actualLifetimePaidValue')?.textContent || '$0';
-  const dailyVampireVal = isMortgage ? 'N/A' : (document.getElementById('dailyVampireDrain')?.textContent || '$0');
-  const termBalanceVal = isMortgage ? (document.getElementById('balanceAtTerm')?.textContent || '$0') : 'N/A';
+  const startingPrincipal = isMortgage ? (inputs.homePrice - inputs.downPayment) : inputs.ccBalance;
+  const balanceVal = formatCurrency(startingPrincipal);
+  
+  const yrs_paid = Math.floor(actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear);
+  const rem_paid = actualData.summary.periodsToPayoff % actualData.summary.periodsPerYear;
+  const frequencyLabel = isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months';
+  const payoffVal = `${yrs_paid} Years, ${rem_paid} ${frequencyLabel}`;
+  
+  const savedVal = formatCurrency(baseData.summary.totalInterest - actualData.summary.totalInterest);
+  const actualLifetimeVal = formatCurrency(actualData.summary.totalInterest + startingPrincipal);
+  const dailyVampireVal = isMortgage ? 'N/A' : formatCurrency(inputs.ccBalance * ((inputs.annualRate / 100) / 365));
+  
+  const termPer = Math.ceil(inputs.termYears * actualData.summary.periodsPerYear);
+  const termBalanceVal = isMortgage ? formatCurrency(termPer < actualData.schedule.length ? actualData.schedule[Math.max(0, termPer - 1)].balance : 0) : 'N/A';
   
   // Sanitizing variables prior to HTML string interpolation
   const balance = escapeHtml(balanceVal);
@@ -368,10 +396,20 @@ export const generateReportHtml = (inputs: Inputs, isMortgage: boolean, _state: 
     `;
   }
 
-  const tableRows = Array.from(document.querySelectorAll('#amortization-table tbody tr'))
-    .slice(0, 12)
-    .map(tr => tr.outerHTML)
-    .join('');
+  const tableRows = actualData.schedule.slice(0, 12).map((row: ScheduleRow) => {
+    const eTd = (inputs.usePiti && isMortgage) ? `<td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(formatCurrency(row.escrow))}</td>` : '';
+    return `
+      <tr style="border-bottom: 1px solid #cbd5e1;">
+        <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(row.dateLabel)}</td>
+        <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; font-weight: 700 !important; background: none !important;"><strong>${escapeHtml(formatCurrency(row.payment))}</strong></td>
+        <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(formatCurrency(row.principal))}</td>
+        <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(formatCurrency(row.interest))}</td>
+        ${eTd}
+        <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(formatCurrency(row.extra))}</td>
+        <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; font-weight: 700 !important; background: none !important;"><strong>${escapeHtml(formatCurrency(row.balance))}</strong></td>
+      </tr>
+    `;
+  }).join('');
 
   return `
     <div class="pdf-report" style="width: 170mm; background: white; color: #1e293b; font-family: 'Inter', sans-serif; padding: 20px;">
@@ -609,7 +647,8 @@ export const setupShareFunctionality = (
     inputs: Record<string, HTMLInputElement | HTMLSelectElement | null>;
     results: Record<string, Element | null>;
   },
-  calculate: () => void
+  calculate: () => void,
+  getLatestSchedules: () => { actualData: ScheduleResult; baseData: ScheduleResult }
 ) => {
   const shareBtn = document.getElementById('shareBtn');
   const shareModal = document.getElementById('shareModal');
@@ -658,7 +697,8 @@ export const setupShareFunctionality = (
         statusEl.textContent = 'Generating PDF... Please wait.';
       }
 
-      const reportHtml = generateReportHtml(inputs, isMortgage, state);
+      const { actualData, baseData } = getLatestSchedules();
+      const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData);
       const tempContainer = document.createElement('div');
       tempContainer.style.position = 'absolute';
       tempContainer.style.left = '-9999px';
@@ -709,7 +749,8 @@ export const setupShareFunctionality = (
         statusEl.textContent = 'Preparing file to share...';
       }
 
-      const reportHtml = generateReportHtml(inputs, isMortgage, state);
+      const { actualData, baseData } = getLatestSchedules();
+      const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData);
       const tempContainer = document.createElement('div');
       tempContainer.style.position = 'absolute';
       tempContainer.style.left = '-9999px';

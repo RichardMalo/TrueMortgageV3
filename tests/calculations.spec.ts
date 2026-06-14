@@ -185,4 +185,71 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const lastRow = clampedResult.schedule[clampedResult.schedule.length - 1];
     expect(lastRow.totalPrincipal + lastRow.balance).toBeCloseTo(500000 - (500000 * 0.999), 1);
   });
+
+  it('should handle homePrice = 0 gracefully without NaN values', () => {
+    const inputs: Inputs = {
+      homePrice: 0,
+      downPayment: 0,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.39,
+      amortizationYears: 30,
+      termYears: 5,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    expect(result.schedule.length).toBe(0);
+    const milestones = calculateMilestones(result, result, inputs, 'mortgage');
+    expect(milestones.length).toBe(0);
+  });
+
+  it('should recalculate periodic payment on rate shock renewals', () => {
+    const inputs: Inputs = {
+      homePrice: 500000,
+      downPayment: 100000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.0,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: true,
+      termRates: {
+        5: 8.0 // Rate shocks to 8% at year 5
+      }
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    // Month 60 (Year 5, payment 60 is the last of the first term)
+    // Month 61 (Year 5 + 1 period, payment 61 is the first of the second term)
+    const row60 = result.schedule[59];
+    const row61 = result.schedule[60];
+    
+    // With rate shock, payment should change (recalculated at renewal)
+    expect(row61.payment).not.toBeCloseTo(row60.payment, 1);
+    expect(row61.payment).toBeGreaterThan(row60.payment);
+  });
 });

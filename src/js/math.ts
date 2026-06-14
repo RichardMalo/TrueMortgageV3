@@ -71,6 +71,26 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
       }
     }
 
+    // Recalculate periodic payment at refinancing renewals
+    if (inputs.rateShockEnabled && termYrs > 0 && (i - 1) > 0 && (i - 1) % Math.round(termYrs * perYear) === 0) {
+      const remainingAmortYrs = Math.max(0.1, safeAmort - elapsedYrs);
+      const stdRateShock = (inputs.compounding === 'semi')
+        ? Math.pow(1 + (activeRate / 100 / 2), 1 / 6) - 1
+        : (activeRate / 100 / 12);
+      
+      const newBasePI = getMonthlyPayment(bal, stdRateShock, remainingAmortYrs * 12);
+      
+      if (freq === 'monthly') {
+        perPI = newBasePI;
+      } else if (freq === 'semi-monthly') {
+        perPI = newBasePI / 2;
+      } else if (freq === 'bi-weekly') {
+        perPI = (newBasePI * 12) / 26;
+      } else {
+        perPI = newBasePI / 2;
+      }
+    }
+
     const perRate = (inputs.compounding === 'semi')
       ? Math.pow(1 + (activeRate / 100 / 2), 2 / perYear) - 1
       : (activeRate / 100 / perYear);
@@ -122,7 +142,7 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
       year: yLbl,
       calendarYear,
       dateLabel: dLbl,
-      ltv: (bal / inputs.homePrice) * 100,
+      ltv: inputs.homePrice > 0 ? (bal / inputs.homePrice) * 100 : 0,
       payment: pPart + iPart + pEscrow + cExtra,
       principal: pPart,
       interest: iPart,
@@ -298,7 +318,7 @@ export const calculateMilestones = (
     let badgeText = '';
     let isAchieved = false;
     
-    const startingLtv = (startingPrincipal / inputs.homePrice) * 100;
+    const startingLtv = inputs.homePrice > 0 ? (startingPrincipal / inputs.homePrice) * 100 : 0;
     
     if (startingLtv <= 80) {
       targetDate = 'Day 1';

@@ -74,6 +74,7 @@ const state: AppState = {
   bankWagesView: 'wages'
 };
 
+let lastBaseData: ScheduleResult | null = null;
 let lastActData: ScheduleResult | null = null;
 
 // DOM selectors mapping
@@ -401,6 +402,66 @@ const renderMilestonesUI = (milestones: Milestone[]) => {
   container.scrollLeft = currentScrollLeft;
 };
 
+const syncStateCardOrderFromDOM = () => {
+  const chartsContainer = document.getElementById('draggable-charts-container');
+  if (chartsContainer) {
+    state.chartsOrder = Array.from(chartsContainer.children)
+      .map(child => {
+        const chartDiv = child.querySelector('.plotly-container');
+        return chartDiv ? chartDiv.id : null;
+      })
+      .filter(id => id !== null);
+  }
+  
+  const strategyContainer = document.getElementById('draggable-strategy-container');
+  if (strategyContainer) {
+    state.strategyOrder = Array.from(strategyContainer.children)
+      .map(child => {
+        const chartDiv = child.querySelector('.plotly-container');
+        return chartDiv ? chartDiv.id : null;
+      })
+      .filter(id => id !== null);
+  }
+};
+
+const applyStateCardOrderToDOM = () => {
+  const chartsContainer = document.getElementById('draggable-charts-container');
+  if (chartsContainer && state.chartsOrder && state.chartsOrder.length > 0) {
+    const wrappers = Array.from(chartsContainer.children);
+    const wrapperMap: Record<string, Element> = {};
+    wrappers.forEach(wrapper => {
+      const chartDiv = wrapper.querySelector('.plotly-container');
+      if (chartDiv && chartDiv.id) {
+        wrapperMap[chartDiv.id] = wrapper;
+      }
+    });
+    
+    state.chartsOrder.forEach(id => {
+      if (id && wrapperMap[id]) {
+        chartsContainer.appendChild(wrapperMap[id]);
+      }
+    });
+  }
+  
+  const strategyContainer = document.getElementById('draggable-strategy-container');
+  if (strategyContainer && state.strategyOrder && state.strategyOrder.length > 0) {
+    const wrappers = Array.from(strategyContainer.children);
+    const wrapperMap: Record<string, Element> = {};
+    wrappers.forEach(wrapper => {
+      const chartDiv = wrapper.querySelector('.plotly-container');
+      if (chartDiv && chartDiv.id) {
+        wrapperMap[chartDiv.id] = wrapper;
+      }
+    });
+    
+    state.strategyOrder.forEach(id => {
+      if (id && wrapperMap[id]) {
+        strategyContainer.appendChild(wrapperMap[id]);
+      }
+    });
+  }
+};
+
 // Central calculation execution pipeline
 const calculate = (e?: Event) => {
   if (e) e.preventDefault();
@@ -528,8 +589,10 @@ const calculate = (e?: Event) => {
   renderMilestonesUI(milestones);
 
   lastActData = actData;
+  lastBaseData = baseData;
   renderBankWages(actData);
 
+  syncStateCardOrderFromDOM();
   saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
 };
 
@@ -923,6 +986,9 @@ const setupBlueprintSync = () => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    
+    // Clear passcode field after export completes
+    passcodeInput.value = '';
   });
 
   dropzone.addEventListener('click', () => {
@@ -999,6 +1065,7 @@ const setupBlueprintSync = () => {
         loadSettingsFromStorage(state, DEFAULT_INPUTS);
         handleProfileSwitch(state.activeProfileId as string);
         showFeedback('Strategy Blueprint Restored Successfully! 🎉');
+        passcodeInput.value = ''; // Clear passcode field after successful import
       } catch (err) {
         console.error(err);
         showFeedback('Restoration failed!', true);
@@ -1107,6 +1174,7 @@ const setupLimitsToggle = () => {
 
 const bootApp = () => {
   loadSettingsFromStorage(state, DEFAULT_INPUTS);
+  applyStateCardOrderToDOM();
 
   // Prefill initial start date if empty
   if (els.inputs.date && !els.inputs.date.value) {
@@ -1264,7 +1332,15 @@ const bootApp = () => {
   setupTableExpandButton();
   setupTouchAndKeyboardTooltips();
   setupDragAndDrop(calculate);
-  setupShareFunctionality(state, els, calculate);
+  setupShareFunctionality(state, els, calculate, () => {
+    if (!lastActData || !lastBaseData) {
+      calculate();
+    }
+    return {
+      actualData: lastActData!,
+      baseData: lastBaseData!
+    };
+  });
   setupComplexityToggle();
   setupBankWagesToggle();
   setupLimitsToggle();
@@ -1281,12 +1357,14 @@ const bootApp = () => {
     calculate
   );
 
-  // Restore current active profile form values
-  handleProfileSwitch(state.activeProfileId as string);
-
-  // GSAP Entrance Animations
+  // GSAP Entrance Animations (run immediately on boot)
   gsap.from('.gsap-fade-in', { y: -20, opacity: 0, duration: 0.8, ease: 'power3.out' });
   gsap.from('.gsap-slide-up', { y: 40, opacity: 0, duration: 0.8, stagger: 0.1, ease: 'back.out(1.5)' });
+
+  // Restore current active profile form values and calculate (deferred to let UI render and animate first)
+  setTimeout(() => {
+    handleProfileSwitch(state.activeProfileId as string);
+  }, 250);
 };
 
 // Auto boot on window load (if not in Vitest checks context)

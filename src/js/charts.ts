@@ -385,7 +385,6 @@ export const renderCharts = (
       const p1X: number[] = [];
       const p1Y: number[] = [];
       let p1Inv = 0;
-      const p1PIEx = actualData.schedule[0].principal + actualData.schedule[0].interest + actualData.schedule[0].extra;
       const p1PY = actualData.summary.periodsPerYear;
       const p1Rate = Math.pow(1 + ir, 1 / p1PY) - 1;
       
@@ -397,9 +396,13 @@ export const renderCharts = (
       let cY = p1X[p1X.length - 1];
       const mY = baseData.schedule[baseData.schedule.length - 1].year;
       
+      // Use the last row's payment capacity for future investments
+      const lastActRow = actualData.schedule[actualData.schedule.length - 1];
+      const actualCapacityPerPeriod = lastActRow ? (lastActRow.principal + lastActRow.interest + lastActRow.extra) : 0;
+      
       while (cY < mY) {
         cY += (1 / p1PY);
-        p1Inv = (p1Inv + p1PIEx) * (1 + p1Rate);
+        p1Inv = (p1Inv + actualCapacityPerPeriod) * (1 + p1Rate);
         p1X.push(cY);
         p1Y.push(hp + p1Inv);
       }
@@ -407,15 +410,30 @@ export const renderCharts = (
       const p2X: number[] = [];
       const p2Y: number[] = [];
       let p2Inv = 0;
-      const p2PI = baseData.schedule[0].principal + baseData.schedule[0].interest;
       const p2PY = baseData.summary.periodsPerYear;
       const p2Rate = Math.pow(1 + ir, 1 / p2PY) - 1;
-      const annBud = p1PIEx * p1PY;
-      const annBase = p2PI * p2PY;
-      const p2InvPer = Math.max(0, annBud - annBase) / p2PY;
       
       baseData.schedule.forEach(d => {
-        p2Inv = (p2Inv + p2InvPer) * (1 + p2Rate);
+        // Find matching actual row at or just after d.year
+        const yearVal = d.year;
+        const actRow = actualData.schedule.find(r => r.year >= yearVal) || actualData.schedule[actualData.schedule.length - 1];
+        
+        let actualDebtServiceAnn = 0;
+        if (actRow) {
+          actualDebtServiceAnn = (actRow.principal + actRow.interest + actRow.extra) * actualData.summary.periodsPerYear;
+        } else if (lastActRow) {
+          actualDebtServiceAnn = (lastActRow.principal + lastActRow.interest + lastActRow.extra) * actualData.summary.periodsPerYear;
+        }
+        
+        // Baseline annual debt service rate in this period
+        const baseDebtServiceAnn = (d.principal + d.interest) * p2PY;
+        
+        // Annual surplus
+        const annSurplus = Math.max(0, actualDebtServiceAnn - baseDebtServiceAnn);
+        // Monthly surplus (divided by 12, since baseline is monthly)
+        const monthlySurplus = annSurplus / 12;
+        
+        p2Inv = (p2Inv + monthlySurplus) * (1 + p2Rate);
         p2X.push(d[xKey]);
         p2Y.push(hp - d.balance + p2Inv);
       });
@@ -424,7 +442,7 @@ export const renderCharts = (
         { x: p1X, y: p1Y, name: 'Pay Debt Fast', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } },
         { x: p2X, y: p2Y, name: 'Invest Surplus', type: 'scatter', line: { color: CONFIG.colors.investLine, width: 3, dash: 'dot' } }
       ];
-
+ 
       if (compData && compData.schedule) {
         const compName = (state.profiles[state.comparisonProfileId as string] && state.profiles[state.comparisonProfileId as string].name) || 'Comparison';
         const compX: number[] = [];
@@ -432,7 +450,6 @@ export const renderCharts = (
         let compInv = 0;
         const cSched = compData.schedule;
         if (cSched.length > 0) {
-          const cPIEx = cSched[0].principal + cSched[0].interest + cSched[0].extra;
           const cPY = compData.summary.periodsPerYear;
           const cRate = Math.pow(1 + ir, 1 / cPY) - 1;
           cSched.forEach(d => {
@@ -440,9 +457,12 @@ export const renderCharts = (
             compY.push(hp - d.balance);
           });
           let ccY = compX[compX.length - 1];
+          const lastCompRow = cSched[cSched.length - 1];
+          const compCapacityPerPeriod = lastCompRow ? (lastCompRow.principal + lastCompRow.interest + lastCompRow.extra) : 0;
+          
           while (ccY < mY) {
             ccY += (1 / cPY);
-            compInv = (compInv + cPIEx) * (1 + cRate);
+            compInv = (compInv + compCapacityPerPeriod) * (1 + cRate);
             compX.push(ccY);
             compY.push(hp + compInv);
           }

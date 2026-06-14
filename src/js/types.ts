@@ -81,6 +81,8 @@ export interface AppState {
   compareModeActive: boolean;
   profiles: Record<string, Profile>;
   bankWagesView: 'wages' | 'rent' | 'rent-tax-ins';
+  chartsOrder?: (string | null)[];
+  strategyOrder?: (string | null)[];
 }
 
 export interface Milestone {

@@ -729,6 +729,10 @@ input:focus,
 .chart-wrapper:active {
   cursor: grabbing;
 }
+.chart-wrapper:focus-visible {
+  outline: 3px solid var(--primary-color);
+  outline-offset: 4px;
+}
 .chart-wrapper.drag-over {
   border: 2px dashed var(--primary-color);
   transform: scale(0.99);
@@ -2089,4 +2093,17 @@ body:not(.dark-mode) .scenario-sidebar {
   .header-controls-right .master-mode-selector {
     flex: 1;
   }
+}
+
+/* Screen Reader Only utility class for visual hiding */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
