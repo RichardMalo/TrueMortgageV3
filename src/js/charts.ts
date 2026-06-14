@@ -1,6 +1,6 @@
 import { AppState, Inputs, ScheduleResult } from './types.js';
 
-let plotlyInstance: any = null;
+let plotlyInstance: typeof import('plotly.js-basic-dist') | null = null;
 
 const loadPlotly = async () => {
   if (!plotlyInstance) {
@@ -39,14 +39,14 @@ const PLOT_CONFIG = { responsive: true, displayModeBar: false };
 const visibleChartsMap: Record<string, boolean> = {};
 
 // Queue for batch rendering to maximize INP performance
-const renderQueue = new Map<string, { data: any[]; layout: any; config: any }>();
+const renderQueue = new Map<string, { data: unknown[]; layout: unknown; config: unknown }>();
 let renderFrameId: number | null = null;
 
 export const queueChartRender = (
   elementId: string,
-  data: any[],
-  layout: any,
-  config: any
+  data: unknown[],
+  layout: unknown,
+  config: unknown
 ) => {
   renderQueue.set(elementId, { data, layout, config });
   
@@ -62,7 +62,7 @@ export const queueChartRender = (
 const flushRenderQueue = async () => {
   try {
     const Plotly = await loadPlotly();
-    const elementsToRender: Array<{ el: HTMLElement; data: any; layout: any; config: any; elementId: string }> = [];
+    const elementsToRender: Array<{ el: HTMLElement; data: unknown[]; layout: unknown; config: unknown; elementId: string }> = [];
     
     // Read geometries first (forces a single batch layout reflow)
     renderQueue.forEach(({ data, layout, config }, elementId) => {
@@ -93,7 +93,7 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
   const c = isDark ? '#f8fafc' : '#1e293b';
   const g = isDark ? '#334155' : '#e2e8f0';
   const isCurrency = yTitle && (yTitle.includes('$') || yTitle === '$');
-  const yaxisConfig: any = { title: yTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true };
+  const yaxisConfig: Record<string, unknown> = { title: yTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true };
   if (isCurrency) {
     yaxisConfig.tickformat = '$,.0f';
   }
@@ -134,7 +134,7 @@ export const renderCharts = (
   hasStrat: boolean,
   compData: ScheduleResult | null = null
 ) => {
-  const xKey = 'year';
+  const xKey = 'year' as const;
   let termX: number | null = (state.currentMode === 'mortgage') ? inputs.termYears : null;
   
   if (termX !== null && inputs.startDate && baseData.schedule.length > 0) {
@@ -215,8 +215,8 @@ export const renderCharts = (
 
   const chart3El = document.getElementById('chart3');
   if (chart3El) {
-    const t3: any[] = [{
-      x: baseData.schedule.map(d => (d as any)[xKey]),
+    const t3: unknown[] = [{
+      x: baseData.schedule.map(d => d[xKey]),
       y: baseData.schedule.map(d => d.balance),
       name: 'Balance (Baseline)',
       type: 'scatter',
@@ -225,7 +225,7 @@ export const renderCharts = (
     }];
     if (hasStrat) {
       t3.push({
-        x: actualData.schedule.map(d => (d as any)[xKey]),
+        x: actualData.schedule.map(d => d[xKey]),
         y: actualData.schedule.map(d => d.balance),
         name: 'Balance (Actual)',
         type: 'scatter',
@@ -236,7 +236,7 @@ export const renderCharts = (
     if (compData && compData.schedule) {
       const compName = (state.profiles[state.comparisonProfileId as string] && state.profiles[state.comparisonProfileId as string].name) || 'Comparison';
       t3.push({
-        x: compData.schedule.map(d => (d as any)[xKey]),
+        x: compData.schedule.map(d => d[xKey]),
         y: compData.schedule.map(d => d.balance),
         name: `${compName} (Comparison)`,
         type: 'scatter',
@@ -244,7 +244,7 @@ export const renderCharts = (
       });
     }
     
-    const l3: any = getBaseLayout('Debt Balance Over Time', 'Year', '$', state.isDark);
+    const l3: Record<string, unknown> = getBaseLayout('Debt Balance Over Time', 'Year', '$', state.isDark);
     const shapes3 = [];
     if (termLine) {
       shapes3.push(termLine);
@@ -278,8 +278,8 @@ export const renderCharts = (
     const chart4El = document.getElementById('chart4');
     if (chart4El) {
       const pAmt = actualData.schedule.length ? (actualData.schedule[0].balance + actualData.schedule[0].principal) : 0;
-      const t4 = [{
-        x: baseData.schedule.map(d => (d as any)[xKey]),
+      const t4: unknown[] = [{
+        x: baseData.schedule.map(d => d[xKey]),
         y: baseData.schedule.map(d => pAmt - d.balance),
         name: 'Equity (Standard)',
         type: 'scatter',
@@ -287,7 +287,7 @@ export const renderCharts = (
       }];
       if (hasStrat) {
         t4.push({
-          x: actualData.schedule.map(d => (d as any)[xKey]),
+          x: actualData.schedule.map(d => d[xKey]),
           y: actualData.schedule.map(d => pAmt - d.balance),
           name: 'Equity (Actual)',
           type: 'scatter',
@@ -300,19 +300,19 @@ export const renderCharts = (
 
   const chart2El = document.getElementById('chart2');
   if (chart2El) {
-    const t2 = [
-      { x: actualData.schedule.map(d => (d as any)[xKey]), y: actualData.schedule.map(d => d.totalInterest), name: 'Interest', stackgroup: 'one', line: { color: CONFIG.colors.interest } },
-      { x: actualData.schedule.map(d => (d as any)[xKey]), y: actualData.schedule.map(d => d.totalPrincipal), name: 'Principal', stackgroup: 'one', line: { color: CONFIG.colors.principal } }
+    const t2: unknown[] = [
+      { x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.totalInterest), name: 'Interest', stackgroup: 'one', line: { color: CONFIG.colors.interest } },
+      { x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.totalPrincipal), name: 'Principal', stackgroup: 'one', line: { color: CONFIG.colors.principal } }
     ];
     if (inputs.usePiti && state.currentMode === 'mortgage') {
-      t2.push({ x: actualData.schedule.map(d => (d as any)[xKey]), y: actualData.schedule.map(d => d.totalEscrow), name: 'Escrow', stackgroup: 'one', line: { color: CONFIG.colors.tax } });
+      t2.push({ x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.totalEscrow), name: 'Escrow', stackgroup: 'one', line: { color: CONFIG.colors.tax } });
     }
     queueChartRender('chart2', t2, getBaseLayout('Cumulative Outflow', 'Year', '$', state.isDark), PLOT_CONFIG);
   }
 
   const aData: Record<number, { p: number; i: number; e: number; esc: number }> = {};
   actualData.schedule.forEach(d => {
-    const y = Math.floor((d as any)[xKey]);
+    const y = Math.floor(d[xKey]);
     if (!aData[y]) aData[y] = { p: 0, i: 0, e: 0, esc: 0 };
     aData[y].p += d.principal;
     aData[y].i += d.interest;
@@ -323,13 +323,13 @@ export const renderCharts = (
   
   const chart11El = document.getElementById('chart11');
   if (chart11El) {
-    const t11 = [
+    const t11: unknown[] = [
       { x: yrs, y: yrs.map(y => aData[Number(y)].i), name: 'Interest', type: 'bar', marker: { color: CONFIG.colors.interest } },
       { x: yrs, y: yrs.map(y => aData[Number(y)].p), name: 'Principal', type: 'bar', marker: { color: CONFIG.colors.principal } },
       { x: yrs, y: yrs.map(y => aData[Number(y)].e), name: 'Extra', type: 'bar', marker: { color: CONFIG.colors.extra } }
     ];
     if (inputs.usePiti && state.currentMode === 'mortgage') {
-      t11.splice(1, 0, { x: yrs, y: yrs.map(y => aData[Number(y)].esc), name: 'Escrow', type: 'bar', marker: { color: CONFIG.colors.tax } } as any);
+      t11.splice(1, 0, { x: yrs, y: yrs.map(y => aData[Number(y)].esc), name: 'Escrow', type: 'bar', marker: { color: CONFIG.colors.tax } });
     }
     queueChartRender('chart11', t11, Object.assign(getBaseLayout('Annual Cash Flow', 'Year', '$', state.isDark), { barmode: 'stack' }), PLOT_CONFIG);
   }
@@ -337,21 +337,21 @@ export const renderCharts = (
   const chart6El = document.getElementById('chart6');
   if (chart6El) {
     queueChartRender('chart6', [
-      { x: actualData.schedule.map(d => (d as any)[xKey]), y: actualData.schedule.map(d => d.interest), name: 'Interest Portion', type: 'scatter', fill: 'tozeroy', line: { color: CONFIG.colors.interest } },
-      { x: actualData.schedule.map(d => (d as any)[xKey]), y: actualData.schedule.map(d => d.principal), name: 'Principal Portion', type: 'scatter', fill: 'tonexty', line: { color: CONFIG.colors.principal } }
+      { x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.interest), name: 'Interest Portion', type: 'scatter', fill: 'tozeroy', line: { color: CONFIG.colors.interest } },
+      { x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.principal), name: 'Principal Portion', type: 'scatter', fill: 'tonexty', line: { color: CONFIG.colors.principal } }
     ], getBaseLayout('Payment Composition', 'Year', '$', state.isDark), PLOT_CONFIG);
   }
 
   const chartEl = document.getElementById('chart');
   if (chartEl) {
     const fData = actualData.schedule[actualData.schedule.length - 1] || { totalInterest: 0, totalEscrow: 0, totalPrincipal: 0, totalExtra: 0 };
-    const tTot = [
+    const tTot: unknown[] = [
       { x: ['Total Cost'], y: [fData.totalInterest], name: 'Interest', type: 'bar', marker: { color: CONFIG.colors.interest } },
       { x: ['Total Cost'], y: [fData.totalPrincipal], name: 'Principal', type: 'bar', marker: { color: CONFIG.colors.principal } },
       { x: ['Total Cost'], y: [fData.totalExtra], name: 'Extra', type: 'bar', marker: { color: CONFIG.colors.extra } }
     ];
     if (inputs.usePiti && state.currentMode === 'mortgage') {
-      tTot.splice(1, 0, { x: ['Total Cost'], y: [fData.totalEscrow], name: 'Escrow', type: 'bar', marker: { color: CONFIG.colors.tax } } as any);
+      tTot.splice(1, 0, { x: ['Total Cost'], y: [fData.totalEscrow], name: 'Escrow', type: 'bar', marker: { color: CONFIG.colors.tax } });
     }
     queueChartRender('chart', tTot, Object.assign(getBaseLayout('Lifetime Breakdown', '', '$', state.isDark), { barmode: 'stack' }), PLOT_CONFIG);
   }
@@ -361,10 +361,11 @@ export const renderCharts = (
     if (ltvContainer) ltvContainer.style.display = 'block';
     const chartLTVEl = document.getElementById('chartLTV');
     if (chartLTVEl) {
-      const tLTV: any[] = [{ x: baseData.schedule.map(d => (d as any)[xKey]), y: baseData.schedule.map(d => d.ltv), name: 'LTV (Standard)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
+      const tLTV: unknown[] = [{ x: baseData.schedule.map(d => d[xKey]), y: baseData.schedule.map(d => d.ltv), name: 'LTV (Standard)', type: 'scatter', line: { color: CONFIG.colors.principal } }];
       if (hasStrat) {
-        tLTV.push({ x: actualData.schedule.map(d => (d as any)[xKey]), y: actualData.schedule.map(d => d.ltv), name: 'LTV (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
+        tLTV.push({ x: actualData.schedule.map(d => d[xKey]), y: actualData.schedule.map(d => d.ltv), name: 'LTV (Actual)', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } });
       }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const lLTV: any = getBaseLayout('LTV (Loan To Value) & PMI (Private Mortgage Insurance) Drop', 'Year', 'LTV (%)', state.isDark);
       lLTV.yaxis.range = [0, Math.max(105, actualData.schedule[0]?.ltv || 100)];
       lLTV.shapes = [termLine, { type: 'line', x0: 0, y0: 80, x1: 1, y1: 80, xref: 'paper', yref: 'y', line: { color: CONFIG.colors.thresholdRed, width: 2, dash: 'dash' } }];
@@ -389,7 +390,7 @@ export const renderCharts = (
       const p1Rate = Math.pow(1 + ir, 1 / p1PY) - 1;
       
       actualData.schedule.forEach(d => {
-        p1X.push((d as any)[xKey]);
+        p1X.push(d[xKey]);
         p1Y.push(hp - d.balance);
       });
       
@@ -415,11 +416,11 @@ export const renderCharts = (
       
       baseData.schedule.forEach(d => {
         p2Inv = (p2Inv + p2InvPer) * (1 + p2Rate);
-        p2X.push((d as any)[xKey]);
+        p2X.push(d[xKey]);
         p2Y.push(hp - d.balance + p2Inv);
       });
       
-      const tOpp: any[] = [
+      const tOpp: unknown[] = [
         { x: p1X, y: p1Y, name: 'Pay Debt Fast', type: 'scatter', line: { color: CONFIG.colors.extra, width: 3 } },
         { x: p2X, y: p2Y, name: 'Invest Surplus', type: 'scatter', line: { color: CONFIG.colors.investLine, width: 3, dash: 'dot' } }
       ];
@@ -435,7 +436,7 @@ export const renderCharts = (
           const cPY = compData.summary.periodsPerYear;
           const cRate = Math.pow(1 + ir, 1 / cPY) - 1;
           cSched.forEach(d => {
-            compX.push((d as any)[xKey]);
+            compX.push(d[xKey]);
             compY.push(hp - d.balance);
           });
           let ccY = compX[compX.length - 1];
@@ -456,7 +457,7 @@ export const renderCharts = (
         }
       }
 
-      const lOpp: any = getBaseLayout('Projection: Pay Debt vs Invest', 'Year', 'Net Worth ($)', state.isDark);
+      const lOpp: Record<string, unknown> = getBaseLayout('Projection: Pay Debt vs Invest', 'Year', 'Net Worth ($)', state.isDark);
       if (payoffLine) {
         lOpp.shapes = [payoffLine];
         tOpp.push({

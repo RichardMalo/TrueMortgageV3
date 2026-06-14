@@ -6,7 +6,7 @@ import { webcrypto } from 'node:crypto';
 // Ensure window is defined and crypto is mocked in node/JSDOM testing environments
 beforeAll(() => {
   if (typeof globalThis.window === 'undefined') {
-    (globalThis as any).window = globalThis;
+    (globalThis as unknown as Record<string, unknown>).window = globalThis;
   }
   if (!globalThis.window.crypto) {
     Object.defineProperty(globalThis.window, 'crypto', {

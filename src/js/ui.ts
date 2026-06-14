@@ -2,6 +2,7 @@ import gsap from 'gsap';
 import { AppState, Inputs } from './types.js';
 import { getCalculationsInputs } from './form.js';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let html2pdfInstance: any = null;
 
 const loadHtml2Pdf = async () => {
@@ -105,7 +106,7 @@ export const adjustTooltip = (tip: HTMLElement, active: boolean) => {
 export const setupTouchAndKeyboardTooltips = () => {
   const tips = document.querySelectorAll('.help-tip');
   let activeTip: HTMLElement | null = null;
-  let touchTimeout: any;
+  let touchTimeout: ReturnType<typeof setTimeout> | undefined;
 
   const getParentContainer = (element: Element) => {
     return element.closest('.column, .full-width-section');
@@ -279,13 +280,14 @@ export const setupDragAndDrop = (onReorder: () => void) => {
 
   const wrappers = document.querySelectorAll('[draggable="true"]');
   wrappers.forEach(item => {
-    item.addEventListener('dragstart', handleDragStart as any, false);
-    item.addEventListener('dragenter', handleDragEnter as any, false);
-    item.addEventListener('dragover', handleDragOver as any, false);
-    item.addEventListener('dragleave', handleDragLeave as any, false);
-    item.addEventListener('drop', handleDrop as any, false);
-    item.addEventListener('dragend', handleDragEnd as any, false);
-    item.addEventListener('click', handleCardClick as any, false);
+    const el = item as HTMLElement;
+    el.addEventListener('dragstart', handleDragStart, false);
+    el.addEventListener('dragenter', handleDragEnter, false);
+    el.addEventListener('dragover', handleDragOver, false);
+    el.addEventListener('dragleave', handleDragLeave, false);
+    el.addEventListener('drop', handleDrop, false);
+    el.addEventListener('dragend', handleDragEnd, false);
+    el.addEventListener('click', handleCardClick, false);
   });
 };
 
@@ -603,7 +605,10 @@ export const setupCustomDropdown = (onCountryChange: (_val: string) => void) => 
 
 export const setupShareFunctionality = (
   state: AppState,
-  els: any,
+  els: {
+    inputs: Record<string, HTMLInputElement | HTMLSelectElement | null>;
+    results: Record<string, Element | null>;
+  },
   calculate: () => void
 ) => {
   const shareBtn = document.getElementById('shareBtn');
@@ -670,19 +675,22 @@ export const setupShareFunctionality = (
         jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
       };
 
-      loadHtml2Pdf().then((html2pdf) => {
-        (html2pdf() as any).from(tempContainer.firstElementChild).set(opt).save().then(() => {
+      loadHtml2Pdf().then((
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        html2pdf: any
+      ) => {
+        html2pdf().from(tempContainer.firstElementChild).set(opt).save().then(() => {
           document.body.removeChild(tempContainer);
           if (statusEl) {
             statusEl.textContent = 'PDF downloaded successfully!';
             setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
           }
-        }).catch((err: any) => {
+        }).catch((err: unknown) => {
           console.error(err);
           if (statusEl) statusEl.textContent = 'Error generating PDF.';
           if (tempContainer.parentNode) document.body.removeChild(tempContainer);
         });
-      }).catch((err) => {
+      }).catch((err: unknown) => {
         console.error('Failed to load html2pdf:', err);
         if (statusEl) statusEl.textContent = 'Error loading PDF generator.';
         if (tempContainer.parentNode) document.body.removeChild(tempContainer);
@@ -718,8 +726,12 @@ export const setupShareFunctionality = (
         jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
       };
 
-      loadHtml2Pdf().then((html2pdf) => {
-        (html2pdf() as any).from(tempContainer.firstElementChild).set(opt).output('blob').then((blob: any) => {
+      loadHtml2Pdf().then((
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        html2pdf: any
+      ) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        html2pdf().from(tempContainer.firstElementChild).set(opt).output('blob').then((blob: any) => {
           document.body.removeChild(tempContainer);
           const file = new File([blob], opt.filename, { type: 'application/pdf' });
           
@@ -734,7 +746,7 @@ export const setupShareFunctionality = (
                 statusEl.textContent = 'Strategy shared successfully!';
                 setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
               }
-            }).catch(err => {
+            }).catch((err: unknown) => {
               console.log('Share failed:', err);
               if (statusEl) {
                 statusEl.textContent = 'Sharing canceled.';
@@ -753,12 +765,12 @@ export const setupShareFunctionality = (
             URL.revokeObjectURL(url);
             setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
           }
-        }).catch((err: any) => {
+        }).catch((err: unknown) => {
           console.error(err);
           if (statusEl) statusEl.textContent = 'Error preparing file.';
           if (tempContainer.parentNode) document.body.removeChild(tempContainer);
         });
-      }).catch((err) => {
+      }).catch((err: unknown) => {
         console.error('Failed to load html2pdf:', err);
         if (statusEl) statusEl.textContent = 'Error loading PDF generator.';
         if (tempContainer.parentNode) document.body.removeChild(tempContainer);
@@ -815,7 +827,7 @@ export const setupShareFunctionality = (
           statusEl.textContent = 'Summary text copied to clipboard!';
           setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
         }
-      }).catch(err => {
+      }).catch((err: unknown) => {
         console.error(err);
         if (statusEl) statusEl.textContent = 'Failed to copy text.';
       });

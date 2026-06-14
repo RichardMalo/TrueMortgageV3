@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { AppState, Inputs, ScheduleResult } from './types.js';
+import { AppState, Inputs, ScheduleResult, Milestone } from './types.js';
 import { 
   generateMortgageSchedule, 
   generateCCSchedule, 
@@ -367,7 +367,7 @@ const renderBankWages = (actData: ScheduleResult) => {
   });
 };
 
-const renderMilestonesUI = (milestones: any[]) => {
+const renderMilestonesUI = (milestones: Milestone[]) => {
   const container = els.containers.milestoneTimeline;
   if (!container) return;
   
@@ -544,7 +544,7 @@ const handleProfileSwitch = (profileId: string) => {
 
   if (activeProfile.inputs) {
     Object.entries(activeProfile.inputs).forEach(([key, val]) => {
-      const el = (els.inputs as any)[key];
+      const el = (els.inputs as Record<string, HTMLInputElement | HTMLSelectElement | null>)[key];
       if (el) {
         if (el.type === 'checkbox') {
           el.checked = val === true || val === 'true';
@@ -711,7 +711,7 @@ const setupComplexityToggle = () => {
       complexityBtns.forEach(b => b.classList.remove('active'));
       const btnEl = e.currentTarget as HTMLElement;
       btnEl.classList.add('active');
-      state.complexity = btnEl.getAttribute('data-complexity') as any;
+      state.complexity = btnEl.getAttribute('data-complexity') as AppState['complexity'];
       
       document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''} complexity-${state.complexity}`.replace(/\s+/g, ' ').trim();
       
@@ -727,7 +727,7 @@ const setupBankWagesToggle = () => {
   const buttons = container.querySelectorAll('.wage-toggle-btn');
   buttons.forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const view = (e.currentTarget as HTMLElement).getAttribute('data-view') as any;
+      const view = (e.currentTarget as HTMLElement).getAttribute('data-view') as AppState['bankWagesView'];
       if (state.bankWagesView === view) return;
       
       state.bankWagesView = view;
@@ -953,7 +953,7 @@ const setupBlueprintSync = () => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       const rawText = (e.target?.result as string || '').trim();
-      let parsedSettings: any;
+      let parsedSettings: unknown;
 
       if (rawText.startsWith('{')) {
         try {
@@ -985,8 +985,9 @@ const setupBlueprintSync = () => {
         }
       }
 
-      const isValidV2 = parsedSettings && parsedSettings.profiles && typeof parsedSettings.profiles === 'object' && parsedSettings.activeProfileId;
-      const isValidV1 = parsedSettings && parsedSettings.currentMode && parsedSettings.inputs && typeof parsedSettings.inputs === 'object';
+      const settingsObj = parsedSettings as Record<string, unknown> | null | undefined;
+      const isValidV2 = settingsObj && settingsObj.profiles && typeof settingsObj.profiles === 'object' && settingsObj.activeProfileId;
+      const isValidV1 = settingsObj && settingsObj.currentMode && settingsObj.inputs && typeof settingsObj.inputs === 'object';
       
       if (!isValidV2 && !isValidV1) {
         showFeedback('Invalid Strategy Blueprint file structure!', true);
@@ -1224,7 +1225,7 @@ const bootApp = () => {
   // Table label selectors Date vs Period
   document.querySelectorAll('.label-format-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const format = (e.currentTarget as HTMLElement).getAttribute('data-format') as any;
+      const format = (e.currentTarget as HTMLElement).getAttribute('data-format') as AppState['labelFormat'];
       state.labelFormat = format;
       
       document.querySelectorAll('.label-format-btn').forEach(b => {
@@ -1248,7 +1249,7 @@ const bootApp = () => {
   els.form?.addEventListener('submit', calculate);
 
   // Resize window triggers debounced calculation
-  let resizeTimer: any;
+  let resizeTimer: ReturnType<typeof setTimeout> | undefined;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
@@ -1289,13 +1290,14 @@ const bootApp = () => {
 };
 
 // Auto boot on window load (if not in Vitest checks context)
-if (typeof window !== 'undefined' && !(window as any).__TESTING__) {
+if (typeof window !== 'undefined' && !(window as unknown as { __TESTING__?: boolean }).__TESTING__) {
   document.addEventListener('DOMContentLoaded', bootApp);
 }
 
 // Export references for testing context
-(window as any).generateMortgageSchedule = generateMortgageSchedule;
-(window as any).generateCCSchedule = generateCCSchedule;
-(window as any).calculateMilestones = calculateMilestones;
-(window as any).validate = validateForm;
-(window as any).els = els;
+const win = window as unknown as Record<string, unknown>;
+win.generateMortgageSchedule = generateMortgageSchedule;
+win.generateCCSchedule = generateCCSchedule;
+win.calculateMilestones = calculateMilestones;
+win.validate = validateForm;
+win.els = els;

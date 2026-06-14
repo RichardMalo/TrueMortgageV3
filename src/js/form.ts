@@ -93,7 +93,7 @@ export const getCalculationsInputs = (
     amortizationYears: parseFloat(inputs.amortization?.value || '0'),
     termYears: parseFloat(inputs.term?.value || '0'),
     compounding: (inputs.compounding?.value || 'semi') as 'semi' | 'monthly',
-    frequency: (inputs.frequency?.value || 'monthly') as any,
+    frequency: (inputs.frequency?.value || 'monthly') as Inputs['frequency'],
     usePiti: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked,
     taxRate: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked ? (parseFloat(inputs.tax?.value || '0')) : 0,
     insRate: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked ? (parseFloat(inputs.ins?.value || '0')) : 0,

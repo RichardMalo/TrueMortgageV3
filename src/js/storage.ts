@@ -354,7 +354,7 @@ export const loadSettingsFromStorage = (
       }
       
       // Schema Migration
-      const legacySettings = settings as any;
+      const legacySettings = settings as unknown as Record<string, unknown>;
       if (!settings.version || settings.version < CURRENT_ENGINE_VERSION) {
         console.warn('Outdated schema detected. Initiating state migration block.');
         const migratedProfiles: Record<string, Profile> = {};
@@ -399,8 +399,8 @@ export const loadSettingsFromStorage = (
           complexity: settings.complexity || 'simple',
           labelFormat: settings.labelFormat || 'date',
           bankWagesView: settings.bankWagesView || 'wages',
-          chartsOrder: (settings as any).chartsOrder,
-          strategyOrder: (settings as any).strategyOrder
+          chartsOrder: settings.chartsOrder,
+          strategyOrder: settings.strategyOrder
         };
       }
       

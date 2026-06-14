@@ -196,7 +196,7 @@ export const setupScenarioSandbox = (
   const trapFocus = (e: KeyboardEvent) => {
     if (e.key === 'Tab') {
       const focusables = Array.from(sidebar.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
-        .filter(el => !(el as any).disabled && (el as HTMLElement).offsetWidth > 0 && (el as HTMLElement).offsetHeight > 0) as HTMLElement[];
+        .filter(el => !(el as HTMLButtonElement).disabled && (el as HTMLElement).offsetWidth > 0 && (el as HTMLElement).offsetHeight > 0) as HTMLElement[];
       
       if (focusables.length === 0) {
         e.preventDefault();
