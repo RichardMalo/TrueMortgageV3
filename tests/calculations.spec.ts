@@ -216,7 +216,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(milestones.length).toBe(0);
   });
 
-  it('should recalculate periodic payment on rate shock renewals', () => {
+  it('should keep periodic payments constant but extend payoff periods on rate shock renewals', () => {
     const inputs: Inputs = {
       homePrice: 500000,
       downPayment: 100000,
@@ -248,8 +248,15 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const row60 = result.schedule[59];
     const row61 = result.schedule[60];
     
-    // With rate shock, payment should change (recalculated at renewal)
-    expect(row61.payment).not.toBeCloseTo(row60.payment, 1);
-    expect(row61.payment).toBeGreaterThan(row60.payment);
+    // Payments stay constant
+    expect(row61.payment).toBeCloseTo(row60.payment, 1);
+    
+    // But interest increases and principal contribution decreases
+    expect(row61.interest).toBeGreaterThan(row60.interest);
+    expect(row61.principal).toBeLessThan(row60.principal);
+
+    // Payoff period extends beyond standard 300 months
+    expect(result.summary.periodsToPayoff).toBeGreaterThan(300);
+    expect(result.summary.periodsToPayoff).toBe(377);
   });
 });
