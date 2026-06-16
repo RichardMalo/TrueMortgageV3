@@ -3,6 +3,8 @@
 > **Algorithmic Mortgage & Credit Card Optimizer**  
 > Engineered to eliminate interest friction and accelerate your path to zero debt.
 
+👉 **[Live Demo](https://richardmalo.github.io/TrueMortgageV3/)**
+
 Welcome to the **Debt Elimination Engine**, a high-fidelity, client-side financial strategy dashboard. It compiles mortgage and credit card amortization schedules under aggressive pay-down regimes (accelerated frequencies, discretionary surplus, rate shocks) and evaluates them against market investment yield returns (opportunity costs). 
 
 The entire application runs **locally in your browser**—meaning all calculations, data scenarios, and blueprints remain 100% private in local storage.
