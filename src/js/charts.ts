@@ -102,10 +102,23 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: c, family: 'Inter, sans-serif' },
-    xaxis: { title: xTitle, gridcolor: g, showgrid: true, zeroline: false, fixedrange: true },
+    xaxis: {
+      title: { text: xTitle, standoff: 12 },
+      gridcolor: g,
+      showgrid: true,
+      zeroline: false,
+      fixedrange: true
+    },
     yaxis: yaxisConfig,
-    margin: { t: 50, r: 10, l: isCurrency ? 80 : 45, b: 80 },
-    legend: { orientation: 'h', y: -0.18, x: 0.5, xanchor: 'center', yanchor: 'top' },
+    margin: { t: 50, r: 10, l: isCurrency ? 80 : 45, b: 95 },
+    legend: {
+      orientation: 'h',
+      yref: 'container',
+      y: 0.02,
+      x: 0.5,
+      xanchor: 'center',
+      yanchor: 'bottom'
+    },
     hovermode: 'x',
     autosize: true,
     dragmode: false
