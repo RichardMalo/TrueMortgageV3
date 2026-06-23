@@ -2,35 +2,35 @@ name: Continuous Integration
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    - name: Install Dependencies
-      run: npm ci
+      - name: Install Dependencies
+        run: npm ci
 
-    - name: Verify Code Linting
-      run: npx eslint .
+      - name: Verify Code Linting
+        run: npx eslint .
 
-    - name: Security Vulnerability Audit
-      run: npm audit --audit-level=high
+      - name: Security Vulnerability Audit
+        run: npm audit --audit-level=high
 
-    - name: Run Unit Tests
-      run: npm run test:coverage
+      - name: Run Unit Tests
+        run: npm run test:coverage
 
-    - name: Run Build Compiler Check
-      run: npm run build
+      - name: Run Build Compiler Check
+        run: npm run build

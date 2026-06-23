@@ -1,6 +1,19 @@
 import { AppState, Inputs, AppElements } from './types.js';
 import gsap from 'gsap';
 
+/**
+ * Sets up listeners and logic for importing and exporting encrypted or plain
+ * JSON blueprints representing user configuration and sandbox profiles.
+ *
+ * @param state - The shared AppState store.
+ * @param els - Centralized DOM elements mapping object.
+ * @param defaultInputs - Defaults inputs configuration.
+ * @param saveSettingsToStorage - Storage persistence callback.
+ * @param loadSettingsFromStorage - Storage recovery callback.
+ * @param encryptData - Cryptographic encryption function.
+ * @param decryptData - Cryptographic decryption function.
+ * @param handleProfileSwitch - Profile switching callback.
+ */
 export const setupBlueprintSync = (
   state: AppState,
   els: AppElements,
@@ -25,15 +38,16 @@ export const setupBlueprintSync = (
   const feedback = document.getElementById('dropzoneFeedback');
   let activeFormat = 'plain';
 
-  if (!passcodeWrapper || !passcodeInput || !exportBtn || !fileInput || !dropzone || !feedback) return;
+  if (!passcodeWrapper || !passcodeInput || !exportBtn || !fileInput || !dropzone || !feedback)
+    return;
 
-  formatBtns.forEach(btn => {
+  formatBtns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      formatBtns.forEach(b => b.classList.remove('active'));
+      formatBtns.forEach((b) => b.classList.remove('active'));
       const btnEl = e.target as HTMLElement;
       btnEl.classList.add('active');
       activeFormat = btnEl.getAttribute('data-format') || 'plain';
-      
+
       if (activeFormat === 'encrypted') {
         passcodeWrapper.classList.add('active');
       } else {
@@ -54,7 +68,7 @@ export const setupBlueprintSync = (
       dropzone.style.borderColor = '#10b981';
       gsap.fromTo(dropzone, { scale: 0.98 }, { scale: 1, duration: 0.5, ease: 'elastic.out(1.5)' });
     }
-    
+
     setTimeout(() => {
       feedback.style.display = 'none';
       dropzone.style.borderColor = '';
@@ -103,7 +117,7 @@ export const setupBlueprintSync = (
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    
+
     passcodeInput.value = '';
   });
 
@@ -134,7 +148,7 @@ export const setupBlueprintSync = (
   const handleFileImport = (file: File) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const rawText = (e.target?.result as string || '').trim();
+      const rawText = ((e.target?.result as string) || '').trim();
       let parsedSettings: unknown;
 
       if (rawText.startsWith('{')) {
@@ -149,14 +163,14 @@ export const setupBlueprintSync = (
         if (!passcode) {
           showFeedback('Encrypted file detected! Enter passcode below to unlock.', true);
           passcodeWrapper.classList.add('active');
-          formatBtns.forEach(b => b.classList.remove('active'));
+          formatBtns.forEach((b) => b.classList.remove('active'));
           const encBtn = document.querySelector('.format-btn[data-format="encrypted"]');
           if (encBtn) encBtn.classList.add('active');
           activeFormat = 'encrypted';
           passcodeInput.focus();
           return;
         }
-        
+
         try {
           const decryptedText = await decryptData(rawText, passcode);
           parsedSettings = JSON.parse(decryptedText);
@@ -168,9 +182,17 @@ export const setupBlueprintSync = (
       }
 
       const settingsObj = parsedSettings as Record<string, unknown> | null | undefined;
-      const isValidV2 = settingsObj && settingsObj.profiles && typeof settingsObj.profiles === 'object' && settingsObj.activeProfileId;
-      const isValidV1 = settingsObj && settingsObj.currentMode && settingsObj.inputs && typeof settingsObj.inputs === 'object';
-      
+      const isValidV2 =
+        settingsObj &&
+        settingsObj.profiles &&
+        typeof settingsObj.profiles === 'object' &&
+        settingsObj.activeProfileId;
+      const isValidV1 =
+        settingsObj &&
+        settingsObj.currentMode &&
+        settingsObj.inputs &&
+        typeof settingsObj.inputs === 'object';
+
       if (!isValidV2 && !isValidV1) {
         showFeedback('Invalid Strategy Blueprint file structure!', true);
         return;

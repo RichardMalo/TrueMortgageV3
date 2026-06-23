@@ -1,37 +1,26 @@
 import gsap from 'gsap';
 import { AppState, Inputs, ScheduleResult } from './types.js';
-import { DEFAULT_INPUTS, PREFILLED_DATE, RESIZE_DEBOUNCE_MS } from './constants.js';
-import { 
-  generateMortgageSchedule, 
-  generateCCSchedule, 
-  calculateMilestones 
-} from './math.js';
-import { 
-  renderCharts, 
-  clearVisibleChartsCache,
-  resizeChart
-} from './charts.js';
-import { 
-  saveSettingsToStorage, 
-  loadSettingsFromStorage, 
+import { DEFAULT_INPUTS, PREFILLED_DATE, RESIZE_DEBOUNCE_MS, getPrefersDark } from './constants.js';
+import { generateMortgageSchedule, generateCCSchedule, calculateMilestones } from './math.js';
+import { renderCharts, clearVisibleChartsCache, resizeChart } from './charts.js';
+import {
+  saveSettingsToStorage,
+  loadSettingsFromStorage,
   encryptData,
   decryptData,
   sanitizeProfile
 } from './storage.js';
-import { 
-  updateKineticText, 
-  syncCheckboxARIALabels, 
-  setupTouchAndKeyboardTooltips, 
-  setupDragAndDrop, 
-  setupCustomDropdown, 
+import {
+  updateKineticText,
+  syncCheckboxARIALabels,
+  setupTouchAndKeyboardTooltips,
+  setupDragAndDrop,
+  setupCustomDropdown,
   setupShareFunctionality,
   showConfirmModal,
   showAlertModal
 } from './ui.js';
-import { 
-  renderSandboxList, 
-  setupScenarioSandbox 
-} from './sandbox.js';
+import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
 import { validateForm, getCalculationsInputs } from './form.js';
 import { syncRateShockTimeline } from './rate-shock.js';
@@ -41,11 +30,9 @@ import { syncStateCardOrderFromDOM, applyStateCardOrderToDOM } from './card-orde
 import { setupBlueprintSync } from './blueprint.js';
 import { setupSettingsMenu } from './settings.js';
 
-
-
 // App Global State store
 const state: AppState = {
-  isDark: false,
+  isDark: getPrefersDark(),
   currentMode: 'mortgage',
   complexity: 'simple',
   termRates: {},
@@ -118,10 +105,6 @@ const els = {
   masterBtns: document.querySelectorAll('.mode-btn')
 };
 
-
-
-
-
 // Central calculation execution pipeline
 const calculate = (e?: Event) => {
   if (e) e.preventDefault();
@@ -134,8 +117,10 @@ const calculate = (e?: Event) => {
   if (els.containers.pitiSection) {
     els.containers.pitiSection.style.display = inputs.usePiti ? 'block' : 'none';
   }
-  
-  const rentTaxInsBtn = document.querySelector('.wage-toggle-btn[data-view="rent-tax-ins"]') as HTMLElement | null;
+
+  const rentTaxInsBtn = document.querySelector(
+    '.wage-toggle-btn[data-view="rent-tax-ins"]'
+  ) as HTMLElement | null;
   if (rentTaxInsBtn) {
     if (inputs.usePiti) {
       rentTaxInsBtn.style.display = '';
@@ -146,7 +131,9 @@ const calculate = (e?: Event) => {
         const container = document.getElementById('bankWagesToggle');
         if (container) {
           const buttons = container.querySelectorAll('.wage-toggle-btn');
-          buttons.forEach(b => b.classList.toggle('active', b.getAttribute('data-view') === state.bankWagesView));
+          buttons.forEach((b) =>
+            b.classList.toggle('active', b.getAttribute('data-view') === state.bankWagesView)
+          );
         }
       }
     }
@@ -162,10 +149,12 @@ const calculate = (e?: Event) => {
     els.containers.rateShockSection.style.display = 'none';
   }
 
-  const principalBorrowAmount = isMortgage ? (inputs.homePrice - inputs.downPayment) : inputs.ccBalance;
-  
+  const principalBorrowAmount = isMortgage
+    ? inputs.homePrice - inputs.downPayment
+    : inputs.ccBalance;
+
   if (!isMortgage) {
-    const dailyVampireCost = principalBorrowAmount * ((inputs.annualRate / 100) / 365);
+    const dailyVampireCost = principalBorrowAmount * (inputs.annualRate / 100 / 365);
     updateKineticText(els.results.vampireDrain, dailyVampireCost, true, true);
   }
 
@@ -181,11 +170,19 @@ const calculate = (e?: Event) => {
     els.containers.oppCost.style.display = inputs.useOppCost ? 'block' : 'none';
   }
 
-  const baseData = isMortgage ? generateMortgageSchedule(inputs, true) : generateCCSchedule(inputs, true);
-  const actData = isMortgage ? generateMortgageSchedule(inputs, false) : generateCCSchedule(inputs, false);
+  const baseData = isMortgage
+    ? generateMortgageSchedule(inputs, true)
+    : generateCCSchedule(inputs, true);
+  const actData = isMortgage
+    ? generateMortgageSchedule(inputs, false)
+    : generateCCSchedule(inputs, false);
 
   let compData: ScheduleResult | null = null;
-  if (state.compareModeActive && state.comparisonProfileId && state.profiles[state.comparisonProfileId]) {
+  if (
+    state.compareModeActive &&
+    state.comparisonProfileId &&
+    state.profiles[state.comparisonProfileId]
+  ) {
     const compProfile = state.profiles[state.comparisonProfileId];
     const isCompMortgage = compProfile.currentMode === 'mortgage';
     const compInputs: Inputs = {
@@ -199,51 +196,93 @@ const calculate = (e?: Event) => {
       compounding: compProfile.inputs.compounding as 'semi' | 'monthly',
       frequency: compProfile.inputs.frequency as Inputs['frequency'],
       usePiti: isCompMortgage && compProfile.inputs.pitiToggle === true,
-      taxRate: isCompMortgage && compProfile.inputs.pitiToggle === true ? (parseFloat(compProfile.inputs.tax) || 0) : 0,
-      insRate: isCompMortgage && compProfile.inputs.pitiToggle === true ? (parseFloat(compProfile.inputs.ins) || 0) : 0,
-      hoaRate: isCompMortgage && compProfile.inputs.pitiToggle === true ? (parseFloat(compProfile.inputs.hoa) || 0) : 0,
-      pmiRate: isCompMortgage && compProfile.inputs.pitiToggle === true ? (parseFloat(compProfile.inputs.pmi) || 0) : 0,
+      taxRate:
+        isCompMortgage && compProfile.inputs.pitiToggle === true
+          ? parseFloat(compProfile.inputs.tax) || 0
+          : 0,
+      insRate:
+        isCompMortgage && compProfile.inputs.pitiToggle === true
+          ? parseFloat(compProfile.inputs.ins) || 0
+          : 0,
+      hoaRate:
+        isCompMortgage && compProfile.inputs.pitiToggle === true
+          ? parseFloat(compProfile.inputs.hoa) || 0
+          : 0,
+      pmiRate:
+        isCompMortgage && compProfile.inputs.pitiToggle === true
+          ? parseFloat(compProfile.inputs.pmi) || 0
+          : 0,
       useOppCost: compProfile.inputs.oppCostToggle === true,
-      investRate: compProfile.inputs.oppCostToggle === true ? (parseFloat(compProfile.inputs.investRate) || 7.0) : 7.0,
+      investRate:
+        compProfile.inputs.oppCostToggle === true
+          ? parseFloat(compProfile.inputs.investRate) || 7.0
+          : 7.0,
       extraPayment: parseFloat(compProfile.inputs.extra) || 0,
       startDate: compProfile.inputs.date,
       rateShockEnabled: isCompMortgage && compProfile.inputs.rateShockToggle === true,
       termRates: compProfile.termRates || {}
     };
-    compData = isCompMortgage ? generateMortgageSchedule(compInputs, false) : generateCCSchedule(compInputs, false);
+    compData = isCompMortgage
+      ? generateMortgageSchedule(compInputs, false)
+      : generateCCSchedule(compInputs, false);
   }
-  
+
   const totalActualLifetimePaidToBank = actData.summary.totalInterest + principalBorrowAmount;
-  
+
   const blueprintRadius = 20;
-  const costPowerFactor = principalBorrowAmount > 0 ? totalActualLifetimePaidToBank / principalBorrowAmount : 1;
+  const costPowerFactor =
+    principalBorrowAmount > 0 ? totalActualLifetimePaidToBank / principalBorrowAmount : 1;
   const maxAllowedRadius = 48;
   let constMarkupRadius = blueprintRadius * Math.sqrt(costPowerFactor);
   if (constMarkupRadius > maxAllowedRadius) constMarkupRadius = maxAllowedRadius;
-  
-  gsap.to(['#concentric-outer', '#concentric-border'], { attr: { r: constMarkupRadius }, duration: 0.8, ease: 'back.out(1.5)' });
-  
-  if (els.results.svgInnerPrincipal) updateKineticText(els.results.svgInnerPrincipal, principalBorrowAmount);
-  if (els.results.outPrincipalVal) updateKineticText(els.results.outPrincipalVal, principalBorrowAmount);
-  if (els.results.svgInnerMarkup) updateKineticText(els.results.svgInnerMarkup, actData.summary.totalInterest);
-  if (els.results.outMarkupVal) updateKineticText(els.results.outMarkupVal, actData.summary.totalInterest);
-  
+
+  gsap.to(['#concentric-outer', '#concentric-border'], {
+    attr: { r: constMarkupRadius },
+    duration: 0.8,
+    ease: 'back.out(1.5)'
+  });
+
+  if (els.results.svgInnerPrincipal)
+    updateKineticText(els.results.svgInnerPrincipal, principalBorrowAmount);
+  if (els.results.outPrincipalVal)
+    updateKineticText(els.results.outPrincipalVal, principalBorrowAmount);
+  if (els.results.svgInnerMarkup)
+    updateKineticText(els.results.svgInnerMarkup, actData.summary.totalInterest);
+  if (els.results.outMarkupVal)
+    updateKineticText(els.results.outMarkupVal, actData.summary.totalInterest);
+
   updateKineticText(els.results.actualLifetimePaidValue, totalActualLifetimePaidToBank);
   updateKineticText(els.results.mortgageDisplay, principalBorrowAmount);
 
   const yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
   const rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
-  updateKineticText(els.results.paidOffIn, `${yrs_paid} Years, ${rem_paid} ${isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months'}`, false);
-  
+  updateKineticText(
+    els.results.paidOffIn,
+    `${yrs_paid} Years, ${rem_paid} ${isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months'}`,
+    false
+  );
+
   if (isMortgage) {
     const termPer = Math.ceil(inputs.termYears * actData.summary.periodsPerYear);
-    updateKineticText(els.results.termBalance, termPer < actData.schedule.length ? actData.schedule[Math.max(0, termPer - 1)].balance : 0);
+    updateKineticText(
+      els.results.termBalance,
+      termPer < actData.schedule.length ? actData.schedule[Math.max(0, termPer - 1)].balance : 0
+    );
   }
-  
-  updateKineticText(els.results.saved, (baseData.summary.totalInterest) - (actData.summary.totalInterest));
+
+  updateKineticText(
+    els.results.saved,
+    baseData.summary.totalInterest - actData.summary.totalInterest
+  );
 
   renderCharts(state, baseData, actData, inputs, hasStrat, compData);
-  updateTable(actData.schedule, (isMortgage && inputs.usePiti), state.labelFormat, els.containers.escrowTh, compData ? compData.schedule : null);
+  updateTable(
+    actData.schedule,
+    isMortgage && inputs.usePiti,
+    state.labelFormat,
+    els.containers.escrowTh,
+    compData ? compData.schedule : null
+  );
 
   const milestones = calculateMilestones(baseData, actData, inputs, state.currentMode);
   renderMilestonesUI(els, milestones);
@@ -260,7 +299,7 @@ const handleProfileSwitch = (profileId: string) => {
   const activeProfile = state.profiles[profileId];
   state.currentMode = activeProfile.currentMode || 'mortgage';
   state.complexity = activeProfile.complexity || 'simple';
-  state.isDark = activeProfile.isDark !== undefined ? activeProfile.isDark : false;
+  state.isDark = activeProfile.isDark !== undefined ? activeProfile.isDark : getPrefersDark();
   state.termRates = activeProfile.termRates || {};
   state.customizedYears = activeProfile.customizedYears || {};
   state.bankWagesView = activeProfile.bankWagesView || 'wages';
@@ -272,50 +311,57 @@ const handleProfileSwitch = (profileId: string) => {
         if (el.type === 'checkbox') {
           el.checked = val === true || val === 'true';
         } else {
-          el.value = typeof val === 'string' ? val : (val !== undefined ? String(val) : '');
+          el.value = typeof val === 'string' ? val : val !== undefined ? String(val) : '';
         }
       }
     });
   }
 
-  document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''} complexity-${state.complexity}`.replace(/\s+/g, ' ').trim();
+  document.body.className =
+    `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
+      .replace(/\s+/g, ' ')
+      .trim();
   if (els.modeSwitch) els.modeSwitch.checked = state.isDark;
-  
-  els.masterBtns.forEach(btn => {
+
+  els.masterBtns.forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-mode') === state.currentMode);
   });
 
   const complexityBtns = document.querySelectorAll('.complexity-btn');
-  complexityBtns.forEach(btn => {
+  complexityBtns.forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-complexity') === state.complexity);
   });
-  
+
   const innerLabel = document.getElementById('inner-circle-label');
   if (innerLabel) {
     innerLabel.textContent = state.currentMode === 'cc' ? 'CC Balance' : 'Principal';
   }
-  
+
   const calcBtn = document.getElementById('calcBtn');
   if (calcBtn) {
-    calcBtn.textContent = state.currentMode === 'cc' ? 'Optimize Credit Card Payoff' : 'Optimize Mortgage Strategy';
+    calcBtn.textContent =
+      state.currentMode === 'cc' ? 'Optimize Credit Card Payoff' : 'Optimize Mortgage Strategy';
   }
 
   if (els.containers.pitiSection) {
     els.containers.pitiSection.style.display = els.inputs.pitiToggle?.checked ? 'block' : 'none';
   }
   if (els.containers.oppCostSection) {
-    els.containers.oppCostSection.style.display = els.inputs.oppCostToggle?.checked ? 'block' : 'none';
+    els.containers.oppCostSection.style.display = els.inputs.oppCostToggle?.checked
+      ? 'block'
+      : 'none';
   }
   if (els.containers.rateShockSection) {
-    els.containers.rateShockSection.style.display = (els.inputs.rateShockToggle && els.inputs.rateShockToggle.checked) ? 'block' : 'none';
+    els.containers.rateShockSection.style.display =
+      els.inputs.rateShockToggle && els.inputs.rateShockToggle.checked ? 'block' : 'none';
   }
-  
+
   const wageToggleBtns = document.querySelectorAll('.wage-toggle-btn');
-  wageToggleBtns.forEach(btn => {
+  wageToggleBtns.forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-view') === state.bankWagesView);
   });
 
-  document.querySelectorAll('.label-format-btn').forEach(btn => {
+  document.querySelectorAll('.label-format-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-format') === state.labelFormat);
   });
 
@@ -340,14 +386,14 @@ const resetApplicationData = () => {
   if (els.inputs.date) els.inputs.date.value = DEFAULT_INPUTS.startDate;
   if (els.inputs.countrySelect) els.inputs.countrySelect.value = 'semi';
   state.labelFormat = 'date';
-  
-  document.querySelectorAll('.label-format-btn').forEach(b => {
+
+  document.querySelectorAll('.label-format-btn').forEach((b) => {
     b.classList.toggle('active', b.getAttribute('data-format') === 'date');
   });
 
   state.currentMode = 'mortgage';
   state.complexity = 'simple';
-  state.isDark = false;
+  state.isDark = getPrefersDark();
   state.compareModeActive = false;
   state.comparisonProfileId = null;
   state.termRates = {};
@@ -356,17 +402,20 @@ const resetApplicationData = () => {
 
   const defaultId = 'profile-default';
   state.profiles = {};
-  state.profiles[defaultId] = sanitizeProfile({
-    id: defaultId,
-    name: '30-Year Baseline',
-    currentMode: 'mortgage',
-    complexity: 'simple',
-    isDark: false,
-    termRates: {},
-    customizedYears: {},
-    bankWagesView: 'wages',
-    inputs: DEFAULT_INPUTS
-  }, DEFAULT_INPUTS)!;
+  state.profiles[defaultId] = sanitizeProfile(
+    {
+      id: defaultId,
+      name: '30-Year Baseline',
+      currentMode: 'mortgage',
+      complexity: 'simple',
+      isDark: getPrefersDark(),
+      termRates: {},
+      customizedYears: {},
+      bankWagesView: 'wages',
+      inputs: DEFAULT_INPUTS
+    },
+    DEFAULT_INPUTS
+  )!;
   state.activeProfileId = defaultId;
 
   const sidebar = document.getElementById('scenarioSidebar');
@@ -379,17 +428,17 @@ const resetApplicationData = () => {
     const order = ['chart3', 'chart', 'chart4', 'chart2', 'chart11', 'chart6'];
     const wrappers = Array.from(container.children);
     const wrapperMap: Record<string, Element> = {};
-    wrappers.forEach(wrapper => {
+    wrappers.forEach((wrapper) => {
       const chartDiv = wrapper.querySelector('.plotly-container');
       if (chartDiv && chartDiv.id) wrapperMap[chartDiv.id] = wrapper;
     });
-    order.forEach(id => {
+    order.forEach((id) => {
       if (wrapperMap[id]) container.appendChild(wrapperMap[id]);
     });
-    
+
     // Collapse expanded chart wrappers
     const expandedWrappers = container.querySelectorAll('.chart-wrapper.expanded');
-    expandedWrappers.forEach(w => {
+    expandedWrappers.forEach((w) => {
       w.classList.remove('expanded');
       const btn = w.querySelector('.chart-expand-btn') as HTMLElement | null;
       if (btn) {
@@ -398,17 +447,17 @@ const resetApplicationData = () => {
       }
     });
   }
-  
+
   const stratContainer = document.getElementById('draggable-strategy-container');
   if (stratContainer) {
     const order = ['chart9', 'chart12'];
     const wrappers = Array.from(stratContainer.children);
     const wrapperMap: Record<string, Element> = {};
-    wrappers.forEach(wrapper => {
+    wrappers.forEach((wrapper) => {
       const chartDiv = wrapper.querySelector('.plotly-container');
       if (chartDiv && chartDiv.id) wrapperMap[chartDiv.id] = wrapper;
     });
-    order.forEach(id => {
+    order.forEach((id) => {
       if (wrapperMap[id]) stratContainer.appendChild(wrapperMap[id]);
     });
   }
@@ -429,28 +478,29 @@ const resetApplicationData = () => {
 
 const setupComplexityToggle = () => {
   const complexityBtns = document.querySelectorAll('.complexity-btn');
-  complexityBtns.forEach(btn => {
+  complexityBtns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      complexityBtns.forEach(b => b.classList.remove('active'));
+      complexityBtns.forEach((b) => b.classList.remove('active'));
       const btnEl = e.currentTarget as HTMLElement;
       btnEl.classList.add('active');
       state.complexity = btnEl.getAttribute('data-complexity') as AppState['complexity'];
-      
-      document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''} complexity-${state.complexity}`.replace(/\s+/g, ' ').trim();
-      
+
+      document.body.className =
+        `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
+          .replace(/\s+/g, ' ')
+          .trim();
+
       calculate();
       saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
     });
   });
 };
 
-
-
 const setupChartExpandButtons = () => {
   const container = document.getElementById('draggable-charts-container');
   if (!container) return;
   const wrappers = container.querySelectorAll('.chart-wrapper');
-  wrappers.forEach(wrapperEl => {
+  wrappers.forEach((wrapperEl) => {
     const wrapper = wrapperEl as HTMLElement;
     if (wrapper.querySelector('.chart-expand-btn')) return;
 
@@ -459,15 +509,15 @@ const setupChartExpandButtons = () => {
     btn.className = 'chart-expand-btn';
     btn.innerHTML = '+';
     btn.title = 'Enlarge Chart';
-    
+
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
+
       const isExpanded = wrapper.classList.toggle('expanded');
       btn.innerHTML = isExpanded ? '−' : '+';
       btn.title = isExpanded ? 'Shrink Chart' : 'Enlarge Chart';
-      
+
       const chartDiv = wrapper.querySelector('.plotly-container') as HTMLElement | null;
       if (chartDiv) {
         resizeChart(chartDiv);
@@ -476,7 +526,7 @@ const setupChartExpandButtons = () => {
         }, 150);
       }
     });
-    
+
     wrapper.appendChild(btn);
   });
 };
@@ -503,7 +553,7 @@ const setupExpandCollapseAllChartsButtons = () => {
 
   const updateCharts = (expand: boolean) => {
     const wrappers = container.querySelectorAll('.chart-wrapper');
-    wrappers.forEach(wrapperEl => {
+    wrappers.forEach((wrapperEl) => {
       const wrapper = wrapperEl as HTMLElement;
       const isExpanded = wrapper.classList.contains('expanded');
       if (expand !== isExpanded) {
@@ -520,7 +570,7 @@ const setupExpandCollapseAllChartsButtons = () => {
       }
     });
     setTimeout(() => {
-      wrappers.forEach(wrapper => {
+      wrappers.forEach((wrapper) => {
         const chartDiv = wrapper.querySelector('.plotly-container') as HTMLElement | null;
         if (chartDiv) {
           resizeChart(chartDiv);
@@ -538,8 +588,6 @@ const setupExpandCollapseAllChartsButtons = () => {
     updateCharts(false);
   });
 };
-
-
 
 const setupLimitsToggle = () => {
   const toggleLimitsBtn = document.getElementById('toggleLimitsBtn');
@@ -570,17 +618,17 @@ const bootApp = () => {
   }
 
   // Bind Mode buttons
-  els.masterBtns.forEach(btnEl => {
+  els.masterBtns.forEach((btnEl) => {
     const btn = btnEl as HTMLButtonElement;
     btn.addEventListener('click', () => {
       const targetMode = btn.getAttribute('data-mode') as 'mortgage' | 'cc';
       if (state.currentMode === targetMode) return;
-      
+
       saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
       state.currentMode = targetMode;
-      
+
       const activeProfile = state.profiles[state.activeProfileId as string];
-      
+
       if (state.currentMode === 'cc') {
         const savedRate = activeProfile?.inputs?.ccRate;
         const savedExtra = activeProfile?.inputs?.ccExtra;
@@ -597,12 +645,18 @@ const bootApp = () => {
         if (innerLabel) innerLabel.textContent = 'Principal';
       }
 
-      document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''} complexity-${state.complexity}`.replace(/\s+/g, ' ').trim();
-      els.masterBtns.forEach(b => b.classList.toggle('active', b.getAttribute('data-mode') === state.currentMode));
-      
+      document.body.className =
+        `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
+          .replace(/\s+/g, ' ')
+          .trim();
+      els.masterBtns.forEach((b) =>
+        b.classList.toggle('active', b.getAttribute('data-mode') === state.currentMode)
+      );
+
       const calcBtn = document.getElementById('calcBtn');
       if (calcBtn) {
-        calcBtn.textContent = state.currentMode === 'cc' ? 'Optimize Credit Card Payoff' : 'Optimize Mortgage Strategy';
+        calcBtn.textContent =
+          state.currentMode === 'cc' ? 'Optimize Credit Card Payoff' : 'Optimize Mortgage Strategy';
       }
 
       calculate();
@@ -613,7 +667,10 @@ const bootApp = () => {
   // Dark mode switch checkbox
   els.modeSwitch?.addEventListener('change', (e) => {
     state.isDark = (e.target as HTMLInputElement).checked;
-    document.body.className = `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : ''} complexity-${state.complexity}`.replace(/\s+/g, ' ').trim();
+    document.body.className =
+      `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
+        .replace(/\s+/g, ' ')
+        .trim();
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
     calculate();
@@ -622,7 +679,9 @@ const bootApp = () => {
   // Toggles bindings
   els.inputs.pitiToggle?.addEventListener('change', (e) => {
     if (els.containers.pitiSection) {
-      els.containers.pitiSection.style.display = (e.target as HTMLInputElement).checked ? 'block' : 'none';
+      els.containers.pitiSection.style.display = (e.target as HTMLInputElement).checked
+        ? 'block'
+        : 'none';
     }
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
@@ -631,7 +690,9 @@ const bootApp = () => {
 
   els.inputs.oppCostToggle?.addEventListener('change', (e) => {
     if (els.containers.oppCostSection) {
-      els.containers.oppCostSection.style.display = (e.target as HTMLInputElement).checked ? 'block' : 'none';
+      els.containers.oppCostSection.style.display = (e.target as HTMLInputElement).checked
+        ? 'block'
+        : 'none';
     }
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
@@ -647,7 +708,7 @@ const bootApp = () => {
   els.inputs.countrySelect?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
     if (els.inputs.compounding) {
-      els.inputs.compounding.value = (val === 'semi') ? 'semi' : 'monthly';
+      els.inputs.compounding.value = val === 'semi' ? 'semi' : 'monthly';
     }
     calculate();
   });
@@ -680,12 +741,14 @@ const bootApp = () => {
   });
 
   // Table label selectors Date vs Period
-  document.querySelectorAll('.label-format-btn').forEach(btn => {
+  document.querySelectorAll('.label-format-btn').forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      const format = (e.currentTarget as HTMLElement).getAttribute('data-format') as AppState['labelFormat'];
+      const format = (e.currentTarget as HTMLElement).getAttribute(
+        'data-format'
+      ) as AppState['labelFormat'];
       state.labelFormat = format;
-      
-      document.querySelectorAll('.label-format-btn').forEach(b => {
+
+      document.querySelectorAll('.label-format-btn').forEach((b) => {
         b.classList.toggle('active', b.getAttribute('data-format') === format);
       });
       calculate();
@@ -693,10 +756,12 @@ const bootApp = () => {
   });
 
   // Inputs event binds
-  Object.values(els.inputs).forEach(inp => {
+  Object.values(els.inputs).forEach((inp) => {
     if (inp && !['oppCostToggle', 'includePitiToggle', 'rateShockToggle'].includes(inp.id)) {
       inp.addEventListener('blur', () => calculate());
-      inp.addEventListener('input', () => saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false));
+      inp.addEventListener('input', () =>
+        saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false)
+      );
       if (inp.tagName === 'SELECT' && inp.id !== 'country-select' && inp.id !== 'compounding') {
         inp.addEventListener('change', () => calculate());
       }
@@ -731,24 +796,38 @@ const bootApp = () => {
     };
   });
   setupComplexityToggle();
-  setupBankWagesToggle(state, els, () => lastActData, () => saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false));
+  setupBankWagesToggle(
+    state,
+    els,
+    () => lastActData,
+    () => saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false)
+  );
   setupLimitsToggle();
   setupCustomDropdown(() => {
     calculate();
   });
-  setupBlueprintSync(state, els, DEFAULT_INPUTS, saveSettingsToStorage, loadSettingsFromStorage, encryptData, decryptData, handleProfileSwitch);
-  setupSettingsMenu(resetApplicationData);
-  setupScenarioSandbox(
-    state, 
-    DEFAULT_INPUTS, 
-    els.inputs, 
-    handleProfileSwitch, 
-    calculate
+  setupBlueprintSync(
+    state,
+    els,
+    DEFAULT_INPUTS,
+    saveSettingsToStorage,
+    loadSettingsFromStorage,
+    encryptData,
+    decryptData,
+    handleProfileSwitch
   );
+  setupSettingsMenu(resetApplicationData);
+  setupScenarioSandbox(state, DEFAULT_INPUTS, els.inputs, handleProfileSwitch, calculate);
 
   // GSAP Entrance Animations (run immediately on boot)
   gsap.from('.gsap-fade-in', { y: -20, opacity: 0, duration: 0.8, ease: 'power3.out' });
-  gsap.from('.gsap-slide-up', { y: 40, opacity: 0, duration: 0.8, stagger: 0.1, ease: 'back.out(1.5)' });
+  gsap.from('.gsap-slide-up', {
+    y: 40,
+    opacity: 0,
+    duration: 0.8,
+    stagger: 0.1,
+    ease: 'back.out(1.5)'
+  });
 
   // Restore current active profile form values and calculate (deferred to let UI render and animate first)
   setTimeout(() => {
@@ -757,7 +836,10 @@ const bootApp = () => {
 };
 
 // Auto boot on window load (if not in Vitest checks context)
-if (typeof window !== 'undefined' && !(window as unknown as { __TESTING__?: boolean }).__TESTING__) {
+if (
+  typeof window !== 'undefined' &&
+  !(window as unknown as { __TESTING__?: boolean }).__TESTING__
+) {
   document.addEventListener('DOMContentLoaded', bootApp);
 }
 

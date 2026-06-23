@@ -6,7 +6,9 @@ describe('UI Helper Functions (ui.ts)', () => {
     it('should escape HTML special characters to prevent XSS', () => {
       const dangerousString = '<script>alert("XSS")</script> & other chars \'';
       const escaped = escapeHtml(dangerousString);
-      expect(escaped).toBe('&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt; &amp; other chars &#039;');
+      expect(escaped).toBe(
+        '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt; &amp; other chars &#039;'
+      );
     });
 
     it('should return empty string when empty input provided', () => {

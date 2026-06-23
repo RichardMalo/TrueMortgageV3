@@ -25,18 +25,27 @@ export const escapeHtml = (str: string): string => {
     .replace(/'/g, '&#039;');
 };
 
-export const updateKineticText = (el: HTMLElement | null, val: number | string, isCurr = true, decimal = false) => {
+export const updateKineticText = (
+  el: HTMLElement | null,
+  val: number | string,
+  isCurr = true,
+  decimal = false
+) => {
   if (!el) return;
   if (typeof val === 'string' && !isCurr) {
     el.textContent = val;
-    gsap.fromTo(el, { scale: 1.1, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' });
+    gsap.fromTo(
+      el,
+      { scale: 1.1, opacity: 0 },
+      { scale: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' }
+    );
     return;
   }
-  
+
   const numericVal = typeof val === 'number' ? val : parseFloat(val);
   let current = parseFloat(el.getAttribute('data-val') || '0');
   if (isNaN(current)) current = 0;
-  
+
   el.setAttribute('data-val', String(numericVal));
   const obj = { v: current };
   gsap.to(obj, {
@@ -44,8 +53,10 @@ export const updateKineticText = (el: HTMLElement | null, val: number | string, 
     duration: 0.6,
     ease: 'power2.out',
     onUpdate: () => {
-      el.textContent = isCurr 
-        ? (decimal ? formatDecimal(obj.v) : formatCurrency(obj.v)) 
+      el.textContent = isCurr
+        ? decimal
+          ? formatDecimal(obj.v)
+          : formatCurrency(obj.v)
         : String(Math.round(obj.v));
     }
   });
@@ -53,7 +64,7 @@ export const updateKineticText = (el: HTMLElement | null, val: number | string, 
 
 export const syncCheckboxARIALabels = () => {
   const checkboxes = document.querySelectorAll('input[type="checkbox"]');
-  checkboxes.forEach(cb => {
+  checkboxes.forEach((cb) => {
     cb.setAttribute('role', 'switch');
     cb.setAttribute('aria-checked', (cb as HTMLInputElement).checked ? 'true' : 'false');
   });
@@ -75,7 +86,7 @@ export const adjustTooltip = (tip: HTMLElement, active: boolean) => {
   tooltip.classList.remove('tooltip-below');
 
   let rect = tooltip.getBoundingClientRect();
-  
+
   if (rect.top < 10) {
     tooltip.classList.add('tooltip-below');
     rect = tooltip.getBoundingClientRect();
@@ -86,14 +97,14 @@ export const adjustTooltip = (tip: HTMLElement, active: boolean) => {
   if (rect.left < 10) {
     offset = 10 - rect.left;
   } else if (rect.right > viewportWidth - 10) {
-    offset = (viewportWidth - 10) - rect.right;
+    offset = viewportWidth - 10 - rect.right;
   }
 
   if (offset !== 0) {
     const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
     const defaultTranslateX = isMobile ? '-40%' : '-50%';
     const defaultArrowLeft = isMobile ? '40%' : '50%';
-    
+
     tooltip.style.transform = `translateX(calc(${defaultTranslateX} + ${offset}px)) translateY(0)`;
     tooltip.style.setProperty('--arrow-left', `calc(${defaultArrowLeft} - ${offset}px)`);
   } else {
@@ -113,13 +124,13 @@ export const setupTouchAndKeyboardTooltips = () => {
     return element.closest('.column, .full-width-section');
   };
 
-  tips.forEach(tipEl => {
+  tips.forEach((tipEl) => {
     const tip = tipEl as HTMLElement;
-    
+
     // Set explicit tabindex to make tooltip keyboard focusable
     tip.setAttribute('tabindex', '0');
     tip.setAttribute('role', 'tooltip');
-    
+
     const descText = tip.querySelector('.tooltip-text')?.textContent || '';
     tip.setAttribute('aria-label', `Help context: ${descText}`);
 
@@ -150,41 +161,53 @@ export const setupTouchAndKeyboardTooltips = () => {
     });
 
     // Mobile touch bindings
-    tip.addEventListener('touchstart', () => {
-      clearTimeout(touchTimeout);
-      if (activeTip && activeTip !== tip) {
-        activeTip.classList.remove('touch-active');
-        const oldParent = getParentContainer(activeTip);
-        if (oldParent) oldParent.classList.remove('has-active-tooltip');
-        adjustTooltip(activeTip, false);
-      }
-      tip.classList.add('touch-active');
-      const newParent = getParentContainer(tip);
-      if (newParent) newParent.classList.add('has-active-tooltip');
-      activeTip = tip;
-      adjustTooltip(tip, true);
-    }, { passive: true });
+    tip.addEventListener(
+      'touchstart',
+      () => {
+        clearTimeout(touchTimeout);
+        if (activeTip && activeTip !== tip) {
+          activeTip.classList.remove('touch-active');
+          const oldParent = getParentContainer(activeTip);
+          if (oldParent) oldParent.classList.remove('has-active-tooltip');
+          adjustTooltip(activeTip, false);
+        }
+        tip.classList.add('touch-active');
+        const newParent = getParentContainer(tip);
+        if (newParent) newParent.classList.add('has-active-tooltip');
+        activeTip = tip;
+        adjustTooltip(tip, true);
+      },
+      { passive: true }
+    );
 
-    tip.addEventListener('touchend', () => {
-      touchTimeout = setTimeout(() => {
-        tip.classList.remove('touch-active');
-        const parent = getParentContainer(tip);
-        if (parent) parent.classList.remove('has-active-tooltip');
-        adjustTooltip(tip, false);
-        if (activeTip === tip) activeTip = null;
-      }, 1200);
-    }, { passive: true });
+    tip.addEventListener(
+      'touchend',
+      () => {
+        touchTimeout = setTimeout(() => {
+          tip.classList.remove('touch-active');
+          const parent = getParentContainer(tip);
+          if (parent) parent.classList.remove('has-active-tooltip');
+          adjustTooltip(tip, false);
+          if (activeTip === tip) activeTip = null;
+        }, 1200);
+      },
+      { passive: true }
+    );
   });
 
-  document.addEventListener('touchstart', (e: TouchEvent) => {
-    if (activeTip && !(e.target as Element).closest('.help-tip')) {
-      activeTip.classList.remove('touch-active');
-      const parent = getParentContainer(activeTip);
-      if (parent) parent.classList.remove('has-active-tooltip');
-      adjustTooltip(activeTip, false);
-      activeTip = null;
-    }
-  }, { passive: true });
+  document.addEventListener(
+    'touchstart',
+    (e: TouchEvent) => {
+      if (activeTip && !(e.target as Element).closest('.help-tip')) {
+        activeTip.classList.remove('touch-active');
+        const parent = getParentContainer(activeTip);
+        if (parent) parent.classList.remove('has-active-tooltip');
+        adjustTooltip(activeTip, false);
+        activeTip = null;
+      }
+    },
+    { passive: true }
+  );
 };
 
 export const swapDOMNodes = (node1: HTMLElement, node2: HTMLElement, onSwap?: () => void) => {
@@ -208,7 +231,7 @@ export const swapDOMNodes = (node1: HTMLElement, node2: HTMLElement, onSwap?: ()
     parent2.insertBefore(node1, next2);
     parent1.insertBefore(node2, next1);
   }
-  
+
   if (onSwap) onSwap();
 };
 
@@ -250,7 +273,7 @@ export const setupDragAndDrop = (onReorder: () => void) => {
 
   const handleDragEnd = () => {
     const wrappers = document.querySelectorAll('[draggable="true"]');
-    wrappers.forEach(item => {
+    wrappers.forEach((item) => {
       (item as HTMLElement).classList.remove('drag-over');
       (item as HTMLElement).style.opacity = '1';
     });
@@ -260,8 +283,12 @@ export const setupDragAndDrop = (onReorder: () => void) => {
   const handleCardClick = (e: MouseEvent) => {
     const card = e.currentTarget as HTMLElement;
     const target = e.target as HTMLElement;
-    
-    if (target.closest('.chart-expand-btn') || target.closest('.plotly-container') || target.closest('.modebar')) {
+
+    if (
+      target.closest('.chart-expand-btn') ||
+      target.closest('.plotly-container') ||
+      target.closest('.modebar')
+    ) {
       return;
     }
 
@@ -280,14 +307,20 @@ export const setupDragAndDrop = (onReorder: () => void) => {
   };
 
   const wrappers = document.querySelectorAll('[draggable="true"]');
-  wrappers.forEach(item => {
+  wrappers.forEach((item) => {
     const el = item as HTMLElement;
-    
+
     // Accessibility: programmatically establish keyboard focus and semantic button roles
     el.setAttribute('tabindex', '0');
     el.setAttribute('role', 'button');
-    const cardTitle = el.querySelector('.section-title')?.textContent || el.querySelector('.plotly-container')?.id || 'Dashboard Card';
-    el.setAttribute('aria-label', `Dashboard card: ${cardTitle}. Press Enter or Space to select and swap layout position.`);
+    const cardTitle =
+      el.querySelector('.section-title')?.textContent ||
+      el.querySelector('.plotly-container')?.id ||
+      'Dashboard Card';
+    el.setAttribute(
+      'aria-label',
+      `Dashboard card: ${cardTitle}. Press Enter or Space to select and swap layout position.`
+    );
 
     el.addEventListener('dragstart', handleDragStart, false);
     el.addEventListener('dragenter', handleDragEnter, false);
@@ -296,7 +329,7 @@ export const setupDragAndDrop = (onReorder: () => void) => {
     el.addEventListener('drop', handleDrop, false);
     el.addEventListener('dragend', handleDragEnd, false);
     el.addEventListener('click', handleCardClick, false);
-    
+
     // Keyboard reordering interactions
     el.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -314,22 +347,34 @@ export const generateReportHtml = (
   baseData: ScheduleResult
 ): string => {
   const reportDate = new Date().toLocaleString();
-  
-  const startingPrincipal = isMortgage ? (inputs.homePrice - inputs.downPayment) : inputs.ccBalance;
+
+  const startingPrincipal = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
   const balanceVal = formatCurrency(startingPrincipal);
-  
-  const yrs_paid = Math.floor(actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear);
+
+  const yrs_paid = Math.floor(
+    actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear
+  );
   const rem_paid = actualData.summary.periodsToPayoff % actualData.summary.periodsPerYear;
   const frequencyLabel = isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months';
   const payoffVal = `${yrs_paid} Years, ${rem_paid} ${frequencyLabel}`;
-  
-  const savedVal = formatCurrency(baseData.summary.totalInterest - actualData.summary.totalInterest);
+
+  const savedVal = formatCurrency(
+    baseData.summary.totalInterest - actualData.summary.totalInterest
+  );
   const actualLifetimeVal = formatCurrency(actualData.summary.totalInterest + startingPrincipal);
-  const dailyVampireVal = isMortgage ? 'N/A' : formatCurrency(inputs.ccBalance * ((inputs.annualRate / 100) / 365));
-  
+  const dailyVampireVal = isMortgage
+    ? 'N/A'
+    : formatCurrency(inputs.ccBalance * (inputs.annualRate / 100 / 365));
+
   const termPer = Math.ceil(inputs.termYears * actualData.summary.periodsPerYear);
-  const termBalanceVal = isMortgage ? formatCurrency(termPer < actualData.schedule.length ? actualData.schedule[Math.max(0, termPer - 1)].balance : 0) : 'N/A';
-  
+  const termBalanceVal = isMortgage
+    ? formatCurrency(
+        termPer < actualData.schedule.length
+          ? actualData.schedule[Math.max(0, termPer - 1)].balance
+          : 0
+      )
+    : 'N/A';
+
   // Sanitizing variables prior to HTML string interpolation
   const balance = escapeHtml(balanceVal);
   const payoff = escapeHtml(payoffVal);
@@ -338,13 +383,13 @@ export const generateReportHtml = (
   const dailyVampire = escapeHtml(dailyVampireVal);
   const termBalance = escapeHtml(termBalanceVal);
   const rate = escapeHtml(inputs.annualRate + '%');
-  
+
   let strategyParams = `
     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
       <span>Interest Rate:</span><strong>${rate}</strong>
     </div>
   `;
-  
+
   if (isMortgage) {
     strategyParams += `
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -371,11 +416,14 @@ export const generateReportHtml = (
         for (let y = termYrs; y < amortYrs; y += termYrs) {
           years.push(y);
         }
-        const shockRatesList = years.map(y => {
-          const rateVal = inputs.termRates[y] !== undefined ? inputs.termRates[y] : inputs.annualRate;
-          return `Yr ${y}: ${rateVal.toFixed(2)}%`;
-        }).join(', ');
-        
+        const shockRatesList = years
+          .map((y) => {
+            const rateVal =
+              inputs.termRates[y] !== undefined ? inputs.termRates[y] : inputs.annualRate;
+            return `Yr ${y}: ${rateVal.toFixed(2)}%`;
+          })
+          .join(', ');
+
         strategyParams += `
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
             <span>Refinance Shock Rates:</span><strong style="max-width: 60%; text-align: right; word-wrap: break-word;">${escapeHtml(shockRatesList)}</strong>
@@ -397,9 +445,14 @@ export const generateReportHtml = (
     `;
   }
 
-  const tableRows = actualData.schedule.slice(0, 12).map((row: ScheduleRow) => {
-    const eTd = (inputs.usePiti && isMortgage) ? `<td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(formatCurrency(row.escrow))}</td>` : '';
-    return `
+  const tableRows = actualData.schedule
+    .slice(0, 12)
+    .map((row: ScheduleRow) => {
+      const eTd =
+        inputs.usePiti && isMortgage
+          ? `<td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(formatCurrency(row.escrow))}</td>`
+          : '';
+      return `
       <tr style="border-bottom: 1px solid #cbd5e1;">
         <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(row.dateLabel)}</td>
         <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; font-weight: 700 !important; background: none !important;"><strong>${escapeHtml(formatCurrency(row.payment))}</strong></td>
@@ -410,7 +463,8 @@ export const generateReportHtml = (
         <td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; font-weight: 700 !important; background: none !important;"><strong>${escapeHtml(formatCurrency(row.balance))}</strong></td>
       </tr>
     `;
-  }).join('');
+    })
+    .join('');
 
   return `
     <div class="pdf-report" style="width: 170mm; background: white; color: #1e293b; font-family: 'Inter', sans-serif; padding: 20px;">
@@ -471,18 +525,22 @@ export const generateReportHtml = (
         <div style="flex: 1; min-width: 0;">
           <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">METRIC SUMMARY</h3>
           <div style="font-size: 11px; color: #475569;">
-            ${isMortgage ? `
+            ${
+              isMortgage
+                ? `
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span>Refinancing Term Balance:</span><strong>${termBalance}</strong>
               </div>
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span>Compounding Style:</span><strong>${inputs.compounding === 'semi' ? 'Canadian Semi-Annual' : 'US Monthly'}</strong>
               </div>
-            ` : `
+            `
+                : `
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span>Daily Fee to the Bank:</span><strong>${dailyVampire}</strong>
               </div>
-            `}
+            `
+            }
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
               <span>Opportunity Cost Plan:</span><strong>${inputs.useOppCost ? `Enabled (${inputs.investRate}%)` : 'Disabled'}</strong>
             </div>
@@ -589,7 +647,7 @@ export const setupCustomDropdown = (onCountryChange: (_val: string) => void) => 
     };
 
     item.addEventListener('click', handleSelect);
-    
+
     // key bindings on elements
     item.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
@@ -617,7 +675,7 @@ export const setupCustomDropdown = (onCountryChange: (_val: string) => void) => 
 
   const syncDropdownVisuals = () => {
     const currentVal = nativeSelect.value;
-    items.forEach(itemEl => {
+    items.forEach((itemEl) => {
       const item = itemEl as HTMLElement;
       if (item.getAttribute('data-value') === currentVal) {
         item.classList.add('selected');
@@ -654,19 +712,23 @@ export const setupShareFunctionality = (
   const shareBtn = document.getElementById('shareBtn');
   const shareModal = document.getElementById('shareModal');
   const closeModalBtn = document.getElementById('closeModalBtn');
-  
+
   if (!shareBtn || !shareModal || !closeModalBtn) return;
-  
+
   shareBtn.addEventListener('click', () => {
     calculate(); // Sync latest form adjustments
     shareModal.classList.add('active');
-    gsap.fromTo("#shareModal .modal-card", { scale: 0.9, y: 20 }, { scale: 1, y: 0, duration: 0.4, ease: "back.out(1.5)" });
+    gsap.fromTo(
+      '#shareModal .modal-card',
+      { scale: 0.9, y: 20 },
+      { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+    );
   });
-  
+
   closeModalBtn.addEventListener('click', () => {
     shareModal.classList.remove('active');
   });
-  
+
   shareModal.addEventListener('click', (e) => {
     if (e.target === shareModal) {
       shareModal.classList.remove('active');
@@ -681,7 +743,8 @@ export const setupShareFunctionality = (
       const descEl = nativeBtn.querySelector('.option-desc');
       if (descEl) descEl.textContent = 'Not supported in this browser';
     }
-  }  const getInputs = (): Inputs => {
+  }
+  const getInputs = (): Inputs => {
     return getCalculationsInputs(state.currentMode, els.inputs, state.termRates);
   };
 
@@ -693,7 +756,8 @@ export const setupShareFunctionality = (
     const inputs = getInputs();
     if (statusEl) {
       statusEl.style.display = 'block';
-      statusEl.textContent = action === 'save' ? 'Generating PDF... Please wait.' : 'Preparing file to share...';
+      statusEl.textContent =
+        action === 'save' ? 'Generating PDF... Please wait.' : 'Preparing file to share...';
     }
 
     const { actualData, baseData } = getLatestSchedules();
@@ -718,7 +782,7 @@ export const setupShareFunctionality = (
     try {
       const html2pdf = await loadHtml2Pdf();
       const worker = html2pdf().from(tempContainer.firstElementChild).set(opt);
-      
+
       if (action === 'save') {
         await worker.save();
         document.body.removeChild(tempContainer);
@@ -745,21 +809,25 @@ export const setupShareFunctionality = (
     const actualLifetime = els.results.actualLifetimePaidValue?.textContent || '$0';
 
     if (formatMarkdown) {
-      return `*Debt Elimination Engine Report*\n\n` +
-             `*Type:* ${modeText}\n` +
-             `*Original Debt:* ${balance}\n` +
-             `*Actual Payoff Time:* ${payoff}\n` +
-             `*Interest Saved:* ${saved}\n` +
-             `*Total Lifetime Paid:* ${actualLifetime}\n\n` +
-             `Calculated using the Debt Elimination Engine. Optimize your strategy!`;
+      return (
+        `*Debt Elimination Engine Report*\n\n` +
+        `*Type:* ${modeText}\n` +
+        `*Original Debt:* ${balance}\n` +
+        `*Actual Payoff Time:* ${payoff}\n` +
+        `*Interest Saved:* ${saved}\n` +
+        `*Total Lifetime Paid:* ${actualLifetime}\n\n` +
+        `Calculated using the Debt Elimination Engine. Optimize your strategy!`
+      );
     } else {
-      return `Debt Elimination Engine Report\n\n` +
-             `Type: ${modeText}\n` +
-             `Original Debt: ${balance}\n` +
-             `Actual Payoff Time: ${payoff}\n` +
-             `Interest Saved: ${saved}\n` +
-             `Total Lifetime Paid: ${actualLifetime}\n\n` +
-             `Calculated using the Debt Elimination Engine.`;
+      return (
+        `Debt Elimination Engine Report\n\n` +
+        `Type: ${modeText}\n` +
+        `Original Debt: ${balance}\n` +
+        `Actual Payoff Time: ${payoff}\n` +
+        `Interest Saved: ${saved}\n` +
+        `Total Lifetime Paid: ${actualLifetime}\n\n` +
+        `Calculated using the Debt Elimination Engine.`
+      );
     }
   };
 
@@ -770,7 +838,9 @@ export const setupShareFunctionality = (
       generatePdfBlobOrSave(statusEl, 'save').then((res) => {
         if (res && statusEl) {
           statusEl.textContent = 'PDF downloaded successfully!';
-          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+          setTimeout(() => {
+            statusEl.style.display = 'none';
+          }, 3000);
         }
       });
     });
@@ -783,25 +853,32 @@ export const setupShareFunctionality = (
       generatePdfBlobOrSave(statusEl, 'blob').then((res) => {
         if (!res || !res.blob) return;
         const file = new File([res.blob], res.filename, { type: 'application/pdf' });
-        
+
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
           if (statusEl) statusEl.textContent = 'Opening share sheet...';
-          navigator.share({
-            files: [file],
-            title: `My ${res.modeName} Debt Elimination Report`,
-            text: `Check out my customized debt strategy report generated by Debt Elimination Engine.`
-          }).then(() => {
-            if (statusEl) {
-              statusEl.textContent = 'Strategy shared successfully!';
-              setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-            }
-          }).catch((err: unknown) => {
-            console.log('Share failed:', err);
-            if (statusEl) {
-              statusEl.textContent = 'Sharing canceled.';
-              setTimeout(() => { statusEl.style.display = 'none'; }, 2000);
-            }
-          });
+          navigator
+            .share({
+              files: [file],
+              title: `My ${res.modeName} Debt Elimination Report`,
+              text: `Check out my customized debt strategy report generated by Debt Elimination Engine.`
+            })
+            .then(() => {
+              if (statusEl) {
+                statusEl.textContent = 'Strategy shared successfully!';
+                setTimeout(() => {
+                  statusEl.style.display = 'none';
+                }, 3000);
+              }
+            })
+            .catch((err: unknown) => {
+              console.log('Share failed:', err);
+              if (statusEl) {
+                statusEl.textContent = 'Sharing canceled.';
+                setTimeout(() => {
+                  statusEl.style.display = 'none';
+                }, 2000);
+              }
+            });
         } else {
           if (statusEl) statusEl.textContent = 'System share not supported. Downloading instead...';
           const url = URL.createObjectURL(res.blob);
@@ -812,7 +889,9 @@ export const setupShareFunctionality = (
           a.click();
           document.body.removeChild(a);
           URL.revokeObjectURL(url);
-          setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+          setTimeout(() => {
+            if (statusEl) statusEl.style.display = 'none';
+          }, 3000);
         }
       });
     });
@@ -835,16 +914,21 @@ export const setupShareFunctionality = (
       if (statusEl) {
         statusEl.style.display = 'block';
       }
-      
-      navigator.clipboard.writeText(text).then(() => {
-        if (statusEl) {
-          statusEl.textContent = 'Summary text copied to clipboard!';
-          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-        }
-      }).catch((err: unknown) => {
-        console.error(err);
-        if (statusEl) statusEl.textContent = 'Failed to copy text.';
-      });
+
+      navigator.clipboard
+        .writeText(text)
+        .then(() => {
+          if (statusEl) {
+            statusEl.textContent = 'Summary text copied to clipboard!';
+            setTimeout(() => {
+              statusEl.style.display = 'none';
+            }, 3000);
+          }
+        })
+        .catch((err: unknown) => {
+          console.error(err);
+          if (statusEl) statusEl.textContent = 'Failed to copy text.';
+        });
     });
   }
 };
@@ -853,52 +937,52 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');
     backdrop.className = 'custom-modal-backdrop';
-    
+
     const container = document.createElement('div');
     container.className = 'custom-modal-container';
     container.setAttribute('role', 'dialog');
     container.setAttribute('aria-modal', 'true');
-    
+
     const titleEl = document.createElement('h3');
     titleEl.className = 'custom-modal-title';
     titleEl.textContent = title;
-    
+
     const bodyEl = document.createElement('div');
     bodyEl.className = 'custom-modal-body';
     bodyEl.textContent = message;
-    
+
     const footer = document.createElement('div');
     footer.className = 'custom-modal-footer';
-    
+
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'custom-modal-btn custom-modal-btn-cancel';
     cancelBtn.textContent = 'Cancel';
-    
+
     const confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
     confirmBtn.className = 'custom-modal-btn custom-modal-btn-confirm';
     confirmBtn.textContent = 'Confirm';
-    
+
     footer.appendChild(cancelBtn);
     footer.appendChild(confirmBtn);
-    
+
     container.appendChild(titleEl);
     container.appendChild(bodyEl);
     container.appendChild(footer);
     backdrop.appendChild(container);
     document.body.appendChild(backdrop);
-    
+
     // Save previous focus
     const previousFocus = document.activeElement as HTMLElement | null;
-    
+
     // Force browser reflow to enable transition
     backdrop.getBoundingClientRect();
     backdrop.classList.add('active');
-    
+
     // Focus the cancel button by default (safer default)
     cancelBtn.focus();
-    
+
     const cleanup = (result: boolean) => {
       backdrop.classList.remove('active');
       setTimeout(() => {
@@ -910,10 +994,10 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
         }
         resolve(result);
       }, 200); // match transition duration
-      
+
       document.removeEventListener('keydown', handleKeyDown);
     };
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
@@ -936,7 +1020,7 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
         }
       }
     };
-    
+
     cancelBtn.addEventListener('click', () => cleanup(false));
     confirmBtn.addEventListener('click', () => cleanup(true));
     backdrop.addEventListener('click', (e) => {
@@ -944,7 +1028,7 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
         cleanup(false);
       }
     });
-    
+
     document.addEventListener('keydown', handleKeyDown);
   });
 };
@@ -953,43 +1037,43 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');
     backdrop.className = 'custom-modal-backdrop';
-    
+
     const container = document.createElement('div');
     container.className = 'custom-modal-container';
     container.setAttribute('role', 'dialog');
     container.setAttribute('aria-modal', 'true');
-    
+
     const titleEl = document.createElement('h3');
     titleEl.className = 'custom-modal-title';
     titleEl.textContent = title;
-    
+
     const bodyEl = document.createElement('div');
     bodyEl.className = 'custom-modal-body';
     bodyEl.textContent = message;
-    
+
     const footer = document.createElement('div');
     footer.className = 'custom-modal-footer';
-    
+
     const okBtn = document.createElement('button');
     okBtn.type = 'button';
     okBtn.className = 'custom-modal-btn custom-modal-btn-alert-ok';
     okBtn.textContent = 'OK';
-    
+
     footer.appendChild(okBtn);
-    
+
     container.appendChild(titleEl);
     container.appendChild(bodyEl);
     container.appendChild(footer);
     backdrop.appendChild(container);
     document.body.appendChild(backdrop);
-    
+
     const previousFocus = document.activeElement as HTMLElement | null;
-    
+
     backdrop.getBoundingClientRect();
     backdrop.classList.add('active');
-    
+
     okBtn.focus();
-    
+
     const cleanup = () => {
       backdrop.classList.remove('active');
       setTimeout(() => {
@@ -1001,10 +1085,10 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
         }
         resolve();
       }, 200);
-      
+
       document.removeEventListener('keydown', handleKeyDown);
     };
-    
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' || e.key === 'Enter') {
         e.preventDefault();
@@ -1014,15 +1098,14 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
         okBtn.focus();
       }
     };
-    
+
     okBtn.addEventListener('click', () => cleanup());
     backdrop.addEventListener('click', (e) => {
       if (e.target === backdrop) {
         cleanup();
       }
     });
-    
+
     document.addEventListener('keydown', handleKeyDown);
   });
 };
-

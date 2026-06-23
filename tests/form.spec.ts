@@ -27,7 +27,7 @@ describe('Form Validation & Parsing (form.ts)', () => {
       hoa: document.createElement('input'),
       pmi: document.createElement('input'),
       investRate: document.createElement('input'),
-      date: document.createElement('input'),
+      date: document.createElement('input')
     };
 
     (inputs.pitiToggle as HTMLInputElement).type = 'checkbox';
@@ -79,7 +79,9 @@ describe('Form Validation & Parsing (form.ts)', () => {
       inputs.amortization!.value = '105';
       const isValid = validateForm('mortgage', inputs, errorContainer);
       expect(isValid).toBe(false);
-      expect(errorContainer.textContent).toBe('Amortization must be a valid number between 0.1 and 100 years.');
+      expect(errorContainer.textContent).toBe(
+        'Amortization must be a valid number between 0.1 and 100 years.'
+      );
     });
 
     it('should fail with term > amortization', () => {
@@ -89,7 +91,9 @@ describe('Form Validation & Parsing (form.ts)', () => {
       inputs.term!.value = '30';
       const isValid = validateForm('mortgage', inputs, errorContainer);
       expect(isValid).toBe(false);
-      expect(errorContainer.textContent).toBe('Term Length must be positive and cannot exceed the Amortization period.');
+      expect(errorContainer.textContent).toBe(
+        'Term Length must be positive and cannot exceed the Amortization period.'
+      );
     });
 
     it('should fail with invalid rate', () => {
@@ -100,7 +104,9 @@ describe('Form Validation & Parsing (form.ts)', () => {
       inputs.rate!.value = '105';
       const isValid = validateForm('mortgage', inputs, errorContainer);
       expect(isValid).toBe(false);
-      expect(errorContainer.textContent).toBe('Interest Rate must be a valid number between 0% and 100%.');
+      expect(errorContainer.textContent).toBe(
+        'Interest Rate must be a valid number between 0% and 100%.'
+      );
     });
 
     it('should fail with negative extra payment', () => {
@@ -130,7 +136,9 @@ describe('Form Validation & Parsing (form.ts)', () => {
       inputs.ccBalance!.value = '0';
       const isValid = validateForm('cc', inputs, errorContainer);
       expect(isValid).toBe(false);
-      expect(errorContainer.textContent).toBe('Credit Card Balance must be a valid positive number.');
+      expect(errorContainer.textContent).toBe(
+        'Credit Card Balance must be a valid positive number.'
+      );
     });
 
     it('should fail with rate > 200%', () => {
@@ -138,7 +146,9 @@ describe('Form Validation & Parsing (form.ts)', () => {
       inputs.rate!.value = '205';
       const isValid = validateForm('cc', inputs, errorContainer);
       expect(isValid).toBe(false);
-      expect(errorContainer.textContent).toBe('Interest Rate must be a valid number between 0% and 200%.');
+      expect(errorContainer.textContent).toBe(
+        'Interest Rate must be a valid number between 0% and 200%.'
+      );
     });
 
     it('should fail with negative surplus', () => {
@@ -147,7 +157,9 @@ describe('Form Validation & Parsing (form.ts)', () => {
       inputs.extra!.value = '-100';
       const isValid = validateForm('cc', inputs, errorContainer);
       expect(isValid).toBe(false);
-      expect(errorContainer.textContent).toBe('Monthly Surplus must be a valid non-negative number.');
+      expect(errorContainer.textContent).toBe(
+        'Monthly Surplus must be a valid non-negative number.'
+      );
     });
   });
 

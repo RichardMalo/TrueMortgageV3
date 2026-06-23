@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { generateMortgageSchedule, generateCCSchedule, calculateMilestones, getMonthlyPayment } from '../src/js/math.js';
+import {
+  generateMortgageSchedule,
+  generateCCSchedule,
+  calculateMilestones,
+  getMonthlyPayment
+} from '../src/js/math.js';
 import { Inputs, Milestone } from '../src/js/types.js';
 
 describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
@@ -93,9 +98,9 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateCCSchedule(inputs, false);
     const firstRow = result.schedule[0];
-    expect(firstRow.payment).toBeCloseTo(450.00, 1);
-    expect(firstRow.interest).toBeCloseTo(251.90, 1);
-    expect(firstRow.principal).toBeCloseTo(198.10, 1);
+    expect(firstRow.payment).toBeCloseTo(450.0, 1);
+    expect(firstRow.interest).toBeCloseTo(251.9, 1);
+    expect(firstRow.principal).toBeCloseTo(198.1, 1);
   });
 
   it('should calculate milestones correctly', () => {
@@ -125,7 +130,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const baseData = generateMortgageSchedule(inputs, true);
     const actData = generateMortgageSchedule(inputs, false);
     const milestones = calculateMilestones(baseData, actData, inputs, 'mortgage');
-    
+
     // We expect basic milestones to be calculated (e.g. equity mastery, halfway, financial freedom)
     expect(milestones.length).toBeGreaterThan(0);
     const payoffMilestone = milestones.find((m: Milestone) => m.id === 'financial-freedom');
@@ -183,7 +188,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const clampedResult = generateMortgageSchedule(invalidInputs, false);
     const lastRow = clampedResult.schedule[clampedResult.schedule.length - 1];
-    expect(lastRow.totalPrincipal + lastRow.balance).toBeCloseTo(500000 - (500000 * 0.999), 1);
+    expect(lastRow.totalPrincipal + lastRow.balance).toBeCloseTo(500000 - 500000 * 0.999, 1);
   });
 
   it('should handle homePrice = 0 gracefully without NaN values', () => {
@@ -247,10 +252,10 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     // Month 61 (Year 5 + 1 period, payment 61 is the first of the second term)
     const row60 = result.schedule[59];
     const row61 = result.schedule[60];
-    
+
     // Payments stay constant
     expect(row61.payment).toBeCloseTo(row60.payment, 1);
-    
+
     // But interest increases and principal contribution decreases
     expect(row61.interest).toBeGreaterThan(row60.interest);
     expect(row61.principal).toBeLessThan(row60.principal);
@@ -293,9 +298,9 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateCCSchedule(inputs, false);
     const firstRow = result.schedule[0];
-    expect(firstRow.payment).toBeCloseTo(750.00, 1); // 5% of 15000
-    expect(firstRow.interest).toBeCloseTo(251.90, 1);
-    expect(firstRow.principal).toBeCloseTo(498.10, 1);
+    expect(firstRow.payment).toBeCloseTo(750.0, 1); // 5% of 15000
+    expect(firstRow.interest).toBeCloseTo(251.9, 1);
+    expect(firstRow.principal).toBeCloseTo(498.1, 1);
   });
 
   it('should handle different payment frequencies (semi-monthly, bi-weekly, accelerated bi-weekly)', () => {
@@ -323,17 +328,28 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     // Semi-monthly
-    const semiMonthlyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'semi-monthly' }, false);
+    const semiMonthlyResult = generateMortgageSchedule(
+      { ...baseInputs, frequency: 'semi-monthly' },
+      false
+    );
     expect(semiMonthlyResult.summary.periodsPerYear).toBe(24);
 
     // Bi-weekly
-    const biWeeklyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'bi-weekly' }, false);
+    const biWeeklyResult = generateMortgageSchedule(
+      { ...baseInputs, frequency: 'bi-weekly' },
+      false
+    );
     expect(biWeeklyResult.summary.periodsPerYear).toBe(26);
 
     // Accelerated bi-weekly
-    const accBiWeeklyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'accelerated-bi-weekly' }, false);
+    const accBiWeeklyResult = generateMortgageSchedule(
+      { ...baseInputs, frequency: 'accelerated-bi-weekly' },
+      false
+    );
     expect(accBiWeeklyResult.summary.periodsPerYear).toBe(26);
-    expect(accBiWeeklyResult.summary.periodsToPayoff).toBeLessThan(semiMonthlyResult.summary.periodsToPayoff);
+    expect(accBiWeeklyResult.summary.periodsToPayoff).toBeLessThan(
+      semiMonthlyResult.summary.periodsToPayoff
+    );
   });
 
   it('should compute PMI and PITI escrow in mortgage schedule correctly', () => {
@@ -362,7 +378,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateMortgageSchedule(inputs, false);
     const firstRow = result.schedule[0];
-    
+
     // Escrow = Tax (3000/12 = 250) + Ins (1200/12 = 100) + HOA (100) + PMI (450000 * 0.01 / 12 = 375) = 825
     expect(firstRow.tax).toBeCloseTo(250, 1);
     expect(firstRow.ins).toBeCloseTo(100, 1);

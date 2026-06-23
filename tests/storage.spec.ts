@@ -60,12 +60,14 @@ describe('Storage & Cryptography (storage.ts)', () => {
       const wrongPasscode = 'wrong-pass';
 
       const ciphertext = await encryptData(plaintext, passcode);
-      await expect(decryptData(ciphertext, wrongPasscode)).rejects.toThrow('Invalid passcode or corrupted file');
+      await expect(decryptData(ciphertext, wrongPasscode)).rejects.toThrow(
+        'Invalid passcode or corrupted file'
+      );
     });
 
     it('should throw an error for empty passcodes', async () => {
       const plaintext = 'some-secret-data';
-      
+
       await expect(encryptData(plaintext, '')).rejects.toThrow('Passcode cannot be empty');
       await expect(encryptData(plaintext, '   ')).rejects.toThrow('Passcode cannot be empty');
       await expect(decryptData('some-ciphertext', '')).rejects.toThrow('Passcode cannot be empty');
@@ -117,7 +119,7 @@ describe('Storage & Cryptography (storage.ts)', () => {
 
       const sanitized = sanitizeProfile(legacyProfile, DEFAULT_INPUTS);
       expect(sanitized).not.toBeNull();
-      
+
       const inputs = sanitized!.inputs;
       expect(inputs.rate).toBe('5.5');
       expect(inputs.frequency).toBe('bi-weekly');
@@ -139,7 +141,7 @@ describe('Storage & Cryptography (storage.ts)', () => {
 
       const sanitized = sanitizeProfile(partialProfile, DEFAULT_INPUTS);
       expect(sanitized).not.toBeNull();
-      
+
       // Defaults filled in string format matching DOM value representations
       expect(sanitized!.inputs.homePrice).toBe(String(DEFAULT_INPUTS.homePrice));
       expect(sanitized!.inputs.downPayment).toBe(String(DEFAULT_INPUTS.downPayment));

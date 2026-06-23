@@ -13,7 +13,7 @@ export const renderSandboxList = (
   if (!container) return;
   container.innerHTML = '';
 
-  Object.values(state.profiles).forEach(p => {
+  Object.values(state.profiles).forEach((p) => {
     const isSelected = p.id === state.activeProfileId;
     const isCompare = p.id === state.comparisonProfileId && state.compareModeActive;
 
@@ -32,7 +32,7 @@ export const renderSandboxList = (
 
     const modeLabel = p.currentMode === 'cc' ? 'Credit Card' : 'Mortgage';
     const tagComp = p.complexity === 'advanced' ? 'Advanced' : 'Simple';
-    
+
     card.innerHTML = `
       <div class="profile-card-header">
         <h4 class="profile-card-title" id="title-text-${p.id}"></h4>
@@ -63,9 +63,9 @@ export const renderSandboxList = (
       if (target.closest('.profile-card-actions') || target.closest('.compare-toggle-label')) {
         return;
       }
-      
+
       const titleText = document.getElementById(`title-text-${p.id}`) as HTMLElement | null;
-      
+
       // Double click inline rename
       if (e.detail === 2 && titleText) {
         const input = document.createElement('input');
@@ -91,7 +91,7 @@ export const renderSandboxList = (
 
       saveSettingsToStorage(state, inputsMap, defaultInputs, false);
       state.activeProfileId = p.id;
-      
+
       if (state.comparisonProfileId === p.id) {
         state.comparisonProfileId = null;
         state.compareModeActive = false;
@@ -108,7 +108,7 @@ export const renderSandboxList = (
       state.profiles[newId] = JSON.parse(JSON.stringify(p));
       state.profiles[newId].id = newId;
       state.profiles[newId].name = `${p.name} (Copy)`;
-      
+
       saveSettingsToStorage(state, inputsMap, defaultInputs, false);
       onRecalculate();
       renderSandboxList(state, defaultInputs, inputsMap, onProfileSelect, onRecalculate);
@@ -120,12 +120,15 @@ export const renderSandboxList = (
       delBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (Object.keys(state.profiles).length <= 1) return;
-        
-        const confirmDel = await showConfirmModal('Delete Scenario', `Are you sure you want to delete scenario "${p.name}"?`);
+
+        const confirmDel = await showConfirmModal(
+          'Delete Scenario',
+          `Are you sure you want to delete scenario "${p.name}"?`
+        );
         if (confirmDel) {
           const wasActive = state.activeProfileId === p.id;
           delete state.profiles[p.id];
-          
+
           if (wasActive) {
             state.activeProfileId = Object.keys(state.profiles)[0];
             saveSettingsToStorage(state, inputsMap, defaultInputs, true);
@@ -133,7 +136,7 @@ export const renderSandboxList = (
           } else {
             saveSettingsToStorage(state, inputsMap, defaultInputs, false);
           }
-          
+
           if (state.comparisonProfileId === p.id) {
             state.comparisonProfileId = null;
             state.compareModeActive = false;
@@ -154,8 +157,8 @@ export const renderSandboxList = (
         if (checked) {
           state.comparisonProfileId = p.id;
           state.compareModeActive = true;
-          
-          document.querySelectorAll('.compare-checkbox').forEach(cb => {
+
+          document.querySelectorAll('.compare-checkbox').forEach((cb) => {
             const el = cb as HTMLInputElement;
             if (el.getAttribute('data-id') !== p.id) {
               el.checked = false;
@@ -196,17 +199,23 @@ export const setupScenarioSandbox = (
 
   const trapFocus = (e: KeyboardEvent) => {
     if (e.key === 'Tab') {
-      const focusables = Array.from(sidebar.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])'))
-        .filter(el => !(el as HTMLButtonElement).disabled && (el as HTMLElement).offsetWidth > 0 && (el as HTMLElement).offsetHeight > 0) as HTMLElement[];
-      
+      const focusables = Array.from(
+        sidebar.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
+      ).filter(
+        (el) =>
+          !(el as HTMLButtonElement).disabled &&
+          (el as HTMLElement).offsetWidth > 0 &&
+          (el as HTMLElement).offsetHeight > 0
+      ) as HTMLElement[];
+
       if (focusables.length === 0) {
         e.preventDefault();
         return;
       }
-      
+
       const first = focusables[0];
       const last = focusables[focusables.length - 1];
-      
+
       if (e.shiftKey) {
         if (document.activeElement === first) {
           last.focus();
@@ -227,9 +236,9 @@ export const setupScenarioSandbox = (
     previouslyFocusedElement = document.activeElement as HTMLElement | null;
     sidebar.classList.add('active');
     overlay.classList.add('active');
-    
+
     renderSandboxList(state, defaultInputs, inputsMap, onProfileSelect, onRecalculate);
-    
+
     document.addEventListener('keydown', trapFocus);
     setTimeout(() => {
       newNameInput.focus();
@@ -263,32 +272,37 @@ export const setupScenarioSandbox = (
     saveSettingsToStorage(state, inputsMap, defaultInputs, false);
     const name = newNameInput.value.trim() || `Scenario ${Object.keys(state.profiles).length + 1}`;
     const newId = 'profile-' + Date.now();
-    
-    state.profiles[newId] = sanitizeProfile({
-      id: newId,
-      name,
-      currentMode: state.currentMode,
-      complexity: state.complexity,
-      isDark: state.isDark,
-      termRates: {},
-      customizedYears: {},
-      bankWagesView: 'wages',
-      inputs: defaultInputs
-    }, defaultInputs)!;
+
+    state.profiles[newId] = sanitizeProfile(
+      {
+        id: newId,
+        name,
+        currentMode: state.currentMode,
+        complexity: state.complexity,
+        isDark: state.isDark,
+        termRates: {},
+        customizedYears: {},
+        bankWagesView: 'wages',
+        inputs: defaultInputs
+      },
+      defaultInputs
+    )!;
 
     state.activeProfileId = newId;
     newNameInput.value = '';
-    
+
     saveSettingsToStorage(state, inputsMap, defaultInputs, true);
     onProfileSelect(newId);
-    
+
     // Auto show user confirmation feedback (Milestone UX Polish)
     const feedback = document.getElementById('dropzoneFeedback');
     if (feedback) {
       feedback.textContent = `Scenario "${name}" Created Successfully! 🎉`;
       feedback.style.display = 'block';
       feedback.style.color = '#10b981';
-      setTimeout(() => { feedback.style.display = 'none'; }, 3000);
+      setTimeout(() => {
+        feedback.style.display = 'none';
+      }, 3000);
     }
   });
 

@@ -95,12 +95,26 @@ export const getCalculationsInputs = (
     compounding: (inputs.compounding?.value || 'semi') as 'semi' | 'monthly',
     frequency: (inputs.frequency?.value || 'monthly') as Inputs['frequency'],
     usePiti: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked,
-    taxRate: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked ? (parseFloat(inputs.tax?.value || '0')) : 0,
-    insRate: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked ? (parseFloat(inputs.ins?.value || '0')) : 0,
-    hoaRate: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked ? (parseFloat(inputs.hoa?.value || '0')) : 0,
-    pmiRate: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked ? (parseFloat(inputs.pmi?.value || '0')) : 0,
+    taxRate:
+      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
+        ? parseFloat(inputs.tax?.value || '0')
+        : 0,
+    insRate:
+      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
+        ? parseFloat(inputs.ins?.value || '0')
+        : 0,
+    hoaRate:
+      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
+        ? parseFloat(inputs.hoa?.value || '0')
+        : 0,
+    pmiRate:
+      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
+        ? parseFloat(inputs.pmi?.value || '0')
+        : 0,
     useOppCost: !!(inputs.oppCostToggle as HTMLInputElement | null)?.checked,
-    investRate: (inputs.oppCostToggle as HTMLInputElement | null)?.checked ? (parseFloat(inputs.investRate?.value || '7.0')) : 7.0,
+    investRate: (inputs.oppCostToggle as HTMLInputElement | null)?.checked
+      ? parseFloat(inputs.investRate?.value || '7.0')
+      : 7.0,
     extraPayment: parseFloat(inputs.extra?.value || '0'),
     startDate: inputs.date?.value || '',
     rateShockEnabled: isMortgage && !!(inputs.rateShockToggle as HTMLInputElement | null)?.checked,

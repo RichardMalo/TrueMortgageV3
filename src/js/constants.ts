@@ -1,6 +1,14 @@
 import { Inputs } from './types.js';
 
-export const PMI_LTV_THRESHOLD = 0.80;
+export const getPrefersDark = (): boolean => {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  );
+};
+
+export const PMI_LTV_THRESHOLD = 0.8;
 export const PBKDF2_ITERATIONS = 100000;
 export const MAX_CC_PAYOFF_MONTHS = 600;
 export const MIN_CC_PAYMENT = 10;

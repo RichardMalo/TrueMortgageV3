@@ -16,30 +16,30 @@ export const updateTable = (
 ) => {
   const tbody = document.querySelector('#amortization-table tbody');
   if (!tbody) return;
-  
+
   if (escrowTh) {
     escrowTh.style.display = usePiti ? '' : 'none';
   }
   tbody.innerHTML = '';
-  
+
   if (tableRenderTimeoutId !== null) {
     clearTimeout(tableRenderTimeoutId);
     tableRenderTimeoutId = null;
   }
-  
+
   const isPeriod = labelFormat === 'period';
   const chunkSize = TABLE_RENDER_CHUNK_SIZE;
-  
+
   const renderChunk = (start: number) => {
     const frag = document.createDocumentFragment();
     const end = Math.min(start + chunkSize, schedule.length);
-    
+
     for (let index = start; index < end; index++) {
       const row = schedule[index];
       const tr = document.createElement('tr');
       const eTd = usePiti ? `<td style="color: #8b5cf6">${formatCurrency(row.escrow)}</td>` : '';
       const label = isPeriod ? `P${row.period}` : row.dateLabel;
-      
+
       let deltaHtml = '';
       if (compSchedule && compSchedule[index]) {
         const diff = row.balance - compSchedule[index].balance;
@@ -64,15 +64,15 @@ export const updateTable = (
       `;
       frag.appendChild(tr);
     }
-    
+
     tbody.appendChild(frag);
-    
+
     if (end < schedule.length) {
       tableRenderTimeoutId = setTimeout(() => renderChunk(end), 16);
     } else {
       tableRenderTimeoutId = null;
     }
   };
-  
+
   renderChunk(0);
 };

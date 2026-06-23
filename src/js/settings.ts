@@ -1,23 +1,38 @@
 import gsap from 'gsap';
 import { showConfirmModal, showAlertModal } from './ui.js';
 
-export const setupSettingsMenu = (
-  resetApplicationData: () => void
-) => {
+/**
+ * Initialises settings trigger event listeners, modal triggers for syncing
+ * and constraint lists, and coordinates application database factory reset triggers.
+ *
+ * @param resetApplicationData - Callback function to invoke when resetting application database state.
+ */
+export const setupSettingsMenu = (resetApplicationData: () => void) => {
   const dropdown = document.getElementById('settings-dropdown');
   const trigger = document.getElementById('settingsTrigger');
-  
+
   const optSync = document.getElementById('settingsOptSync');
   const optLimits = document.getElementById('settingsOptLimits');
   const optReset = document.getElementById('settingsOptReset');
-  
+
   const syncModal = document.getElementById('syncModal');
   const limitsModal = document.getElementById('limitsModal');
-  
+
   const closeSyncBtn = document.getElementById('closeSyncModalBtn');
   const closeLimitsBtn = document.getElementById('closeLimitsModalBtn');
 
-  if (!dropdown || !trigger || !optSync || !optLimits || !optReset || !syncModal || !limitsModal || !closeSyncBtn || !closeLimitsBtn) return;
+  if (
+    !dropdown ||
+    !trigger ||
+    !optSync ||
+    !optLimits ||
+    !optReset ||
+    !syncModal ||
+    !limitsModal ||
+    !closeSyncBtn ||
+    !closeLimitsBtn
+  )
+    return;
 
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -43,7 +58,11 @@ export const setupSettingsMenu = (
   optSync.addEventListener('click', () => {
     dropdown.classList.remove('active');
     syncModal.classList.add('active');
-    gsap.fromTo('#syncModal .modal-card', { scale: 0.9, y: 20 }, { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' });
+    gsap.fromTo(
+      '#syncModal .modal-card',
+      { scale: 0.9, y: 20 },
+      { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+    );
   });
 
   closeSyncBtn.addEventListener('click', () => {
@@ -53,7 +72,11 @@ export const setupSettingsMenu = (
   optLimits.addEventListener('click', () => {
     dropdown.classList.remove('active');
     limitsModal.classList.add('active');
-    gsap.fromTo('#limitsModal .modal-card', { scale: 0.9, y: 20 }, { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' });
+    gsap.fromTo(
+      '#limitsModal .modal-card',
+      { scale: 0.9, y: 20 },
+      { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+    );
   });
 
   closeLimitsBtn.addEventListener('click', () => {

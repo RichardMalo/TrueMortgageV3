@@ -1,22 +1,32 @@
 import { AppState, AppElements } from './types.js';
 
-export const syncRateShockTimeline = (
-  state: AppState,
-  els: AppElements,
-  calculate: () => void
-) => {
+/**
+ * Synchronizes the rate shock timeline in the UI with the active mortgage amortization length and term length.
+ * Rebuilds input boxes when amortization or term changes, and captures rate adjustments dynamically.
+ *
+ * @param state - The shared AppState store.
+ * @param els - Centralized DOM elements mapping object.
+ * @param calculate - Callback function to trigger recalculation on inputs change.
+ */
+export const syncRateShockTimeline = (state: AppState, els: AppElements, calculate: () => void) => {
   const termYrs = parseFloat(els.inputs.term?.value || '0');
   const amortYrs = parseFloat(els.inputs.amortization?.value || '0');
   const baseRate = parseFloat(els.inputs.rate?.value || '0');
 
-  if (termYrs <= 0 || amortYrs <= 0 || state.currentMode !== 'mortgage' || !els.containers.rateShockTimeline) {
+  if (
+    termYrs <= 0 ||
+    amortYrs <= 0 ||
+    state.currentMode !== 'mortgage' ||
+    !els.containers.rateShockTimeline
+  ) {
     if (els.containers.rateShockTimeline) els.containers.rateShockTimeline.innerHTML = '';
     return;
   }
 
   const numPeriods = Math.floor((amortYrs - 0.00001) / termYrs);
   if (numPeriods > 50) {
-    els.containers.rateShockTimeline.innerHTML = '<div style="padding: 15px; font-size: 0.85rem; opacity: 0.8; text-align: center; width: 100%; font-weight: 600;">Timeline is too dense to display (maximum 50 periods). Please enter a larger Term Length.</div>';
+    els.containers.rateShockTimeline.innerHTML =
+      '<div style="padding: 15px; font-size: 0.85rem; opacity: 0.8; text-align: center; width: 100%; font-weight: 600;">Timeline is too dense to display (maximum 50 periods). Please enter a larger Term Length.</div>';
     return;
   }
 
@@ -26,23 +36,26 @@ export const syncRateShockTimeline = (
   }
 
   state.customizedYears = state.customizedYears || {};
-  years.forEach(y => {
+  years.forEach((y) => {
     if (!state.customizedYears[y]) {
       state.termRates[y] = baseRate;
     }
   });
 
   const existingBoxes = els.containers.rateShockTimeline.querySelectorAll('.rate-shock-box');
-  const existingYears = Array.from(existingBoxes).map((boxEl: Element) => {
-    const input = boxEl.querySelector('.term-rate-input');
-    return input ? parseInt(input.getAttribute('data-year') || '0') : null;
-  }).filter(y => y !== null) as number[];
+  const existingYears = Array.from(existingBoxes)
+    .map((boxEl: Element) => {
+      const input = boxEl.querySelector('.term-rate-input');
+      return input ? parseInt(input.getAttribute('data-year') || '0') : null;
+    })
+    .filter((y) => y !== null) as number[];
 
-  const needsRebuild = existingYears.length !== years.length || !years.every((val, idx) => val === existingYears[idx]);
+  const needsRebuild =
+    existingYears.length !== years.length || !years.every((val, idx) => val === existingYears[idx]);
 
   if (needsRebuild) {
     let html = '';
-    years.forEach(y => {
+    years.forEach((y) => {
       const remaining = amortYrs - y;
       html += `
         <div class="rate-shock-box">
