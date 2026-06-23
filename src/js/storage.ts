@@ -18,6 +18,9 @@ export const CURRENT_ENGINE_VERSION = 2.0;
 
 // AES-GCM 256-bit client-side encryption
 export const encryptData = async (plainText: string, passcode: string): Promise<string> => {
+  if (!passcode || passcode.trim() === '') {
+    throw new Error('Passcode cannot be empty');
+  }
   const enc = new TextEncoder();
   const salt = window.crypto.getRandomValues(new Uint8Array(16));
   
@@ -62,6 +65,9 @@ export const encryptData = async (plainText: string, passcode: string): Promise<
 };
 
 export const decryptData = async (cipherTextBase64: string, passcode: string): Promise<string> => {
+  if (!passcode || passcode.trim() === '') {
+    throw new Error('Passcode cannot be empty');
+  }
   try {
     const binaryStr = atob(cipherTextBase64);
     const combined = new Uint8Array(binaryStr.length);

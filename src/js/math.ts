@@ -77,8 +77,9 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
       ? Math.pow(1 + (activeRate / 100 / 2), 2 / perYear) - 1
       : (activeRate / 100 / perYear);
 
-    const pPMI = (bal > pmiDrop && inputs.pmiRate > 0)
-      ? (principal * (Math.min(100, Math.max(0, inputs.pmiRate)) / 100)) / perYear
+    const pmiRate = inputs.pmiRate || 0;
+    const pPMI = (bal > pmiDrop && pmiRate > 0)
+      ? (principal * (Math.min(100, Math.max(0, pmiRate)) / 100)) / perYear
       : 0;
     const pEscrow = pTax + pIns + pHOA + pPMI;
     const iPart = bal * perRate;

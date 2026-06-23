@@ -62,6 +62,14 @@ describe('Storage & Cryptography (storage.ts)', () => {
       const ciphertext = await encryptData(plaintext, passcode);
       await expect(decryptData(ciphertext, wrongPasscode)).rejects.toThrow('Invalid passcode or corrupted file');
     });
+
+    it('should throw an error for empty passcodes', async () => {
+      const plaintext = 'some-secret-data';
+      
+      await expect(encryptData(plaintext, '')).rejects.toThrow('Passcode cannot be empty');
+      await expect(encryptData(plaintext, '   ')).rejects.toThrow('Passcode cannot be empty');
+      await expect(decryptData('some-ciphertext', '')).rejects.toThrow('Passcode cannot be empty');
+    });
   });
 
   describe('Profile Sanitization & Schema Migration', () => {
