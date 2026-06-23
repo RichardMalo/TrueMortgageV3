@@ -1,5 +1,6 @@
 import { AppState, Inputs } from './types.js';
-import { saveSettingsToStorage } from './storage.js';
+import { saveSettingsToStorage, sanitizeProfile } from './storage.js';
+import { showConfirmModal } from './ui.js';
 
 export const renderSandboxList = (
   state: AppState,
@@ -116,11 +117,11 @@ export const renderSandboxList = (
     // Delete scenario
     const delBtn = card.querySelector('.delete-btn');
     if (delBtn) {
-      delBtn.addEventListener('click', (e) => {
+      delBtn.addEventListener('click', async (e) => {
         e.stopPropagation();
         if (Object.keys(state.profiles).length <= 1) return;
         
-        const confirmDel = confirm(`Are you sure you want to delete scenario "${p.name}"?`);
+        const confirmDel = await showConfirmModal('Delete Scenario', `Are you sure you want to delete scenario "${p.name}"?`);
         if (confirmDel) {
           const wasActive = state.activeProfileId === p.id;
           delete state.profiles[p.id];
@@ -263,7 +264,7 @@ export const setupScenarioSandbox = (
     const name = newNameInput.value.trim() || `Scenario ${Object.keys(state.profiles).length + 1}`;
     const newId = 'profile-' + Date.now();
     
-    state.profiles[newId] = {
+    state.profiles[newId] = sanitizeProfile({
       id: newId,
       name,
       currentMode: state.currentMode,
@@ -272,8 +273,8 @@ export const setupScenarioSandbox = (
       termRates: {},
       customizedYears: {},
       bankWagesView: 'wages',
-      inputs: Object.assign({}, defaultInputs)
-    };
+      inputs: defaultInputs
+    }, defaultInputs)!;
 
     state.activeProfileId = newId;
     newNameInput.value = '';

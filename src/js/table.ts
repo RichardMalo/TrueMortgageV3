@@ -1,5 +1,6 @@
 import { ScheduleRow } from './types.js';
 import { formatCurrency } from './charts.js';
+import { TABLE_RENDER_CHUNK_SIZE } from './constants.js';
 
 let tableRenderTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -27,7 +28,7 @@ export const updateTable = (
   }
   
   const isPeriod = labelFormat === 'period';
-  const chunkSize = 100;
+  const chunkSize = TABLE_RENDER_CHUNK_SIZE;
   
   const renderChunk = (start: number) => {
     const frag = document.createDocumentFragment();

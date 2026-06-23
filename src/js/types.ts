@@ -56,6 +56,33 @@ export interface ScheduleResult {
   summary: ScheduleSummary;
 }
 
+export interface ProfileInputs {
+  homePrice: string;
+  downPayment: string;
+  ccBalance: string;
+  province: string;
+  rate: string;
+  amortization: string;
+  term: string;
+  compounding: string;
+  frequency: string;
+  pitiToggle: boolean;
+  tax: string;
+  ins: string;
+  hoa: string;
+  pmi: string;
+  oppCostToggle: boolean;
+  investRate: string;
+  extra: string;
+  date: string;
+  rateShockToggle: boolean;
+  mortgageRate: string;
+  mortgageExtra: string;
+  ccRate: string;
+  ccExtra: string;
+  [key: string]: string | boolean | undefined;
+}
+
 export interface Profile {
   id: string;
   name: string;
@@ -65,8 +92,7 @@ export interface Profile {
   termRates: Record<number, number>;
   customizedYears: Record<number, boolean>;
   bankWagesView: 'wages' | 'rent' | 'rent-tax-ins';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  inputs: Record<string, any>;
+  inputs: ProfileInputs;
 }
 
 export interface AppState {
@@ -94,4 +120,60 @@ export interface Milestone {
   sowhat: string;
   badge: string;
   isBaseline: boolean;
+}
+
+export interface AppElements {
+  form: HTMLFormElement | null;
+  inputs: {
+    homePrice: HTMLInputElement | null;
+    downPayment: HTMLInputElement | null;
+    ccBalance: HTMLInputElement | null;
+    province: HTMLSelectElement | null;
+    rate: HTMLInputElement | null;
+    amortization: HTMLInputElement | null;
+    term: HTMLInputElement | null;
+    compounding: HTMLSelectElement | null;
+    countrySelect: HTMLSelectElement | null;
+    frequency: HTMLSelectElement | null;
+    pitiToggle: HTMLInputElement | null;
+    tax: HTMLInputElement | null;
+    ins: HTMLInputElement | null;
+    hoa: HTMLInputElement | null;
+    pmi: HTMLInputElement | null;
+    oppCostToggle: HTMLInputElement | null;
+    investRate: HTMLInputElement | null;
+    extra: HTMLInputElement | null;
+    date: HTMLInputElement | null;
+    rateShockToggle: HTMLInputElement | null;
+  };
+  results: {
+    mortgageDisplay: HTMLElement | null;
+    vampireDrain: HTMLElement | null;
+    monthly: HTMLElement | null;
+    breakdown: HTMLElement | null;
+    termBalance: HTMLElement | null;
+    paidOffIn: HTMLElement | null;
+    saved: HTMLElement | null;
+    svgInnerPrincipal: HTMLElement | null;
+    svgInnerMarkup: HTMLElement | null;
+    outPrincipalVal: HTMLElement | null;
+    outMarkupVal: HTMLElement | null;
+    actualLifetimePaidValue: HTMLElement | null;
+    concentricStack: Element | null;
+  };
+  containers: {
+    pitiSection: HTMLElement | null;
+    oppCostSection: HTMLElement | null;
+    comparison: HTMLElement | null;
+    error: HTMLElement | null;
+    escrowTh: HTMLElement | null;
+    oppCost: HTMLElement | null;
+    ltv: HTMLElement | null;
+    rateShockSection: HTMLElement | null;
+    rateShockTimeline: HTMLElement | null;
+    milestoneCard: HTMLElement | null;
+    milestoneTimeline: HTMLElement | null;
+  };
+  modeSwitch: HTMLInputElement | null;
+  masterBtns: NodeListOf<Element>;
 }

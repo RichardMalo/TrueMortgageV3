@@ -26,8 +26,11 @@ jobs:
     - name: Verify Code Linting
       run: npx eslint .
 
+    - name: Security Vulnerability Audit
+      run: npm audit --audit-level=high
+
     - name: Run Unit Tests
-      run: npm run test
+      run: npm run test:coverage
 
     - name: Run Build Compiler Check
       run: npm run build

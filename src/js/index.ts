@@ -1,5 +1,6 @@
 import gsap from 'gsap';
-import { AppState, Inputs, ScheduleResult, Milestone } from './types.js';
+import { AppState, Inputs, ScheduleResult } from './types.js';
+import { DEFAULT_INPUTS, PREFILLED_DATE, RESIZE_DEBOUNCE_MS } from './constants.js';
 import { 
   generateMortgageSchedule, 
   generateCCSchedule, 
@@ -7,7 +8,6 @@ import {
 } from './math.js';
 import { 
   renderCharts, 
-  formatCurrency, 
   clearVisibleChartsCache,
   resizeChart
 } from './charts.js';
@@ -15,7 +15,8 @@ import {
   saveSettingsToStorage, 
   loadSettingsFromStorage, 
   encryptData,
-  decryptData
+  decryptData,
+  sanitizeProfile
 } from './storage.js';
 import { 
   updateKineticText, 
@@ -23,7 +24,9 @@ import {
   setupTouchAndKeyboardTooltips, 
   setupDragAndDrop, 
   setupCustomDropdown, 
-  setupShareFunctionality 
+  setupShareFunctionality,
+  showConfirmModal,
+  showAlertModal
 } from './ui.js';
 import { 
   renderSandboxList, 
@@ -31,33 +34,14 @@ import {
 } from './sandbox.js';
 import { updateTable } from './table.js';
 import { validateForm, getCalculationsInputs } from './form.js';
+import { syncRateShockTimeline } from './rate-shock.js';
+import { renderBankWages, setupBankWagesToggle } from './wages-viz.js';
+import { renderMilestonesUI } from './milestones-ui.js';
+import { syncStateCardOrderFromDOM, applyStateCardOrderToDOM } from './card-order.js';
+import { setupBlueprintSync } from './blueprint.js';
+import { setupSettingsMenu } from './settings.js';
 
-// Global defaults prefill date setup
-const nextM = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
-const PREFILLED_DATE = `${nextM.getFullYear()}-${String(nextM.getMonth() + 1).padStart(2, '0')}-${String(nextM.getDate()).padStart(2, '0')}`;
 
-const DEFAULT_INPUTS: Inputs = Object.freeze({
-  homePrice: 800000,
-  downPayment: 160000,
-  ccBalance: 15000,
-  province: 'ON',
-  annualRate: 4.39,
-  amortizationYears: 30,
-  termYears: 5,
-  compounding: 'semi',
-  frequency: 'monthly',
-  usePiti: false,
-  taxRate: 4000,
-  insRate: 1000,
-  hoaRate: 0,
-  pmiRate: 0.5,
-  useOppCost: false,
-  investRate: 7.0,
-  extraPayment: 0,
-  startDate: PREFILLED_DATE,
-  rateShockEnabled: false,
-  termRates: {}
-});
 
 // App Global State store
 const state: AppState = {
@@ -136,331 +120,7 @@ const els = {
 
 
 
-const syncRateShockTimeline = () => {
-  const termYrs = parseFloat(els.inputs.term?.value || '0');
-  const amortYrs = parseFloat(els.inputs.amortization?.value || '0');
-  const baseRate = parseFloat(els.inputs.rate?.value || '0');
 
-  if (termYrs <= 0 || amortYrs <= 0 || state.currentMode !== 'mortgage' || !els.containers.rateShockTimeline) {
-    if (els.containers.rateShockTimeline) els.containers.rateShockTimeline.innerHTML = '';
-    return;
-  }
-
-  const numPeriods = Math.floor((amortYrs - 0.00001) / termYrs);
-  if (numPeriods > 50) {
-    els.containers.rateShockTimeline.innerHTML = '<div style="padding: 15px; font-size: 0.85rem; opacity: 0.8; text-align: center; width: 100%; font-weight: 600;">Timeline is too dense to display (maximum 50 periods). Please enter a larger Term Length.</div>';
-    return;
-  }
-
-  const years: number[] = [];
-  for (let y = termYrs; y < amortYrs; y += termYrs) {
-    years.push(y);
-  }
-
-  state.customizedYears = state.customizedYears || {};
-  years.forEach(y => {
-    if (!state.customizedYears[y]) {
-      state.termRates[y] = baseRate;
-    }
-  });
-
-  const existingBoxes = els.containers.rateShockTimeline.querySelectorAll('.rate-shock-box');
-  const existingYears = Array.from(existingBoxes).map(box => {
-    const input = box.querySelector('.term-rate-input');
-    return input ? parseInt(input.getAttribute('data-year') || '0') : null;
-  }).filter(y => y !== null) as number[];
-
-  const needsRebuild = existingYears.length !== years.length || !years.every((val, idx) => val === existingYears[idx]);
-
-  if (needsRebuild) {
-    let html = '';
-    years.forEach(y => {
-      const remaining = amortYrs - y;
-      html += `
-        <div class="rate-shock-box">
-          <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary-color);">Year ${y} Refinance</span>
-            <span style="font-size: 0.75rem; opacity: 0.7; font-weight: 500;" class="remaining-label">${remaining.toFixed(0)} Yrs remaining</span>
-          </div>
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <input type="number" class="term-rate-input" data-year="${y}" step="0.01" min="0" max="100" value="${state.termRates[y].toFixed(2)}">
-            <span style="font-weight: 800; font-size: 0.95rem;">%</span>
-          </div>
-        </div>
-      `;
-    });
-    els.containers.rateShockTimeline.innerHTML = html;
-
-    const inputs = els.containers.rateShockTimeline.querySelectorAll('.term-rate-input');
-    inputs.forEach(inpEl => {
-      const inp = inpEl as HTMLInputElement;
-      inp.addEventListener('input', () => {
-        const y = parseInt(inp.getAttribute('data-year') || '0');
-        const val = parseFloat(inp.value);
-        if (!isNaN(val)) {
-          state.customizedYears[y] = true;
-          state.termRates[y] = val;
-          calculate();
-        }
-      });
-      inp.addEventListener('blur', () => {
-        const y = parseInt(inp.getAttribute('data-year') || '0');
-        let val = parseFloat(inp.value);
-        if (isNaN(val)) {
-          val = baseRate;
-          inp.value = baseRate.toFixed(2);
-        }
-        state.customizedYears[y] = true;
-        state.termRates[y] = val;
-        calculate();
-      });
-    });
-  } else {
-    existingBoxes.forEach(box => {
-      const input = box.querySelector('.term-rate-input') as HTMLInputElement | null;
-      const remainingLabel = box.querySelector('.remaining-label');
-      if (input) {
-        const y = parseInt(input.getAttribute('data-year') || '0');
-        const remaining = amortYrs - y;
-        if (remainingLabel) {
-          remainingLabel.textContent = `${remaining.toFixed(0)} Yrs remaining`;
-        }
-        if (document.activeElement !== input) {
-          input.value = state.termRates[y].toFixed(2);
-        }
-      }
-    });
-  }
-};
-
-
-
-
-
-const renderBankWages = (actData: ScheduleResult) => {
-  const container = document.getElementById('bankWagesCirclesContainer');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const titleEl = document.getElementById('bankWagesTitleText');
-  const tooltipEl = document.getElementById('bankWagesTooltip');
-  const isRent = (state.bankWagesView === 'rent');
-  const isRentTaxIns = (state.bankWagesView === 'rent-tax-ins');
-
-  if (titleEl) {
-    if (isRentTaxIns) {
-      titleEl.textContent = 'How much interest + carrying costs represents monthly if it was rent';
-    } else if (isRent) {
-      titleEl.textContent = 'How much interest represents monthly if it was rent';
-    } else {
-      titleEl.textContent = 'How much interest you pay towards the bank\'s wages per year';
-    }
-  }
-  if (tooltipEl) {
-    if (isRentTaxIns) {
-      tooltipEl.textContent = 'Annual interest payments plus property tax and home insurance averaged into a monthly rent equivalent. For estimation purposes only.';
-    } else if (isRent) {
-      tooltipEl.textContent = 'Annual interest payments averaged into a monthly rent equivalent: (Annual Interest / 12), rounded up. For estimation purposes only.';
-    } else {
-      tooltipEl.textContent = 'Annual interest payments visualized as wages paid to the bank. Circles shrink over time as you build equity.';
-    }
-  }
-
-  const schedule = actData.schedule;
-  if (!schedule || schedule.length === 0) return;
-
-  const periodsPerYear = actData.summary.periodsPerYear || 12;
-
-  const yearlyData: Record<number, { year: number; interest: number; count: number }> = {};
-  for (const row of schedule) {
-    const yr = row.calendarYear;
-    if (!yearlyData[yr]) {
-      yearlyData[yr] = { year: yr, interest: 0, count: 0 };
-    }
-    yearlyData[yr].interest += row.interest;
-    yearlyData[yr].count += 1;
-  }
-
-  const years = Object.keys(yearlyData).map(Number).sort((a, b) => a - b);
-  if (years.length === 0) return;
-
-  // extrapolated run-rate logic for mid-year starts
-  const firstYear = years[0];
-  if (yearlyData[firstYear].count < periodsPerYear) {
-    let filledInterest = 0;
-    const limit = Math.min(schedule.length, periodsPerYear);
-    for (let i = 0; i < limit; i++) {
-      filledInterest += schedule[i].interest;
-    }
-    yearlyData[firstYear].interest = filledInterest;
-  }
-
-  const annualTax = els.inputs.tax ? (parseFloat(els.inputs.tax.value) || 0) : 0;
-  const annualIns = els.inputs.ins ? (parseFloat(els.inputs.ins.value) || 0) : 0;
-
-  const displayValues: Record<number, number> = {};
-  let maxDisplayVal = 0;
-  for (const yr of years) {
-    const interest = yearlyData[yr].interest;
-    let val = interest;
-    if (isRentTaxIns) {
-      const rentAlone = Math.ceil(interest / 12);
-      val = Math.ceil(rentAlone + (annualTax / 12) + (annualIns / 12));
-    } else if (isRent) {
-      val = Math.ceil(interest / 12);
-    }
-    displayValues[yr] = val;
-    if (val > maxDisplayVal) {
-      maxDisplayVal = val;
-    }
-  }
-
-  if (maxDisplayVal <= 0) maxDisplayVal = 1;
-
-  const isMobile = window.innerWidth <= 768;
-  const minSize = isMobile ? 35 : 55;
-  const maxSize = isMobile ? 70 : 110;
-
-  years.forEach(yr => {
-    const interest = yearlyData[yr].interest;
-    const displayVal = displayValues[yr];
-    const ratio = displayVal / maxDisplayVal;
-    // Sqrt scale mapping for circle areas
-    const size = minSize + (maxSize - minSize) * Math.sqrt(ratio);
-    
-    const wrapper = document.createElement('div');
-    wrapper.className = 'wage-circle-wrapper';
-
-    const circle = document.createElement('div');
-    circle.className = 'wage-circle';
-    circle.style.width = `${size}px`;
-    circle.style.height = `${size}px`;
-    
-    const fontSize = Math.max(0.68, 0.95 * (size / maxSize));
-    circle.style.fontSize = `${fontSize}rem`;
-
-    if (isRentTaxIns) {
-      const rentAlone = Math.ceil(interest / 12);
-      circle.innerHTML = `
-        <span class="wage-circle-default-val">${formatCurrency(displayVal)}</span>
-        <div class="wage-circle-hover-val">
-          <span class="breakdown-rent">${formatCurrency(rentAlone)}</span>
-          <span class="breakdown-tax">+${formatCurrency(Math.ceil(annualTax/12))}</span>
-          <span class="breakdown-ins">+${formatCurrency(Math.ceil(annualIns/12))}</span>
-        </div>
-      `;
-      circle.title = `Year: ${yr}\nRent + Tax & Insurance: ${formatCurrency(displayVal)}/Month\n(Rent: ${formatCurrency(rentAlone)} + Tax: ${formatCurrency(Math.ceil(annualTax/12))} + Insurance: ${formatCurrency(Math.ceil(annualIns/12))})`;
-    } else if (isRent) {
-      circle.innerHTML = `<span class="wage-circle-value">${formatCurrency(displayVal)}</span>`;
-      circle.title = `Year: ${yr}\nRent Equivalent: ${formatCurrency(displayVal)}/Month`;
-    } else {
-      circle.innerHTML = `<span class="wage-circle-value">${formatCurrency(displayVal)}</span>`;
-      circle.title = `Year: ${yr}\nInterest: ${formatCurrency(displayVal)}`;
-    }
-
-    const yearLbl = document.createElement('div');
-    yearLbl.className = 'wage-circle-year';
-    yearLbl.textContent = String(yr);
-
-    wrapper.appendChild(circle);
-    wrapper.appendChild(yearLbl);
-    container.appendChild(wrapper);
-  });
-};
-
-const renderMilestonesUI = (milestones: Milestone[]) => {
-  const container = els.containers.milestoneTimeline;
-  if (!container) return;
-  
-  const currentScrollLeft = container.scrollLeft;
-  
-  if (milestones.length === 0) {
-    container.innerHTML = '<div style="padding: 20px; font-weight: 600; opacity: 0.7; text-align: center; width: 100%;">No milestone data available yet. Please complete calculation.</div>';
-    return;
-  }
-  
-  let html = '';
-  milestones.forEach(m => {
-    const badgeClass = m.isBaseline ? 'roadmap-node-badge baseline' : 'roadmap-node-badge';
-    const badgeLabel = m.badge || 'BASELINE SCHEDULE';
-    
-    html += `
-      <div class="roadmap-node squishy-interactive" id="node-${m.id}">
-        <div class="roadmap-node-header">
-          <span class="${badgeClass}">${badgeLabel}</span>
-          <span style="font-size: 0.72rem; opacity: 0.6; font-weight: 700;">${m.period}</span>
-        </div>
-        <h4 class="roadmap-node-title">${m.title}</h4>
-        <div class="roadmap-node-date">${m.date}</div>
-        <div class="roadmap-node-desc">${m.desc}</div>
-        <div class="roadmap-node-sowhat">${m.sowhat}</div>
-      </div>
-    `;
-  });
-  
-  container.innerHTML = html;
-  container.scrollLeft = currentScrollLeft;
-};
-
-const syncStateCardOrderFromDOM = () => {
-  const chartsContainer = document.getElementById('draggable-charts-container');
-  if (chartsContainer) {
-    state.chartsOrder = Array.from(chartsContainer.children)
-      .map(child => {
-        const chartDiv = child.querySelector('.plotly-container');
-        return chartDiv ? chartDiv.id : null;
-      })
-      .filter(id => id !== null);
-  }
-  
-  const strategyContainer = document.getElementById('draggable-strategy-container');
-  if (strategyContainer) {
-    state.strategyOrder = Array.from(strategyContainer.children)
-      .map(child => {
-        const chartDiv = child.querySelector('.plotly-container');
-        return chartDiv ? chartDiv.id : null;
-      })
-      .filter(id => id !== null);
-  }
-};
-
-const applyStateCardOrderToDOM = () => {
-  const chartsContainer = document.getElementById('draggable-charts-container');
-  if (chartsContainer && state.chartsOrder && state.chartsOrder.length > 0) {
-    const wrappers = Array.from(chartsContainer.children);
-    const wrapperMap: Record<string, Element> = {};
-    wrappers.forEach(wrapper => {
-      const chartDiv = wrapper.querySelector('.plotly-container');
-      if (chartDiv && chartDiv.id) {
-        wrapperMap[chartDiv.id] = wrapper;
-      }
-    });
-    
-    state.chartsOrder.forEach(id => {
-      if (id && wrapperMap[id]) {
-        chartsContainer.appendChild(wrapperMap[id]);
-      }
-    });
-  }
-  
-  const strategyContainer = document.getElementById('draggable-strategy-container');
-  if (strategyContainer && state.strategyOrder && state.strategyOrder.length > 0) {
-    const wrappers = Array.from(strategyContainer.children);
-    const wrapperMap: Record<string, Element> = {};
-    wrappers.forEach(wrapper => {
-      const chartDiv = wrapper.querySelector('.plotly-container');
-      if (chartDiv && chartDiv.id) {
-        wrapperMap[chartDiv.id] = wrapper;
-      }
-    });
-    
-    state.strategyOrder.forEach(id => {
-      if (id && wrapperMap[id]) {
-        strategyContainer.appendChild(wrapperMap[id]);
-      }
-    });
-  }
-};
 
 // Central calculation execution pipeline
 const calculate = (e?: Event) => {
@@ -497,7 +157,7 @@ const calculate = (e?: Event) => {
   }
   if (inputs.rateShockEnabled) {
     if (els.containers.rateShockSection) els.containers.rateShockSection.style.display = 'block';
-    syncRateShockTimeline();
+    syncRateShockTimeline(state, els, calculate);
   } else if (els.containers.rateShockSection) {
     els.containers.rateShockSection.style.display = 'none';
   }
@@ -536,8 +196,8 @@ const calculate = (e?: Event) => {
       annualRate: parseFloat(compProfile.inputs.rate) || 0,
       amortizationYears: parseFloat(compProfile.inputs.amortization) || 0,
       termYears: parseFloat(compProfile.inputs.term) || 0,
-      compounding: compProfile.inputs.compounding,
-      frequency: compProfile.inputs.frequency,
+      compounding: compProfile.inputs.compounding as 'semi' | 'monthly',
+      frequency: compProfile.inputs.frequency as Inputs['frequency'],
       usePiti: isCompMortgage && compProfile.inputs.pitiToggle === true,
       taxRate: isCompMortgage && compProfile.inputs.pitiToggle === true ? (parseFloat(compProfile.inputs.tax) || 0) : 0,
       insRate: isCompMortgage && compProfile.inputs.pitiToggle === true ? (parseFloat(compProfile.inputs.ins) || 0) : 0,
@@ -586,13 +246,13 @@ const calculate = (e?: Event) => {
   updateTable(actData.schedule, (isMortgage && inputs.usePiti), state.labelFormat, els.containers.escrowTh, compData ? compData.schedule : null);
 
   const milestones = calculateMilestones(baseData, actData, inputs, state.currentMode);
-  renderMilestonesUI(milestones);
+  renderMilestonesUI(els, milestones);
 
   lastActData = actData;
   lastBaseData = baseData;
-  renderBankWages(actData);
+  renderBankWages(state, els, actData);
 
-  syncStateCardOrderFromDOM();
+  syncStateCardOrderFromDOM(state);
   saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
 };
 
@@ -612,7 +272,7 @@ const handleProfileSwitch = (profileId: string) => {
         if (el.type === 'checkbox') {
           el.checked = val === true || val === 'true';
         } else {
-          el.value = val;
+          el.value = typeof val === 'string' ? val : (val !== undefined ? String(val) : '');
         }
       }
     });
@@ -696,7 +356,7 @@ const resetApplicationData = () => {
 
   const defaultId = 'profile-default';
   state.profiles = {};
-  state.profiles[defaultId] = {
+  state.profiles[defaultId] = sanitizeProfile({
     id: defaultId,
     name: '30-Year Baseline',
     currentMode: 'mortgage',
@@ -705,8 +365,8 @@ const resetApplicationData = () => {
     termRates: {},
     customizedYears: {},
     bankWagesView: 'wages',
-    inputs: Object.assign({}, DEFAULT_INPUTS)
-  };
+    inputs: DEFAULT_INPUTS
+  }, DEFAULT_INPUTS)!;
   state.activeProfileId = defaultId;
 
   const sidebar = document.getElementById('scenarioSidebar');
@@ -784,25 +444,7 @@ const setupComplexityToggle = () => {
   });
 };
 
-const setupBankWagesToggle = () => {
-  const container = document.getElementById('bankWagesToggle');
-  if (!container) return;
-  const buttons = container.querySelectorAll('.wage-toggle-btn');
-  buttons.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const view = (e.currentTarget as HTMLElement).getAttribute('data-view') as AppState['bankWagesView'];
-      if (state.bankWagesView === view) return;
-      
-      state.bankWagesView = view;
-      buttons.forEach(b => b.classList.toggle('active', b.getAttribute('data-view') === view));
-      
-      if (lastActData) {
-        renderBankWages(lastActData);
-      }
-      saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
-    });
-  });
-};
+
 
 const setupChartExpandButtons = () => {
   const container = document.getElementById('draggable-charts-container');
@@ -897,261 +539,7 @@ const setupExpandCollapseAllChartsButtons = () => {
   });
 };
 
-const setupBlueprintSync = () => {
-  const formatBtns = document.querySelectorAll('.format-btn');
-  const passcodeWrapper = document.getElementById('passcodeWrapper');
-  const passcodeInput = document.getElementById('blueprintPasscode') as HTMLInputElement | null;
-  const exportBtn = document.getElementById('exportBlueprintBtn');
-  const fileInput = document.getElementById('blueprintFileInput') as HTMLInputElement | null;
-  const dropzone = document.getElementById('blueprintDropzone');
-  const feedback = document.getElementById('dropzoneFeedback');
-  let activeFormat = 'plain';
 
-  if (!passcodeWrapper || !passcodeInput || !exportBtn || !fileInput || !dropzone || !feedback) return;
-
-  formatBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      formatBtns.forEach(b => b.classList.remove('active'));
-      const btnEl = e.target as HTMLElement;
-      btnEl.classList.add('active');
-      activeFormat = btnEl.getAttribute('data-format') || 'plain';
-      
-      if (activeFormat === 'encrypted') {
-        passcodeWrapper.classList.add('active');
-      } else {
-        passcodeWrapper.classList.remove('active');
-        passcodeInput.value = '';
-      }
-    });
-  });
-
-  const showFeedback = (text: string, isError = false) => {
-    feedback.textContent = text;
-    feedback.style.display = 'block';
-    feedback.style.color = isError ? 'var(--danger-color)' : '#10b981';
-    if (isError) {
-      dropzone.style.borderColor = 'var(--danger-color)';
-      gsap.fromTo(dropzone, { x: -6 }, { x: 0, duration: 0.1, repeat: 5, yoyo: true });
-    } else {
-      dropzone.style.borderColor = '#10b981';
-      gsap.fromTo(dropzone, { scale: 0.98 }, { scale: 1, duration: 0.5, ease: 'elastic.out(1.5)' });
-    }
-    
-    setTimeout(() => {
-      feedback.style.display = 'none';
-      dropzone.style.borderColor = '';
-    }, 4500);
-  };
-
-  exportBtn.addEventListener('click', async () => {
-    saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
-    const data = localStorage.getItem('mtg_calculator_settings');
-    if (!data) {
-      showFeedback('No settings found to export! Please calculate first.', true);
-      return;
-    }
-
-    let outputText = data;
-    let filename = 'mtg_strategy_blueprint.json';
-
-    if (activeFormat === 'encrypted') {
-      const passcode = passcodeInput.value.trim();
-      if (!passcode) {
-        showFeedback('Passcode is required for encryption!', true);
-        passcodeInput.focus();
-        return;
-      }
-      try {
-        exportBtn.setAttribute('disabled', 'true');
-        exportBtn.textContent = 'Encrypting...';
-        // Run cryptography locally
-        outputText = await encryptData(data, passcode);
-        filename = 'mtg_strategy_blueprint.enc.json';
-      } catch (err) {
-        console.error(err);
-        showFeedback('Encryption failed!', true);
-        return;
-      } finally {
-        exportBtn.removeAttribute('disabled');
-        exportBtn.innerHTML = '<span>📤</span> Export Strategy Blueprint';
-      }
-    }
-
-    const blob = new Blob([outputText], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    // Clear passcode field after export completes
-    passcodeInput.value = '';
-  });
-
-  dropzone.addEventListener('click', () => {
-    fileInput.click();
-  });
-  dropzone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    dropzone.classList.add('drag-over');
-  });
-  dropzone.addEventListener('dragleave', () => {
-    dropzone.classList.remove('drag-over');
-  });
-  dropzone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    dropzone.classList.remove('drag-over');
-    if (e.dataTransfer) {
-      const file = e.dataTransfer.files[0];
-      if (file) handleFileImport(file);
-    }
-  });
-  fileInput.addEventListener('change', (e) => {
-    const file = (e.target as HTMLInputElement).files?.[0];
-    if (file) handleFileImport(file);
-    fileInput.value = '';
-  });
-
-  const handleFileImport = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const rawText = (e.target?.result as string || '').trim();
-      let parsedSettings: unknown;
-
-      if (rawText.startsWith('{')) {
-        try {
-          parsedSettings = JSON.parse(rawText);
-        } catch {
-          showFeedback('Corrupted or invalid JSON file!', true);
-          return;
-        }
-      } else {
-        const passcode = passcodeInput.value.trim();
-        if (!passcode) {
-          showFeedback('Encrypted file detected! Enter passcode below to unlock.', true);
-          passcodeWrapper.classList.add('active');
-          formatBtns.forEach(b => b.classList.remove('active'));
-          const encBtn = document.querySelector('.format-btn[data-format="encrypted"]');
-          if (encBtn) encBtn.classList.add('active');
-          activeFormat = 'encrypted';
-          passcodeInput.focus();
-          return;
-        }
-        
-        try {
-          const decryptedText = await decryptData(rawText, passcode);
-          parsedSettings = JSON.parse(decryptedText);
-        } catch (err) {
-          console.error(err);
-          showFeedback('Incorrect passcode or corrupted file!', true);
-          return;
-        }
-      }
-
-      const settingsObj = parsedSettings as Record<string, unknown> | null | undefined;
-      const isValidV2 = settingsObj && settingsObj.profiles && typeof settingsObj.profiles === 'object' && settingsObj.activeProfileId;
-      const isValidV1 = settingsObj && settingsObj.currentMode && settingsObj.inputs && typeof settingsObj.inputs === 'object';
-      
-      if (!isValidV2 && !isValidV1) {
-        showFeedback('Invalid Strategy Blueprint file structure!', true);
-        return;
-      }
-
-      try {
-        localStorage.setItem('mtg_calculator_settings', JSON.stringify(parsedSettings));
-        loadSettingsFromStorage(state, DEFAULT_INPUTS);
-        handleProfileSwitch(state.activeProfileId as string);
-        showFeedback('Strategy Blueprint Restored Successfully! 🎉');
-        passcodeInput.value = ''; // Clear passcode field after successful import
-      } catch (err) {
-        console.error(err);
-        showFeedback('Restoration failed!', true);
-      }
-    };
-    reader.readAsText(file);
-  };
-};
-
-const setupSettingsMenu = () => {
-  const dropdown = document.getElementById('settings-dropdown');
-  const trigger = document.getElementById('settingsTrigger');
-  
-  const optSync = document.getElementById('settingsOptSync');
-  const optLimits = document.getElementById('settingsOptLimits');
-  const optReset = document.getElementById('settingsOptReset');
-  
-  const syncModal = document.getElementById('syncModal');
-  const limitsModal = document.getElementById('limitsModal');
-  
-  const closeSyncBtn = document.getElementById('closeSyncModalBtn');
-  const closeLimitsBtn = document.getElementById('closeLimitsModalBtn');
-
-  if (!dropdown || !trigger || !optSync || !optLimits || !optReset || !syncModal || !limitsModal || !closeSyncBtn || !closeLimitsBtn) return;
-
-  trigger.addEventListener('click', (e) => {
-    e.stopPropagation();
-    dropdown.classList.toggle('active');
-  });
-
-  dropdown.addEventListener('click', (e) => {
-    const countryDropdown = document.getElementById('country-dropdown');
-    if (countryDropdown && !countryDropdown.contains(e.target as Node)) {
-      countryDropdown.classList.remove('active');
-    }
-    e.stopPropagation();
-  });
-
-  document.addEventListener('click', () => {
-    dropdown.classList.remove('active');
-    const countryDropdown = document.getElementById('country-dropdown');
-    if (countryDropdown) {
-      countryDropdown.classList.remove('active');
-    }
-  });
-
-  optSync.addEventListener('click', () => {
-    dropdown.classList.remove('active');
-    syncModal.classList.add('active');
-    gsap.fromTo('#syncModal .modal-card', { scale: 0.9, y: 20 }, { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' });
-  });
-
-  closeSyncBtn.addEventListener('click', () => {
-    syncModal.classList.remove('active');
-  });
-
-  optLimits.addEventListener('click', () => {
-    dropdown.classList.remove('active');
-    limitsModal.classList.add('active');
-    gsap.fromTo('#limitsModal .modal-card', { scale: 0.9, y: 20 }, { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' });
-  });
-
-  closeLimitsBtn.addEventListener('click', () => {
-    limitsModal.classList.remove('active');
-  });
-
-  window.addEventListener('click', (e) => {
-    if (e.target === syncModal) {
-      syncModal.classList.remove('active');
-    }
-    if (e.target === limitsModal) {
-      limitsModal.classList.remove('active');
-    }
-  });
-
-  optReset.addEventListener('click', () => {
-    dropdown.classList.remove('active');
-    const confirmWipe = confirm(
-      '⚠️ WARNING: Reset Application Data\n\nAre you sure you want to clear all customized data, calculations, and visual grid layouts?\nThis will permanently delete your local session backup and restore everything to default start choices.'
-    );
-    if (confirmWipe) {
-      resetApplicationData();
-      alert('Calculator successfully reset to system defaults! 🎉');
-    }
-  });
-};
 
 const setupLimitsToggle = () => {
   const toggleLimitsBtn = document.getElementById('toggleLimitsBtn');
@@ -1174,7 +562,7 @@ const setupLimitsToggle = () => {
 
 const bootApp = () => {
   loadSettingsFromStorage(state, DEFAULT_INPUTS);
-  applyStateCardOrderToDOM();
+  applyStateCardOrderToDOM(state);
 
   // Prefill initial start date if empty
   if (els.inputs.date && !els.inputs.date.value) {
@@ -1280,13 +668,14 @@ const bootApp = () => {
   });
 
   // Reset Form btn handler
-  document.getElementById('clearBtn')?.addEventListener('click', () => {
-    const confirmWipe = confirm(
-      '⚠️ WARNING: Reset Sidebar Form\n\nAre you sure you want to clear all customized data, calculations, and restore the calculator to default start choices?'
+  document.getElementById('clearBtn')?.addEventListener('click', async () => {
+    const confirmWipe = await showConfirmModal(
+      'Reset Sidebar Form',
+      'Are you sure you want to clear all customized data, calculations, and restore the calculator to default start choices?'
     );
     if (confirmWipe) {
       resetApplicationData();
-      alert('Calculator successfully reset to defaults! 🎉');
+      await showAlertModal('Success', 'Calculator successfully reset to defaults! 🎉');
     }
   });
 
@@ -1323,7 +712,7 @@ const bootApp = () => {
     resizeTimer = setTimeout(() => {
       clearVisibleChartsCache();
       calculate();
-    }, 150);
+    }, RESIZE_DEBOUNCE_MS);
   });
 
   // Boot components
@@ -1342,13 +731,13 @@ const bootApp = () => {
     };
   });
   setupComplexityToggle();
-  setupBankWagesToggle();
+  setupBankWagesToggle(state, els, () => lastActData, () => saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false));
   setupLimitsToggle();
   setupCustomDropdown(() => {
     calculate();
   });
-  setupBlueprintSync();
-  setupSettingsMenu();
+  setupBlueprintSync(state, els, DEFAULT_INPUTS, saveSettingsToStorage, loadSettingsFromStorage, encryptData, decryptData, handleProfileSwitch);
+  setupSettingsMenu(resetApplicationData);
   setupScenarioSandbox(
     state, 
     DEFAULT_INPUTS, 

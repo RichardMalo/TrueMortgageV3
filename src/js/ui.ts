@@ -1,6 +1,7 @@
 import gsap from 'gsap';
 import { AppState, Inputs, ScheduleResult, ScheduleRow } from './types.js';
 import { getCalculationsInputs } from './form.js';
+import { MOBILE_BREAKPOINT } from './constants.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let html2pdfInstance: any = null;
@@ -89,14 +90,14 @@ export const adjustTooltip = (tip: HTMLElement, active: boolean) => {
   }
 
   if (offset !== 0) {
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
     const defaultTranslateX = isMobile ? '-40%' : '-50%';
     const defaultArrowLeft = isMobile ? '40%' : '50%';
     
     tooltip.style.transform = `translateX(calc(${defaultTranslateX} + ${offset}px)) translateY(0)`;
     tooltip.style.setProperty('--arrow-left', `calc(${defaultArrowLeft} - ${offset}px)`);
   } else {
-    const isMobile = window.innerWidth < 768;
+    const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
     const defaultTranslateX = isMobile ? '-40%' : '-50%';
     tooltip.style.transform = `translateX(${defaultTranslateX}) translateY(0)`;
   }
@@ -680,60 +681,97 @@ export const setupShareFunctionality = (
       const descEl = nativeBtn.querySelector('.option-desc');
       if (descEl) descEl.textContent = 'Not supported in this browser';
     }
-  }
-
-  const getInputs = (): Inputs => {
+  }  const getInputs = (): Inputs => {
     return getCalculationsInputs(state.currentMode, els.inputs, state.termRates);
+  };
+
+  const generatePdfBlobOrSave = async (
+    statusEl: HTMLElement | null,
+    action: 'save' | 'blob'
+  ): Promise<{ blob?: Blob; filename: string; modeName: string } | null> => {
+    const isMortgage = state.currentMode === 'mortgage';
+    const inputs = getInputs();
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.textContent = action === 'save' ? 'Generating PDF... Please wait.' : 'Preparing file to share...';
+    }
+
+    const { actualData, baseData } = getLatestSchedules();
+    const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData);
+    const tempContainer = document.createElement('div');
+    tempContainer.style.position = 'absolute';
+    tempContainer.style.left = '-9999px';
+    tempContainer.style.top = '-9999px';
+    tempContainer.innerHTML = reportHtml;
+    document.body.appendChild(tempContainer);
+
+    const modeName = isMortgage ? 'Mortgage' : 'CreditCard';
+    const filename = `Debt_Strategy_Report_${modeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    const opt = {
+      margin: [10, 10, 10, 10],
+      filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, letterRendering: true },
+      jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
+    };
+
+    try {
+      const html2pdf = await loadHtml2Pdf();
+      const worker = html2pdf().from(tempContainer.firstElementChild).set(opt);
+      
+      if (action === 'save') {
+        await worker.save();
+        document.body.removeChild(tempContainer);
+        return { filename, modeName };
+      } else {
+        const blob = await worker.output('blob');
+        document.body.removeChild(tempContainer);
+        return { blob, filename, modeName };
+      }
+    } catch (err: unknown) {
+      console.error(err);
+      if (statusEl) statusEl.textContent = 'Error generating PDF.';
+      if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+      return null;
+    }
+  };
+
+  const getReportSummaryText = (formatMarkdown: boolean): string => {
+    const isMortgage = state.currentMode === 'mortgage';
+    const modeText = isMortgage ? 'Mortgage' : 'Credit Card';
+    const balance = els.results.mortgageDisplay?.textContent || '$0';
+    const payoff = els.results.paidOffIn?.textContent || '0';
+    const saved = els.results.saved?.textContent || '$0';
+    const actualLifetime = els.results.actualLifetimePaidValue?.textContent || '$0';
+
+    if (formatMarkdown) {
+      return `*Debt Elimination Engine Report*\n\n` +
+             `*Type:* ${modeText}\n` +
+             `*Original Debt:* ${balance}\n` +
+             `*Actual Payoff Time:* ${payoff}\n` +
+             `*Interest Saved:* ${saved}\n` +
+             `*Total Lifetime Paid:* ${actualLifetime}\n\n` +
+             `Calculated using the Debt Elimination Engine. Optimize your strategy!`;
+    } else {
+      return `Debt Elimination Engine Report\n\n` +
+             `Type: ${modeText}\n` +
+             `Original Debt: ${balance}\n` +
+             `Actual Payoff Time: ${payoff}\n` +
+             `Interest Saved: ${saved}\n` +
+             `Total Lifetime Paid: ${actualLifetime}\n\n` +
+             `Calculated using the Debt Elimination Engine.`;
+    }
   };
 
   const downloadPdfBtn = document.getElementById('downloadPdfOption');
   if (downloadPdfBtn) {
     downloadPdfBtn.addEventListener('click', () => {
-      const isMortgage = state.currentMode === 'mortgage';
-      const inputs = getInputs();
       const statusEl = document.getElementById('shareStatus');
-      if (statusEl) {
-        statusEl.style.display = 'block';
-        statusEl.textContent = 'Generating PDF... Please wait.';
-      }
-
-      const { actualData, baseData } = getLatestSchedules();
-      const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData);
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '-9999px';
-      tempContainer.innerHTML = reportHtml;
-      document.body.appendChild(tempContainer);
-
-      const modeName = isMortgage ? 'Mortgage' : 'CreditCard';
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `Debt_Strategy_Report_${modeName}_${new Date().toISOString().slice(0,10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
-      };
-
-      loadHtml2Pdf().then((
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        html2pdf: any
-      ) => {
-        html2pdf().from(tempContainer.firstElementChild).set(opt).save().then(() => {
-          document.body.removeChild(tempContainer);
-          if (statusEl) {
-            statusEl.textContent = 'PDF downloaded successfully!';
-            setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-          }
-        }).catch((err: unknown) => {
-          console.error(err);
-          if (statusEl) statusEl.textContent = 'Error generating PDF.';
-          if (tempContainer.parentNode) document.body.removeChild(tempContainer);
-        });
-      }).catch((err: unknown) => {
-        console.error('Failed to load html2pdf:', err);
-        if (statusEl) statusEl.textContent = 'Error loading PDF generator.';
-        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+      generatePdfBlobOrSave(statusEl, 'save').then((res) => {
+        if (res && statusEl) {
+          statusEl.textContent = 'PDF downloaded successfully!';
+          setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+        }
       });
     });
   }
@@ -741,80 +779,41 @@ export const setupShareFunctionality = (
   const nativeShareBtn = document.getElementById('nativeShareOption');
   if (nativeShareBtn) {
     nativeShareBtn.addEventListener('click', () => {
-      const isMortgage = state.currentMode === 'mortgage';
-      const inputs = getInputs();
       const statusEl = document.getElementById('shareStatus');
-      if (statusEl) {
-        statusEl.style.display = 'block';
-        statusEl.textContent = 'Preparing file to share...';
-      }
-
-      const { actualData, baseData } = getLatestSchedules();
-      const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData);
-      const tempContainer = document.createElement('div');
-      tempContainer.style.position = 'absolute';
-      tempContainer.style.left = '-9999px';
-      tempContainer.style.top = '-9999px';
-      tempContainer.innerHTML = reportHtml;
-      document.body.appendChild(tempContainer);
-
-      const modeName = isMortgage ? 'Mortgage' : 'CreditCard';
-      const opt = {
-        margin: [10, 10, 10, 10],
-        filename: `Debt_Strategy_Report_${modeName}_${new Date().toISOString().slice(0,10)}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, letterRendering: true },
-        jsPDF: { unit: 'mm', format: 'letter', orientation: 'portrait' }
-      };
-
-      loadHtml2Pdf().then((
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        html2pdf: any
-      ) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        html2pdf().from(tempContainer.firstElementChild).set(opt).output('blob').then((blob: any) => {
-          document.body.removeChild(tempContainer);
-          const file = new File([blob], opt.filename, { type: 'application/pdf' });
-          
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            if (statusEl) statusEl.textContent = 'Opening share sheet...';
-            navigator.share({
-              files: [file],
-              title: `My ${modeName} Debt Elimination Report`,
-              text: `Check out my customized debt strategy report generated by Debt Elimination Engine.`
-            }).then(() => {
-              if (statusEl) {
-                statusEl.textContent = 'Strategy shared successfully!';
-                setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
-              }
-            }).catch((err: unknown) => {
-              console.log('Share failed:', err);
-              if (statusEl) {
-                statusEl.textContent = 'Sharing canceled.';
-                setTimeout(() => { statusEl.style.display = 'none'; }, 2000);
-              }
-            });
-          } else {
-            if (statusEl) statusEl.textContent = 'System share not supported. Downloading instead...';
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = opt.filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-            setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
-          }
-        }).catch((err: unknown) => {
-          console.error(err);
-          if (statusEl) statusEl.textContent = 'Error preparing file.';
-          if (tempContainer.parentNode) document.body.removeChild(tempContainer);
-        });
-      }).catch((err: unknown) => {
-        console.error('Failed to load html2pdf:', err);
-        if (statusEl) statusEl.textContent = 'Error loading PDF generator.';
-        if (tempContainer.parentNode) document.body.removeChild(tempContainer);
+      generatePdfBlobOrSave(statusEl, 'blob').then((res) => {
+        if (!res || !res.blob) return;
+        const file = new File([res.blob], res.filename, { type: 'application/pdf' });
+        
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          if (statusEl) statusEl.textContent = 'Opening share sheet...';
+          navigator.share({
+            files: [file],
+            title: `My ${res.modeName} Debt Elimination Report`,
+            text: `Check out my customized debt strategy report generated by Debt Elimination Engine.`
+          }).then(() => {
+            if (statusEl) {
+              statusEl.textContent = 'Strategy shared successfully!';
+              setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+            }
+          }).catch((err: unknown) => {
+            console.log('Share failed:', err);
+            if (statusEl) {
+              statusEl.textContent = 'Sharing canceled.';
+              setTimeout(() => { statusEl.style.display = 'none'; }, 2000);
+            }
+          });
+        } else {
+          if (statusEl) statusEl.textContent = 'System share not supported. Downloading instead...';
+          const url = URL.createObjectURL(res.blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = res.filename;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          setTimeout(() => { if (statusEl) statusEl.style.display = 'none'; }, 3000);
+        }
       });
     });
   }
@@ -822,20 +821,7 @@ export const setupShareFunctionality = (
   const whatsappBtn = document.getElementById('whatsappOption');
   if (whatsappBtn) {
     whatsappBtn.addEventListener('click', () => {
-      const isMortgage = state.currentMode === 'mortgage';
-      const modeText = isMortgage ? 'Mortgage' : 'Credit Card';
-      const balance = els.results.mortgageDisplay?.textContent || '$0';
-      const payoff = els.results.paidOffIn?.textContent || '0';
-      const saved = els.results.saved?.textContent || '$0';
-      const actualLifetime = els.results.actualLifetimePaidValue?.textContent || '$0';
-      const text = `*Debt Elimination Engine Report*\n\n` +
-                   `*Type:* ${modeText}\n` +
-                   `*Original Debt:* ${balance}\n` +
-                   `*Actual Payoff Time:* ${payoff}\n` +
-                   `*Interest Saved:* ${saved}\n` +
-                   `*Total Lifetime Paid:* ${actualLifetime}\n\n` +
-                   `Calculated using the Debt Elimination Engine. Optimize your strategy!`;
-      
+      const text = getReportSummaryText(true);
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
       window.open(url, '_blank');
     });
@@ -844,20 +830,7 @@ export const setupShareFunctionality = (
   const copyTextBtn = document.getElementById('copyTextOption');
   if (copyTextBtn) {
     copyTextBtn.addEventListener('click', () => {
-      const isMortgage = state.currentMode === 'mortgage';
-      const modeText = isMortgage ? 'Mortgage' : 'Credit Card';
-      const balance = els.results.mortgageDisplay?.textContent || '$0';
-      const payoff = els.results.paidOffIn?.textContent || '0';
-      const saved = els.results.saved?.textContent || '$0';
-      const actualLifetime = els.results.actualLifetimePaidValue?.textContent || '$0';
-      const text = `Debt Elimination Engine Report\n\n` +
-                   `Type: ${modeText}\n` +
-                   `Original Debt: ${balance}\n` +
-                   `Actual Payoff Time: ${payoff}\n` +
-                   `Interest Saved: ${saved}\n` +
-                   `Total Lifetime Paid: ${actualLifetime}\n\n` +
-                   `Calculated using the Debt Elimination Engine.`;
-                    
+      const text = getReportSummaryText(false);
       const statusEl = document.getElementById('shareStatus');
       if (statusEl) {
         statusEl.style.display = 'block';
@@ -874,5 +847,182 @@ export const setupShareFunctionality = (
       });
     });
   }
+};
+
+export const showConfirmModal = (title: string, message: string): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'custom-modal-backdrop';
+    
+    const container = document.createElement('div');
+    container.className = 'custom-modal-container';
+    container.setAttribute('role', 'dialog');
+    container.setAttribute('aria-modal', 'true');
+    
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'custom-modal-title';
+    titleEl.textContent = title;
+    
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'custom-modal-body';
+    bodyEl.textContent = message;
+    
+    const footer = document.createElement('div');
+    footer.className = 'custom-modal-footer';
+    
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'custom-modal-btn custom-modal-btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+    
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'custom-modal-btn custom-modal-btn-confirm';
+    confirmBtn.textContent = 'Confirm';
+    
+    footer.appendChild(cancelBtn);
+    footer.appendChild(confirmBtn);
+    
+    container.appendChild(titleEl);
+    container.appendChild(bodyEl);
+    container.appendChild(footer);
+    backdrop.appendChild(container);
+    document.body.appendChild(backdrop);
+    
+    // Save previous focus
+    const previousFocus = document.activeElement as HTMLElement | null;
+    
+    // Force browser reflow to enable transition
+    backdrop.getBoundingClientRect();
+    backdrop.classList.add('active');
+    
+    // Focus the cancel button by default (safer default)
+    cancelBtn.focus();
+    
+    const cleanup = (result: boolean) => {
+      backdrop.classList.remove('active');
+      setTimeout(() => {
+        if (document.body.contains(backdrop)) {
+          document.body.removeChild(backdrop);
+        }
+        if (previousFocus && typeof previousFocus.focus === 'function') {
+          previousFocus.focus();
+        }
+        resolve(result);
+      }, 200); // match transition duration
+      
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        cleanup(false);
+      } else if (e.key === 'Tab') {
+        // Trap focus
+        const focusables = [cancelBtn, confirmBtn];
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            last.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === last) {
+            first.focus();
+            e.preventDefault();
+          }
+        }
+      }
+    };
+    
+    cancelBtn.addEventListener('click', () => cleanup(false));
+    confirmBtn.addEventListener('click', () => cleanup(true));
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        cleanup(false);
+      }
+    });
+    
+    document.addEventListener('keydown', handleKeyDown);
+  });
+};
+
+export const showAlertModal = (title: string, message: string): Promise<void> => {
+  return new Promise((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'custom-modal-backdrop';
+    
+    const container = document.createElement('div');
+    container.className = 'custom-modal-container';
+    container.setAttribute('role', 'dialog');
+    container.setAttribute('aria-modal', 'true');
+    
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'custom-modal-title';
+    titleEl.textContent = title;
+    
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'custom-modal-body';
+    bodyEl.textContent = message;
+    
+    const footer = document.createElement('div');
+    footer.className = 'custom-modal-footer';
+    
+    const okBtn = document.createElement('button');
+    okBtn.type = 'button';
+    okBtn.className = 'custom-modal-btn custom-modal-btn-alert-ok';
+    okBtn.textContent = 'OK';
+    
+    footer.appendChild(okBtn);
+    
+    container.appendChild(titleEl);
+    container.appendChild(bodyEl);
+    container.appendChild(footer);
+    backdrop.appendChild(container);
+    document.body.appendChild(backdrop);
+    
+    const previousFocus = document.activeElement as HTMLElement | null;
+    
+    backdrop.getBoundingClientRect();
+    backdrop.classList.add('active');
+    
+    okBtn.focus();
+    
+    const cleanup = () => {
+      backdrop.classList.remove('active');
+      setTimeout(() => {
+        if (document.body.contains(backdrop)) {
+          document.body.removeChild(backdrop);
+        }
+        if (previousFocus && typeof previousFocus.focus === 'function') {
+          previousFocus.focus();
+        }
+        resolve();
+      }, 200);
+      
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+    
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter') {
+        e.preventDefault();
+        cleanup();
+      } else if (e.key === 'Tab') {
+        e.preventDefault(); // Only one button, prevent losing focus
+        okBtn.focus();
+      }
+    };
+    
+    okBtn.addEventListener('click', () => cleanup());
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) {
+        cleanup();
+      }
+    });
+    
+    document.addEventListener('keydown', handleKeyDown);
+  });
 };
 

@@ -1,4 +1,5 @@
-import { AppState, Profile, Inputs } from './types.js';
+import { AppState, Profile, Inputs, ProfileInputs } from './types.js';
+import { PBKDF2_ITERATIONS, STORAGE_KEY } from './constants.js';
 
 export interface AppSettings {
   version: number;
@@ -36,7 +37,7 @@ export const encryptData = async (plainText: string, passcode: string): Promise<
     {
       name: 'PBKDF2',
       salt,
-      iterations: 100000,
+      iterations: PBKDF2_ITERATIONS,
       hash: 'SHA-256'
     },
     passwordKey,
@@ -92,7 +93,7 @@ export const decryptData = async (cipherTextBase64: string, passcode: string): P
       {
         name: 'PBKDF2',
         salt,
-        iterations: 100000,
+        iterations: PBKDF2_ITERATIONS,
         hash: 'SHA-256'
       },
       passwordKey,
@@ -130,7 +131,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     termRates: typeof p.termRates === 'object' && p.termRates ? (p.termRates as Record<number, number>) : {},
     customizedYears: typeof p.customizedYears === 'object' && p.customizedYears ? (p.customizedYears as Record<number, boolean>) : {},
     bankWagesView: ['wages', 'rent', 'rent-tax-ins'].includes(String(p.bankWagesView)) ? (p.bankWagesView as 'wages' | 'rent' | 'rent-tax-ins') : 'wages',
-    inputs: {}
+    inputs: {} as ProfileInputs
   };
   
   const sourceInputs = (p.inputs && typeof p.inputs === 'object' ? { ...p.inputs as Record<string, unknown> } : {}) as Record<string, unknown>;
@@ -254,7 +255,7 @@ export const saveSettingsToStorage = (
         termRates: JSON.parse(JSON.stringify(state.termRates || {})),
         customizedYears: JSON.parse(JSON.stringify(state.customizedYears || {})),
         bankWagesView: state.bankWagesView || 'wages',
-        inputs: {}
+        inputs: {} as ProfileInputs
       };
     }
 
@@ -296,7 +297,7 @@ export const saveSettingsToStorage = (
       strategyOrder: state.strategyOrder
     };
     
-    localStorage.setItem('mtg_calculator_settings', JSON.stringify(settings));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
   } catch (err) {
     console.error('Error saving settings to localStorage:', err);
   }
@@ -309,7 +310,7 @@ export const loadSettingsFromStorage = (
   const initializeDefaultState = () => {
     const defaultId = 'profile-default';
     state.profiles = {};
-    state.profiles[defaultId] = {
+    state.profiles[defaultId] = sanitizeProfile({
       id: defaultId,
       name: '30-Year Baseline',
       currentMode: 'mortgage',
@@ -318,8 +319,8 @@ export const loadSettingsFromStorage = (
       termRates: {},
       customizedYears: {},
       bankWagesView: 'wages',
-      inputs: Object.assign({}, defaultInputs)
-    };
+      inputs: defaultInputs
+    }, defaultInputs)!;
     state.activeProfileId = defaultId;
     state.comparisonProfileId = null;
     state.compareModeActive = false;
@@ -331,7 +332,7 @@ export const loadSettingsFromStorage = (
 
   let settings: AppSettings | null = null;
   try {
-    const data = localStorage.getItem('mtg_calculator_settings');
+    const data = localStorage.getItem(STORAGE_KEY);
     if (!data) {
       initializeDefaultState();
     } else {
@@ -420,7 +421,7 @@ export const loadSettingsFromStorage = (
     console.warn('State engine hydration halted. Emergency reset:', errMsg);
     initializeDefaultState();
     try {
-      localStorage.setItem('mtg_calculator_settings', JSON.stringify({
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
         version: CURRENT_ENGINE_VERSION,
         activeProfileId: state.activeProfileId,
         comparisonProfileId: state.comparisonProfileId,

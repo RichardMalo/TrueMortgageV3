@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateMortgageSchedule, generateCCSchedule, calculateMilestones } from '../src/js/math.js';
+import { generateMortgageSchedule, generateCCSchedule, calculateMilestones, getMonthlyPayment } from '../src/js/math.js';
 import { Inputs, Milestone } from '../src/js/types.js';
 
 describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
@@ -258,5 +258,116 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     // Payoff period extends beyond standard 300 months
     expect(result.summary.periodsToPayoff).toBeGreaterThan(300);
     expect(result.summary.periodsToPayoff).toBe(377);
+  });
+
+  it('should calculate getMonthlyPayment directly', () => {
+    // Zero interest rate
+    expect(getMonthlyPayment(120000, 0, 12)).toBe(10000);
+    // Standard interest rate
+    expect(getMonthlyPayment(10000, 0.05, 12)).toBeCloseTo(1128.25, 1);
+  });
+
+  it('should calculate credit card payoffs with Quebec province minimums (5%)', () => {
+    const inputs: Inputs = {
+      homePrice: 0,
+      downPayment: 0,
+      ccBalance: 15000,
+      province: 'QC', // Quebec 5% minimums
+      annualRate: 19.99,
+      amortizationYears: 0,
+      termYears: 0,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateCCSchedule(inputs, false);
+    const firstRow = result.schedule[0];
+    expect(firstRow.payment).toBeCloseTo(750.00, 1); // 5% of 15000
+    expect(firstRow.interest).toBeCloseTo(251.90, 1);
+    expect(firstRow.principal).toBeCloseTo(498.10, 1);
+  });
+
+  it('should handle different payment frequencies (semi-monthly, bi-weekly, accelerated bi-weekly)', () => {
+    const baseInputs: Inputs = {
+      homePrice: 500000,
+      downPayment: 100000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.5,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'semi',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    // Semi-monthly
+    const semiMonthlyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'semi-monthly' }, false);
+    expect(semiMonthlyResult.summary.periodsPerYear).toBe(24);
+
+    // Bi-weekly
+    const biWeeklyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'bi-weekly' }, false);
+    expect(biWeeklyResult.summary.periodsPerYear).toBe(26);
+
+    // Accelerated bi-weekly
+    const accBiWeeklyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'accelerated-bi-weekly' }, false);
+    expect(accBiWeeklyResult.summary.periodsPerYear).toBe(26);
+    expect(accBiWeeklyResult.summary.periodsToPayoff).toBeLessThan(semiMonthlyResult.summary.periodsToPayoff);
+  });
+
+  it('should compute PMI and PITI escrow in mortgage schedule correctly', () => {
+    const inputs: Inputs = {
+      homePrice: 500000,
+      downPayment: 50000, // < 20% down, so PMI applies
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.5,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: true,
+      taxRate: 3000,
+      insRate: 1200,
+      hoaRate: 100,
+      pmiRate: 1.0, // 1% annual PMI
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    const firstRow = result.schedule[0];
+    
+    // Escrow = Tax (3000/12 = 250) + Ins (1200/12 = 100) + HOA (100) + PMI (450000 * 0.01 / 12 = 375) = 825
+    expect(firstRow.tax).toBeCloseTo(250, 1);
+    expect(firstRow.ins).toBeCloseTo(100, 1);
+    expect(firstRow.hoa).toBeCloseTo(100, 1);
+    expect(firstRow.pmi).toBeCloseTo(375, 1);
+    expect(firstRow.escrow).toBeCloseTo(825, 1);
   });
 });

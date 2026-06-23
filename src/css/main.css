@@ -1,5 +1,4 @@
-/* Core Typeface & Google Fonts Import */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+/* Core Typeface */
 
 /* CSS Box Model Normalization */
 *,
@@ -2125,4 +2124,109 @@ body:not(.dark-mode) .scenario-sidebar {
     transition-delay: 0s !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Custom Accessible Modal Styles */
+.custom-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000000;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.custom-modal-backdrop.active {
+  opacity: 1;
+}
+
+.custom-modal-container {
+  background-color: var(--card-bg, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  width: 90%;
+  max-width: 480px;
+  padding: 24px;
+  color: var(--text-color, #0f172a);
+  transform: scale(0.95);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.custom-modal-backdrop.active .custom-modal-container {
+  transform: scale(1);
+}
+
+.custom-modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.custom-modal-body {
+  font-size: 0.975rem;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+
+.custom-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.custom-modal-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.custom-modal-btn:focus-visible {
+  outline: 2px solid var(--accent-color, #10b981);
+  outline-offset: 2px;
+}
+
+.custom-modal-btn-cancel {
+  background-color: var(--input-bg, #f1f5f9);
+  color: var(--text-color, #0f172a);
+  border: 1px solid var(--border-color, #cbd5e1);
+}
+
+.custom-modal-btn-cancel:hover {
+  background-color: var(--border-color, #cbd5e1);
+}
+
+.custom-modal-btn-confirm {
+  background-color: var(--danger-color, #ef4444);
+  color: #ffffff;
+}
+
+.custom-modal-btn-confirm:hover {
+  filter: brightness(0.9);
+}
+
+.custom-modal-btn-alert-ok {
+  background-color: var(--primary-color, #2563eb);
+  color: #ffffff;
+}
+
+.custom-modal-btn-alert-ok:hover {
+  filter: brightness(0.9);
 }

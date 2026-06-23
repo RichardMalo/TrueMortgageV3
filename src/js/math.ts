@@ -1,4 +1,5 @@
 import { Inputs, ScheduleResult, ScheduleRow, Milestone } from './types.js';
+import { PMI_LTV_THRESHOLD, MAX_CC_PAYOFF_MONTHS, MIN_CC_PAYMENT } from './constants.js';
 
 export const getMonthlyPayment = (p: number, rate: number, n: number): number => {
   return rate === 0 ? p / n : p * (rate * Math.pow(1 + rate, n)) / (Math.pow(1 + rate, n) - 1);
@@ -44,7 +45,7 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
   const pTax = Math.max(0, inputs.taxRate || 0) / perYear;
   const pIns = Math.max(0, inputs.insRate || 0) / perYear;
   const pHOA = (Math.max(0, inputs.hoaRate || 0) * 12) / perYear;
-  const pmiDrop = safeHomePrice * 0.80;
+  const pmiDrop = safeHomePrice * PMI_LTV_THRESHOLD;
 
   let bal = principal;
   let totI = 0;
@@ -102,23 +103,7 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
     totEx += cExtra;
     totEsc += pEscrow;
 
-    let dLbl = `P${i}`;
-    let yLbl = (i / perYear);
-    let calendarYear = new Date().getFullYear() + Math.floor(i / perYear);
-
-    if (cDate) {
-      const d = new Date(cDate.getTime());
-      if (freq === 'monthly') {
-        d.setMonth(d.getMonth() + (i - 1));
-      } else if (freq === 'semi-monthly') {
-        d.setDate(d.getDate() + ((i - 1) * 15));
-      } else {
-        d.setDate(d.getDate() + ((i - 1) * 14));
-      }
-      dLbl = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      yLbl = d.getFullYear() + (d.getMonth() / 12) + (d.getDate() / 365);
-      calendarYear = d.getFullYear();
-    }
+    const { dateLabel: dLbl, yearVal: yLbl, calendarYear } = getRowDateLabel(cDate, i, freq, perYear, 'P');
 
     sched.push({
       period: i,
@@ -172,14 +157,14 @@ export const generateCCSchedule = (inputs: Inputs, isBaseline = false): Schedule
   let totEx = 0;
   const sched: ScheduleRow[] = [];
   const cDate = inputs.startDate ? new Date(inputs.startDate + 'T00:00:00') : null;
-  const maxMonths = 600;
+  const maxMonths = MAX_CC_PAYOFF_MONTHS;
   
   for (let i = 1; i <= maxMonths; i++) {
     if (bal <= 0.01) break;
     
     const iPart = bal * monthlyRate;
     
-    let calcMin = Math.max(10, bal * provPct, iPart + (bal * 0.01));
+    let calcMin = Math.max(MIN_CC_PAYMENT, bal * provPct, iPart + (bal * 0.01));
     if (calcMin > bal + iPart) calcMin = bal + iPart;
     
     let cExtra = userExtra;
@@ -198,17 +183,7 @@ export const generateCCSchedule = (inputs: Inputs, isBaseline = false): Schedule
     totP += (pPart - cExtra);
     totEx += cExtra;
     
-    let dLbl = `M${i}`;
-    let yLbl = (i / 12);
-    let calendarYear = new Date().getFullYear() + Math.floor(i / 12);
-
-    if (cDate) {
-      const d = new Date(cDate.getTime());
-      d.setMonth(d.getMonth() + (i - 1));
-      dLbl = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      yLbl = d.getFullYear() + (d.getMonth() / 12) + (d.getDate() / 365);
-      calendarYear = d.getFullYear();
-    }
+    const { dateLabel: dLbl, yearVal: yLbl, calendarYear } = getRowDateLabel(cDate, i, 'monthly', 12, 'M');
 
     sched.push({
       period: i,
@@ -449,4 +424,32 @@ export const calculateMilestones = (
   }
   
   return milestones;
+};
+
+export const getRowDateLabel = (
+  cDate: Date | null,
+  period: number,
+  freq: string,
+  perYear: number,
+  fallbackPrefix = 'P'
+): { dateLabel: string; yearVal: number; calendarYear: number } => {
+  let dateLabel = `${fallbackPrefix}${period}`;
+  let yearVal = period / perYear;
+  let calendarYear = new Date().getFullYear() + Math.floor(period / perYear);
+
+  if (cDate) {
+    const d = new Date(cDate.getTime());
+    if (freq === 'monthly') {
+      d.setMonth(d.getMonth() + (period - 1));
+    } else if (freq === 'semi-monthly') {
+      d.setDate(d.getDate() + ((period - 1) * 15));
+    } else {
+      d.setDate(d.getDate() + ((period - 1) * 14));
+    }
+    dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    yearVal = d.getFullYear() + (d.getMonth() / 12) + (d.getDate() / 365);
+    calendarYear = d.getFullYear();
+  }
+
+  return { dateLabel, yearVal, calendarYear };
 };
