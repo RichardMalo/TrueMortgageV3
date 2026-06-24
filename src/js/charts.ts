@@ -107,7 +107,10 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
   const g = isDark ? '#334155' : '#e2e8f0';
   const isCurrency = yTitle && (yTitle.includes('$') || yTitle === '$');
   const yaxisConfig: Record<string, unknown> = {
-    title: yTitle,
+    title: {
+      text: yTitle === '$' ? '' : yTitle,
+      font: { size: 12 }
+    },
     gridcolor: g,
     showgrid: true,
     zeroline: false,
@@ -129,14 +132,15 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
       fixedrange: true
     },
     yaxis: yaxisConfig,
-    margin: { t: 50, r: 10, l: isCurrency ? 80 : 45, b: 95 },
+    margin: { t: 50, r: 10, l: isCurrency ? 70 : 45, b: 110 },
     legend: {
       orientation: 'h',
       yref: 'container',
-      y: 0.02,
+      y: 0.01,
       x: 0.5,
       xanchor: 'center',
-      yanchor: 'bottom'
+      yanchor: 'bottom',
+      font: { size: 11 }
     },
     hovermode: 'x',
     autosize: true,
@@ -273,7 +277,7 @@ const renderDebtBalanceChart = (
     {
       x: baseData.schedule.map((d) => d[xKey]),
       y: baseData.schedule.map((d) => d.balance),
-      name: 'Balance (Baseline)',
+      name: 'Baseline',
       type: 'scatter',
       fill: 'tozeroy',
       line: { color: CONFIG.colors.principal }
@@ -283,7 +287,7 @@ const renderDebtBalanceChart = (
     t3.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.balance),
-      name: 'Balance (Actual)',
+      name: 'Actual',
       type: 'scatter',
       line: { color: CONFIG.colors.extra, width: 3 }
     });
@@ -297,7 +301,7 @@ const renderDebtBalanceChart = (
     t3.push({
       x: compData.schedule.map((d) => d[xKey]),
       y: compData.schedule.map((d) => d.balance),
-      name: `${compName} (Comparison)`,
+      name: compName,
       type: 'scatter',
       line: { color: '#a855f7', width: 2.5, dash: 'dash' }
     });
@@ -327,7 +331,7 @@ const renderDebtBalanceChart = (
     t3.push({
       x: [null],
       y: [null],
-      name: 'Debt Free Year',
+      name: 'Debt Free',
       type: 'scatter',
       mode: 'lines',
       line: { color: CONFIG.colors.interest || '#ef4444', width: 2, dash: 'dot' },
@@ -354,7 +358,7 @@ const renderEquityBuildUpChart = (
     {
       x: baseData.schedule.map((d) => d[xKey]),
       y: baseData.schedule.map((d) => pAmt - d.balance),
-      name: 'Equity (Standard)',
+      name: 'Baseline',
       type: 'scatter',
       line: { color: CONFIG.colors.principal }
     }
@@ -363,7 +367,7 @@ const renderEquityBuildUpChart = (
     t4.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => pAmt - d.balance),
-      name: 'Equity (Actual)',
+      name: 'Actual',
       type: 'scatter',
       line: { color: CONFIG.colors.extra }
     });
@@ -492,7 +496,7 @@ const renderPaymentCompositionChart = (
       {
         x: actualData.schedule.map((d) => d[xKey]),
         y: actualData.schedule.map((d) => d.interest),
-        name: 'Interest Portion',
+        name: 'Interest',
         type: 'scatter',
         fill: 'tozeroy',
         line: { color: CONFIG.colors.interest }
@@ -500,7 +504,7 @@ const renderPaymentCompositionChart = (
       {
         x: actualData.schedule.map((d) => d[xKey]),
         y: actualData.schedule.map((d) => d.principal),
-        name: 'Principal Portion',
+        name: 'Principal',
         type: 'scatter',
         fill: 'tonexty',
         line: { color: CONFIG.colors.principal }
@@ -579,7 +583,7 @@ const renderLtvChart = (
     {
       x: baseData.schedule.map((d) => d[xKey]),
       y: baseData.schedule.map((d) => d.ltv),
-      name: 'LTV (Standard)',
+      name: 'Baseline',
       type: 'scatter',
       line: { color: CONFIG.colors.principal }
     }
@@ -588,7 +592,7 @@ const renderLtvChart = (
     tLTV.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.ltv),
-      name: 'LTV (Actual)',
+      name: 'Actual',
       type: 'scatter',
       line: { color: CONFIG.colors.extra, width: 3 }
     });
