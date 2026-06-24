@@ -1198,3 +1198,20 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
     document.addEventListener('keydown', handleKeyDown);
   });
 };
+
+/**
+ * Sets up click event listeners to toggle the expanded state on the amortization table's scrollable container.
+ */
+export const setupTableExpandButton = () => {
+  const btn = document.getElementById('table-expand-btn');
+  const tableResp = document.querySelector('.table-responsive');
+  if (!btn || !tableResp) return;
+
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isExpanded = tableResp.classList.toggle('expanded');
+    btn.innerHTML = isExpanded ? '−' : '+';
+    btn.title = isExpanded ? 'Shrink Table' : 'Expand Table';
+  });
+};

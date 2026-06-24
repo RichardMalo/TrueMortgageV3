@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { escapeHtml } from '../src/js/ui.js';
-import { setupTableExpandButton } from '../src/js/index.js';
+import { escapeHtml, setupTableExpandButton } from '../src/js/ui.js';
 
 describe('UI Helper Functions (ui.ts)', () => {
   describe('escapeHtml', () => {

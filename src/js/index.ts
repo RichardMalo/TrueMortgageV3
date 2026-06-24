@@ -18,7 +18,8 @@ import {
   setupCustomDropdown,
   setupShareFunctionality,
   showConfirmModal,
-  showAlertModal
+  showAlertModal,
+  setupTableExpandButton
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
@@ -496,20 +497,6 @@ const setupChartExpandButtons = () => {
     });
 
     wrapper.appendChild(btn);
-  });
-};
-
-export const setupTableExpandButton = () => {
-  const btn = document.getElementById('table-expand-btn');
-  const tableResp = document.querySelector('.table-responsive');
-  if (!btn || !tableResp) return;
-
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const isExpanded = tableResp.classList.toggle('expanded');
-    btn.innerHTML = isExpanded ? '−' : '+';
-    btn.title = isExpanded ? 'Shrink Table' : 'Expand Table';
   });
 };
 
