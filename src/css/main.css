@@ -845,9 +845,6 @@ input:focus,
 
 /* Amortization Table Expansion Button */
 .table-expand-btn {
-  position: absolute;
-  top: 28px;
-  right: 28px;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -880,12 +877,6 @@ input:focus,
 }
 .table-responsive.expanded {
   max-height: none;
-}
-@media (max-width: 768px) {
-  .table-expand-btn {
-    top: 16px;
-    right: 16px;
-  }
 }
 table {
   width: 100%;

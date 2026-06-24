@@ -987,25 +987,27 @@
             </div>
           </div>
 
-          <div class="bento-card table-card mt-24 relative">
-            <button
-              type="button"
-              class="table-expand-btn"
-              id="table-expand-btn"
-              title="Expand Table"
-            >
-              +
-            </button>
-            <h2 class="section-title">
-              Amortization Schedule
-              <span class="help-tip"
-                >?<span class="tooltip-text"
-                  >A granular ledger mapping principal pay-down and interest decay curves. Note:
-                  Minor variances can occur based on how individual lenders round daily interest and
-                  process extra payments.</span
-                ></span
+          <div class="bento-card table-card mt-24">
+            <div class="section-header-with-toggle mb-20 flex-wrap gap-10">
+              <h2 class="section-title m-0">
+                Amortization Schedule
+                <span class="help-tip"
+                  >?<span class="tooltip-text"
+                    >A granular ledger mapping principal pay-down and interest decay curves. Note:
+                    Minor variances can occur based on how individual lenders round daily interest
+                    and process extra payments.</span
+                  ></span
+                >
+              </h2>
+              <button
+                type="button"
+                class="table-expand-btn"
+                id="table-expand-btn"
+                title="Expand Table"
               >
-            </h2>
+                +
+              </button>
+            </div>
             <div class="table-responsive">
               <table id="amortization-table">
                 <thead>
