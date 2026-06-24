@@ -2351,6 +2351,9 @@ body:not(.dark-mode) .scenario-sidebar {
 .hidden {
   display: none;
 }
+.relative {
+  position: relative;
+}
 .flex-1-min {
   flex: 1 !important;
   min-width: 0 !important;

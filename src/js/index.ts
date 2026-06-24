@@ -499,7 +499,7 @@ const setupChartExpandButtons = () => {
   });
 };
 
-const setupTableExpandButton = () => {
+export const setupTableExpandButton = () => {
   const btn = document.getElementById('table-expand-btn');
   const tableResp = document.querySelector('.table-responsive');
   if (!btn || !tableResp) return;
