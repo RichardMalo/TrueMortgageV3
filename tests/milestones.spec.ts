@@ -90,7 +90,9 @@ describe('renderMilestonesUI (milestones-ui.ts)', () => {
   });
 
   it('renders sowhat text in a roadmap-node-sowhat element', () => {
-    renderMilestonesUI(makeEls(container), [makeMilestone({ sowhat: 'Net worth impact is huge.' })]);
+    renderMilestonesUI(makeEls(container), [
+      makeMilestone({ sowhat: 'Net worth impact is huge.' })
+    ]);
     expect(container.querySelector('.roadmap-node-sowhat')?.textContent).toContain(
       'Net worth impact is huge.'
     );
@@ -104,13 +106,17 @@ describe('renderMilestonesUI (milestones-ui.ts)', () => {
   // ── Badge variants ────────────────────────────────────────────────────────
 
   it('applies baseline badge class when isBaseline is true', () => {
-    renderMilestonesUI(makeEls(container), [makeMilestone({ isBaseline: true, badge: 'BASELINE SCHEDULE' })]);
+    renderMilestonesUI(makeEls(container), [
+      makeMilestone({ isBaseline: true, badge: 'BASELINE SCHEDULE' })
+    ]);
     const badge = container.querySelector('.roadmap-node-badge');
     expect(badge?.classList.contains('baseline')).toBe(true);
   });
 
   it('does NOT apply baseline class when isBaseline is false', () => {
-    renderMilestonesUI(makeEls(container), [makeMilestone({ isBaseline: false, badge: 'MILESTONE' })]);
+    renderMilestonesUI(makeEls(container), [
+      makeMilestone({ isBaseline: false, badge: 'MILESTONE' })
+    ]);
     const badge = container.querySelector('.roadmap-node-badge');
     expect(badge?.classList.contains('baseline')).toBe(false);
   });

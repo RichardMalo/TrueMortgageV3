@@ -35,6 +35,9 @@ jobs:
       - name: Verify Code Linting
         run: npx eslint .
 
+      - name: Verify Code Formatting
+        run: npx prettier --check .
+
       - name: TypeScript Type Check
         run: npm run type-check
 

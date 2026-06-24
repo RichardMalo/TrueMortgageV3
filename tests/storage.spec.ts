@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
-import { encryptData, decryptData, sanitizeProfile, saveSettingsToStorage, loadSettingsFromStorage } from '../src/js/storage.js';
+import {
+  encryptData,
+  decryptData,
+  sanitizeProfile,
+  saveSettingsToStorage,
+  loadSettingsFromStorage
+} from '../src/js/storage.js';
 import { Inputs, AppState, AppElements } from '../src/js/types.js';
 import { webcrypto } from 'node:crypto';
 
@@ -214,7 +220,12 @@ describe('Storage & Cryptography (storage.ts)', () => {
         pitiToggle: pitiCheckbox
       };
 
-      saveSettingsToStorage(state, inputsMap as unknown as AppElements['inputs'], DEFAULT_INPUTS, false);
+      saveSettingsToStorage(
+        state,
+        inputsMap as unknown as AppElements['inputs'],
+        DEFAULT_INPUTS,
+        false
+      );
 
       const prof = state.profiles['prof-1'];
       expect(prof.inputs.homePrice).toBe('900000');
@@ -247,7 +258,12 @@ describe('Storage & Cryptography (storage.ts)', () => {
       homePriceInput.value = '900000';
       const inputsMap = { homePrice: homePriceInput };
 
-      saveSettingsToStorage(state, inputsMap as unknown as AppElements['inputs'], DEFAULT_INPUTS, true);
+      saveSettingsToStorage(
+        state,
+        inputsMap as unknown as AppElements['inputs'],
+        DEFAULT_INPUTS,
+        true
+      );
       // Value should remain 800000 since we skipped DOM sync
       expect(state.profiles['prof-1'].inputs.homePrice).toBe('800000');
     });

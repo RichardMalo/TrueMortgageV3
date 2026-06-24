@@ -71,7 +71,6 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
   });
 
   optSync.addEventListener('click', () => {
-
     dropdown.classList.remove('active');
     syncModal.classList.add('active');
     gsap.fromTo(
@@ -81,7 +80,7 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
     );
     // M1-3: Trap focus inside the modal; Escape closes it
     cleanupSyncTrap = trapFocus(
-      syncModal.querySelector('.modal-card') as HTMLElement ?? syncModal,
+      (syncModal.querySelector('.modal-card') as HTMLElement) ?? syncModal,
       trigger as HTMLElement,
       closeSyncModal
     );
@@ -99,7 +98,7 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
     );
     // M1-3: Trap focus inside the modal; Escape closes it
     cleanupLimitsTrap = trapFocus(
-      limitsModal.querySelector('.modal-card') as HTMLElement ?? limitsModal,
+      (limitsModal.querySelector('.modal-card') as HTMLElement) ?? limitsModal,
       trigger as HTMLElement,
       closeLimitsModal
     );

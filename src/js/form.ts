@@ -72,6 +72,15 @@ export const validateForm = (
       return false;
     }
   }
+
+  const oppCostToggle = inputs.oppCostToggle as HTMLInputElement | null;
+  if (oppCostToggle && oppCostToggle.checked) {
+    const invRate = parseFloat(inputs.investRate?.value || '0');
+    if (isNaN(invRate) || invRate < -99.9 || invRate > 100) {
+      showError('Expected Investment Return must be a valid number between -99.9% and 100%.');
+      return false;
+    }
+  }
   return true;
 };
 

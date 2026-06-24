@@ -57,10 +57,7 @@ const makeState = (bankWagesView: AppState['bankWagesView'] = 'wages'): AppState
     profiles: {}
   }) as AppState;
 
-const makeEls = (
-  taxValue = '0',
-  insValue = '0'
-): AppElements => {
+const makeEls = (taxValue = '0', insValue = '0'): AppElements => {
   const taxInput = document.createElement('input');
   taxInput.value = taxValue;
   const insInput = document.createElement('input');
@@ -86,9 +83,17 @@ const makeScheduleResult = (
     payment: 1000,
     principal: 500,
     interest: r.interest,
-    tax: 0, ins: 0, hoa: 0, pmi: 0, escrow: 0, extra: 0,
+    tax: 0,
+    ins: 0,
+    hoa: 0,
+    pmi: 0,
+    escrow: 0,
+    extra: 0,
     balance: 100000,
-    totalInterest: 0, totalPrincipal: 0, totalExtra: 0, totalEscrow: 0
+    totalInterest: 0,
+    totalPrincipal: 0,
+    totalExtra: 0,
+    totalEscrow: 0
   })),
   summary: {
     periodsToPayoff: rows.length,
@@ -221,7 +226,7 @@ describe('renderBankWages (wages-viz.ts)', () => {
   it('includes breakdown spans for rent, tax and ins in rent-tax-ins mode', () => {
     renderBankWages(
       makeState('rent-tax-ins'),
-      makeEls('4800', '2400'),  // $400/month tax, $200/month ins
+      makeEls('4800', '2400'), // $400/month tax, $200/month ins
       makeScheduleResult([{ calendarYear: 2025, interest: 12000 }])
     );
     const circle = container.querySelector('.wage-circle') as HTMLElement;
@@ -247,10 +252,13 @@ describe('renderBankWages (wages-viz.ts)', () => {
   });
 
   it('two identical interest values produce equal-sized circles', () => {
-    const result = makeScheduleResult([
-      { calendarYear: 2025, interest: 10000 },
-      { calendarYear: 2026, interest: 10000 }
-    ], 1);
+    const result = makeScheduleResult(
+      [
+        { calendarYear: 2025, interest: 10000 },
+        { calendarYear: 2026, interest: 10000 }
+      ],
+      1
+    );
     renderBankWages(makeState('wages'), makeEls(), result);
     const circles = container.querySelectorAll<HTMLElement>('.wage-circle');
     const w1 = parseFloat(circles[0].style.width);

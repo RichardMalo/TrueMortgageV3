@@ -22,11 +22,7 @@ import {
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
-import {
-  getCalculationsInputs,
-  validateForm,
-  profileToInputs
-} from './form.js';
+import { getCalculationsInputs, validateForm, profileToInputs } from './form.js';
 import { syncRateShockTimeline } from './rate-shock.js';
 import { renderBankWages, setupBankWagesToggle } from './wages-viz.js';
 import { renderMilestonesUI } from './milestones-ui.js';

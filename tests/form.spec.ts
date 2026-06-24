@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
 import { validateForm, getCalculationsInputs } from '../src/js/form.js';
 
 describe('Form Validation & Parsing (form.ts)', () => {
@@ -160,6 +160,53 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(errorContainer.textContent).toBe(
         'Monthly Surplus must be a valid non-negative number.'
       );
+    });
+  });
+
+  describe('validateForm - Opportunity Cost Options', () => {
+    beforeEach(() => {
+      inputs.homePrice!.value = '500000';
+      inputs.downPayment!.value = '100000';
+      inputs.amortization!.value = '25';
+      inputs.term!.value = '5';
+      inputs.rate!.value = '4.5';
+      inputs.extra!.value = '100';
+    });
+
+    it('should fail if opportunity cost is enabled and investRate is under -99.9%', () => {
+      (inputs.oppCostToggle as HTMLInputElement).checked = true;
+      inputs.investRate!.value = '-105';
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(false);
+      expect(errorContainer.textContent).toBe(
+        'Expected Investment Return must be a valid number between -99.9% and 100%.'
+      );
+    });
+
+    it('should fail if opportunity cost is enabled and investRate is over 100%', () => {
+      (inputs.oppCostToggle as HTMLInputElement).checked = true;
+      inputs.investRate!.value = '105';
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(false);
+      expect(errorContainer.textContent).toBe(
+        'Expected Investment Return must be a valid number between -99.9% and 100%.'
+      );
+    });
+
+    it('should pass if opportunity cost is enabled and investRate is within valid range', () => {
+      (inputs.oppCostToggle as HTMLInputElement).checked = true;
+      inputs.investRate!.value = '8.5';
+
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(true);
+    });
+
+    it('should ignore investRate if opportunity cost is disabled', () => {
+      (inputs.oppCostToggle as HTMLInputElement).checked = false;
+      inputs.investRate!.value = '-105'; // normally invalid
+
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(true);
     });
   });
 

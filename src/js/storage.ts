@@ -396,6 +396,7 @@ export const loadSettingsFromStorage = (
 
       // Schema Migration
       const legacySettings = settings as unknown as Record<string, unknown>;
+      let wasMigrated = false;
       if (!settings.version || settings.version < CURRENT_ENGINE_VERSION) {
         console.warn('Outdated schema detected. Initiating state migration block.');
         const migratedProfiles: Record<string, Profile> = {};
@@ -446,6 +447,7 @@ export const loadSettingsFromStorage = (
           chartsOrder: settings.chartsOrder,
           strategyOrder: settings.strategyOrder
         };
+        wasMigrated = true;
       }
 
       state.activeProfileId = settings.activeProfileId;
@@ -453,10 +455,14 @@ export const loadSettingsFromStorage = (
       state.compareModeActive = !!settings.compareModeActive;
       state.profiles = {};
 
-      Object.entries(settings.profiles).forEach(([_id, prof]) => {
-        const clean = sanitizeProfile(prof, defaultInputs);
-        if (clean) state.profiles[clean.id] = clean;
-      });
+      if (wasMigrated) {
+        state.profiles = settings.profiles;
+      } else {
+        Object.entries(settings.profiles).forEach(([_id, prof]) => {
+          const clean = sanitizeProfile(prof, defaultInputs);
+          if (clean) state.profiles[clean.id] = clean;
+        });
+      }
 
       if (Object.keys(state.profiles).length === 0) {
         throw new Error('No profiles verified after schema validation');
