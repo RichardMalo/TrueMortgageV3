@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeAll } from 'vitest';
-import { encryptData, decryptData, sanitizeProfile } from '../src/js/storage.js';
-import { Inputs } from '../src/js/types.js';
+import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { encryptData, decryptData, sanitizeProfile, saveSettingsToStorage, loadSettingsFromStorage } from '../src/js/storage.js';
+import { Inputs, AppState, AppElements } from '../src/js/types.js';
 import { webcrypto } from 'node:crypto';
 
 // Ensure window is defined and crypto is mocked in node/JSDOM testing environments
@@ -146,6 +146,218 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(sanitized!.inputs.homePrice).toBe(String(DEFAULT_INPUTS.homePrice));
       expect(sanitized!.inputs.downPayment).toBe(String(DEFAULT_INPUTS.downPayment));
       expect(sanitized!.inputs.rate).toBe(String(DEFAULT_INPUTS.annualRate));
+    });
+  });
+
+  describe('Settings Persistence & Hydration (save/load)', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('should save settings and initialize active profile if none exists', () => {
+      const state = {
+        currentMode: 'mortgage',
+        complexity: 'simple',
+        isDark: false,
+        termRates: {},
+        customizedYears: {},
+        bankWagesView: 'wages',
+        activeProfileId: null,
+        profiles: {}
+      } as unknown as AppState;
+      const inputsMap = {};
+      saveSettingsToStorage(state, inputsMap, DEFAULT_INPUTS, false);
+
+      expect(state.activeProfileId).toBeDefined();
+      expect(state.activeProfileId).toContain('profile-');
+      expect(state.profiles[state.activeProfileId!]).toBeDefined();
+
+      const stored = JSON.parse(localStorage.getItem('mtg_calculator_settings')!);
+      expect(stored).toBeDefined();
+      expect(stored.activeProfileId).toBe(state.activeProfileId);
+    });
+
+    it('should save DOM inputs to active profile if skipDomSync is false', () => {
+      const state = {
+        currentMode: 'mortgage',
+        complexity: 'simple',
+        isDark: false,
+        termRates: { 5: 5.5 },
+        customizedYears: { 5: true },
+        bankWagesView: 'wages',
+        activeProfileId: 'prof-1',
+        profiles: {
+          'prof-1': {
+            id: 'prof-1',
+            name: 'Profile 1',
+            currentMode: 'mortgage',
+            complexity: 'simple',
+            isDark: false,
+            termRates: {},
+            customizedYears: {},
+            inputs: {}
+          }
+        }
+      } as unknown as AppState;
+
+      const homePriceInput = document.createElement('input');
+      homePriceInput.value = '900000';
+      const downPaymentInput = document.createElement('input');
+      downPaymentInput.value = '180000';
+      const pitiCheckbox = document.createElement('input');
+      pitiCheckbox.type = 'checkbox';
+      pitiCheckbox.checked = true;
+
+      const inputsMap = {
+        homePrice: homePriceInput,
+        downPayment: downPaymentInput,
+        pitiToggle: pitiCheckbox
+      };
+
+      saveSettingsToStorage(state, inputsMap as unknown as AppElements['inputs'], DEFAULT_INPUTS, false);
+
+      const prof = state.profiles['prof-1'];
+      expect(prof.inputs.homePrice).toBe('900000');
+      expect(prof.inputs.downPayment).toBe('180000');
+      expect(prof.inputs.pitiToggle).toBe(true);
+      expect(prof.termRates).toEqual({ 5: 5.5 });
+      expect(prof.customizedYears).toEqual({ 5: true });
+    });
+
+    it('should skip DOM sync when skipDomSync is true', () => {
+      const state = {
+        currentMode: 'mortgage',
+        complexity: 'simple',
+        isDark: false,
+        termRates: {},
+        customizedYears: {},
+        activeProfileId: 'prof-1',
+        profiles: {
+          'prof-1': {
+            id: 'prof-1',
+            name: 'Profile 1',
+            inputs: {
+              homePrice: '800000'
+            }
+          }
+        }
+      } as unknown as AppState;
+
+      const homePriceInput = document.createElement('input');
+      homePriceInput.value = '900000';
+      const inputsMap = { homePrice: homePriceInput };
+
+      saveSettingsToStorage(state, inputsMap as unknown as AppElements['inputs'], DEFAULT_INPUTS, true);
+      // Value should remain 800000 since we skipped DOM sync
+      expect(state.profiles['prof-1'].inputs.homePrice).toBe('800000');
+    });
+
+    it('should load settings from empty storage and initialize defaults', () => {
+      const state = {} as unknown as AppState;
+      const settings = loadSettingsFromStorage(state, DEFAULT_INPUTS);
+      expect(settings).toBeNull();
+      expect(state.activeProfileId).toBe('profile-default');
+      expect(state.profiles['profile-default']).toBeDefined();
+    });
+
+    it('should load settings successfully from valid stored settings', () => {
+      const state = {} as unknown as AppState;
+      const testSettings = {
+        version: 2.0,
+        activeProfileId: 'prof-2',
+        comparisonProfileId: null,
+        compareModeActive: false,
+        profiles: {
+          'prof-2': {
+            id: 'prof-2',
+            name: 'Profile 2',
+            currentMode: 'mortgage',
+            complexity: 'simple',
+            isDark: false,
+            termRates: {},
+            customizedYears: {},
+            bankWagesView: 'wages',
+            inputs: {
+              homePrice: '750000'
+            }
+          }
+        },
+        isDark: true,
+        complexity: 'advanced',
+        labelFormat: 'period',
+        bankWagesView: 'rent'
+      };
+
+      localStorage.setItem('mtg_calculator_settings', JSON.stringify(testSettings));
+
+      const settings = loadSettingsFromStorage(state, DEFAULT_INPUTS);
+      expect(settings).not.toBeNull();
+      expect(state.activeProfileId).toBe('prof-2');
+      expect(state.profiles['prof-2']).toBeDefined();
+      expect(state.profiles['prof-2'].inputs.homePrice).toBe('750000');
+      expect(state.isDark).toBe(true);
+      expect(state.complexity).toBe('advanced');
+      expect(state.labelFormat).toBe('period');
+      expect(state.bankWagesView).toBe('rent');
+    });
+
+    it('should migrate legacy profiles when version is outdated', () => {
+      const state = {} as unknown as AppState;
+      const legacySettings = {
+        // version: absent (implies old version)
+        activeProfileId: 'prof-legacy-old',
+        profiles: {
+          'prof-legacy-old': {
+            id: 'prof-legacy-old',
+            name: 'Old Profile',
+            currentMode: 'mortgage',
+            complexity: 'simple',
+            inputs: {
+              interestRate: 6.25, // legacy field name
+              paymentFrequency: 'weekly' // legacy field name
+            }
+          }
+        }
+      };
+
+      localStorage.setItem('mtg_calculator_settings', JSON.stringify(legacySettings));
+
+      const settings = loadSettingsFromStorage(state, DEFAULT_INPUTS);
+      expect(settings).not.toBeNull();
+      expect(settings!.version).toBe(2.0);
+      expect(state.activeProfileId).toBe('prof-legacy-old');
+      expect(state.profiles['prof-legacy-old'].inputs.rate).toBe('6.25');
+      expect(state.profiles['prof-legacy-old'].inputs.frequency).toBe('weekly');
+    });
+
+    it('should migrate legacy single-profile inputs if no profiles exist', () => {
+      const state = {} as unknown as AppState;
+      const legacySingleSettings = {
+        // version: absent
+        currentMode: 'mortgage',
+        complexity: 'simple',
+        inputs: {
+          interestRate: 4.5
+        }
+      };
+
+      localStorage.setItem('mtg_calculator_settings', JSON.stringify(legacySingleSettings));
+
+      const settings = loadSettingsFromStorage(state, DEFAULT_INPUTS);
+      expect(settings).not.toBeNull();
+      expect(state.activeProfileId).toBe('profile-legacy');
+      expect(state.profiles['profile-legacy'].inputs.rate).toBe('4.5');
+    });
+
+    it('should reset to default state if migration fails completely', () => {
+      const state = {} as unknown as AppState;
+      // Corrupt data structure that causes exception
+      localStorage.setItem('mtg_calculator_settings', 'invalid-json-{');
+
+      const settings = loadSettingsFromStorage(state, DEFAULT_INPUTS);
+      expect(settings).toBeNull();
+      expect(state.activeProfileId).toBe('profile-default');
+      expect(state.profiles['profile-default']).toBeDefined();
     });
   });
 });

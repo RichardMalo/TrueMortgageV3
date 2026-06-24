@@ -124,39 +124,57 @@ export const setupTouchAndKeyboardTooltips = () => {
     return element.closest('.column, .full-width-section');
   };
 
-  tips.forEach((tipEl) => {
+  tips.forEach((tipEl, index) => {
     const tip = tipEl as HTMLElement;
 
-    // Set explicit tabindex to make tooltip keyboard focusable
-    tip.setAttribute('tabindex', '0');
-    tip.setAttribute('role', 'tooltip');
+    // M1-2: Correct ARIA pattern for a help-tip trigger:
+    //   - role="button"  → announces as a button to screen readers
+    //   - aria-expanded  → reflects whether the popup is visible
+    //   - aria-describedby → points to the tooltip content element
+    // The tooltip CONTENT element (not the trigger) gets role="tooltip".
+    const tooltipText = tip.querySelector('.tooltip-text') as HTMLElement | null;
+    const tooltipId = `help-tooltip-text-${index}`;
+    if (tooltipText) {
+      tooltipText.id = tooltipId;
+      tooltipText.setAttribute('role', 'tooltip');
+    }
 
-    const descText = tip.querySelector('.tooltip-text')?.textContent || '';
-    tip.setAttribute('aria-label', `Help context: ${descText}`);
+    tip.setAttribute('tabindex', '0');
+    tip.setAttribute('role', 'button');
+    tip.setAttribute('aria-expanded', 'false');
+    if (tooltipText) {
+      tip.setAttribute('aria-describedby', tooltipId);
+    }
+
+    const setExpanded = (open: boolean) => tip.setAttribute('aria-expanded', String(open));
 
     // Desktop hover bindings
     tip.addEventListener('mouseenter', () => {
       const parent = getParentContainer(tip);
       if (parent) parent.classList.add('has-active-tooltip');
+      setExpanded(true);
       adjustTooltip(tip, true);
     });
 
     tip.addEventListener('mouseleave', () => {
       const parent = getParentContainer(tip);
       if (parent) parent.classList.remove('has-active-tooltip');
+      setExpanded(false);
       adjustTooltip(tip, false);
     });
 
-    // Keyboard focus bindings (a11y improvement)
+    // Keyboard focus bindings (a11y)
     tip.addEventListener('focus', () => {
       const parent = getParentContainer(tip);
       if (parent) parent.classList.add('has-active-tooltip');
+      setExpanded(true);
       adjustTooltip(tip, true);
     });
 
     tip.addEventListener('blur', () => {
       const parent = getParentContainer(tip);
       if (parent) parent.classList.remove('has-active-tooltip');
+      setExpanded(false);
       adjustTooltip(tip, false);
     });
 
@@ -169,11 +187,13 @@ export const setupTouchAndKeyboardTooltips = () => {
           activeTip.classList.remove('touch-active');
           const oldParent = getParentContainer(activeTip);
           if (oldParent) oldParent.classList.remove('has-active-tooltip');
+          activeTip.setAttribute('aria-expanded', 'false');
           adjustTooltip(activeTip, false);
         }
         tip.classList.add('touch-active');
         const newParent = getParentContainer(tip);
         if (newParent) newParent.classList.add('has-active-tooltip');
+        setExpanded(true);
         activeTip = tip;
         adjustTooltip(tip, true);
       },
@@ -187,6 +207,7 @@ export const setupTouchAndKeyboardTooltips = () => {
           tip.classList.remove('touch-active');
           const parent = getParentContainer(tip);
           if (parent) parent.classList.remove('has-active-tooltip');
+          setExpanded(false);
           adjustTooltip(tip, false);
           if (activeTip === tip) activeTip = null;
         }, 1200);
@@ -202,12 +223,80 @@ export const setupTouchAndKeyboardTooltips = () => {
         activeTip.classList.remove('touch-active');
         const parent = getParentContainer(activeTip);
         if (parent) parent.classList.remove('has-active-tooltip');
+        activeTip.setAttribute('aria-expanded', 'false');
         adjustTooltip(activeTip, false);
         activeTip = null;
       }
     },
     { passive: true }
   );
+};
+
+/**
+ * M1-3: Traps keyboard focus within a modal element while it is open.
+ * Cycles Tab/Shift-Tab through focusable children and adds an Escape-key handler.
+ * Returns a cleanup function that removes all listeners; call it when the modal closes.
+ *
+ * @param modal - The modal container element to trap focus within.
+ * @param returnFocusEl - The element to re-focus when the modal closes.
+ * @param onClose - Optional callback invoked when Escape is pressed.
+ * @returns A cleanup function that removes all event listeners.
+ */
+export const trapFocus = (
+  modal: HTMLElement,
+  returnFocusEl: HTMLElement | null,
+  onClose?: () => void
+): (() => void) => {
+  const FOCUSABLE =
+    'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  const getFocusable = () => Array.from(modal.querySelectorAll<HTMLElement>(FOCUSABLE));
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      if (onClose) onClose();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+
+    const focusable = getFocusable();
+    if (focusable.length === 0) {
+      e.preventDefault();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+
+  modal.addEventListener('keydown', handleKeyDown);
+
+  // Move focus into the modal immediately
+  const firstFocusable = getFocusable()[0];
+  if (firstFocusable) {
+    firstFocusable.focus();
+  } else {
+    modal.setAttribute('tabindex', '-1');
+    modal.focus();
+  }
+
+  return () => {
+    modal.removeEventListener('keydown', handleKeyDown);
+    modal.removeAttribute('tabindex');
+    returnFocusEl?.focus();
+  };
 };
 
 export const swapDOMNodes = (node1: HTMLElement, node2: HTMLElement, onSwap?: () => void) => {

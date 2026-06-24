@@ -1,3 +1,5 @@
+/// <reference types="vite/client" />
+
 declare module 'plotly.js-basic-dist' {
   export const Plots: {
     resize: (_el: HTMLElement) => void;

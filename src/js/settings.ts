@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { showConfirmModal, showAlertModal } from './ui.js';
+import { showConfirmModal, showAlertModal, trapFocus } from './ui.js';
 
 /**
  * Initialises settings trigger event listeners, modal triggers for syncing
@@ -34,6 +34,21 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
   )
     return;
 
+  let cleanupSyncTrap: (() => void) | null = null;
+  let cleanupLimitsTrap: (() => void) | null = null;
+
+  const closeSyncModal = () => {
+    syncModal.classList.remove('active');
+    cleanupSyncTrap?.();
+    cleanupSyncTrap = null;
+  };
+
+  const closeLimitsModal = () => {
+    limitsModal.classList.remove('active');
+    cleanupLimitsTrap?.();
+    cleanupLimitsTrap = null;
+  };
+
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
     dropdown.classList.toggle('active');
@@ -56,6 +71,7 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
   });
 
   optSync.addEventListener('click', () => {
+
     dropdown.classList.remove('active');
     syncModal.classList.add('active');
     gsap.fromTo(
@@ -63,11 +79,15 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
       { scale: 0.9, y: 20 },
       { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
     );
+    // M1-3: Trap focus inside the modal; Escape closes it
+    cleanupSyncTrap = trapFocus(
+      syncModal.querySelector('.modal-card') as HTMLElement ?? syncModal,
+      trigger as HTMLElement,
+      closeSyncModal
+    );
   });
 
-  closeSyncBtn.addEventListener('click', () => {
-    syncModal.classList.remove('active');
-  });
+  closeSyncBtn.addEventListener('click', closeSyncModal);
 
   optLimits.addEventListener('click', () => {
     dropdown.classList.remove('active');
@@ -77,18 +97,22 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
       { scale: 0.9, y: 20 },
       { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
     );
+    // M1-3: Trap focus inside the modal; Escape closes it
+    cleanupLimitsTrap = trapFocus(
+      limitsModal.querySelector('.modal-card') as HTMLElement ?? limitsModal,
+      trigger as HTMLElement,
+      closeLimitsModal
+    );
   });
 
-  closeLimitsBtn.addEventListener('click', () => {
-    limitsModal.classList.remove('active');
-  });
+  closeLimitsBtn.addEventListener('click', closeLimitsModal);
 
   window.addEventListener('click', (e) => {
     if (e.target === syncModal) {
-      syncModal.classList.remove('active');
+      closeSyncModal();
     }
     if (e.target === limitsModal) {
-      limitsModal.classList.remove('active');
+      closeLimitsModal();
     }
   });
 

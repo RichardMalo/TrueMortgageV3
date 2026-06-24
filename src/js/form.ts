@@ -84,6 +84,8 @@ export const getCalculationsInputs = (
   termRates: Record<number, number>
 ): Inputs => {
   const isMortgage = currentMode === 'mortgage';
+  // Extract once to avoid repeating the cast 5 times
+  const pitiOn = isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked;
   return {
     homePrice: parseFloat(inputs.homePrice?.value || '0'),
     downPayment: parseFloat(inputs.downPayment?.value || '0'),
@@ -94,23 +96,11 @@ export const getCalculationsInputs = (
     termYears: parseFloat(inputs.term?.value || '0'),
     compounding: (inputs.compounding?.value || 'semi') as 'semi' | 'monthly',
     frequency: (inputs.frequency?.value || 'monthly') as Inputs['frequency'],
-    usePiti: isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked,
-    taxRate:
-      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
-        ? parseFloat(inputs.tax?.value || '0')
-        : 0,
-    insRate:
-      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
-        ? parseFloat(inputs.ins?.value || '0')
-        : 0,
-    hoaRate:
-      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
-        ? parseFloat(inputs.hoa?.value || '0')
-        : 0,
-    pmiRate:
-      isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked
-        ? parseFloat(inputs.pmi?.value || '0')
-        : 0,
+    usePiti: pitiOn,
+    taxRate: pitiOn ? parseFloat(inputs.tax?.value || '0') : 0,
+    insRate: pitiOn ? parseFloat(inputs.ins?.value || '0') : 0,
+    hoaRate: pitiOn ? parseFloat(inputs.hoa?.value || '0') : 0,
+    pmiRate: pitiOn ? parseFloat(inputs.pmi?.value || '0') : 0,
     useOppCost: !!(inputs.oppCostToggle as HTMLInputElement | null)?.checked,
     investRate: (inputs.oppCostToggle as HTMLInputElement | null)?.checked
       ? parseFloat(inputs.investRate?.value || '7.0')
@@ -119,5 +109,44 @@ export const getCalculationsInputs = (
     startDate: inputs.date?.value || '',
     rateShockEnabled: isMortgage && !!(inputs.rateShockToggle as HTMLInputElement | null)?.checked,
     termRates: termRates
+  };
+};
+
+/**
+ * Converts a stored profile's raw inputs map to a typed Inputs object.
+ * Used when hydrating comparison profiles to avoid duplicating parse logic from
+ * getCalculationsInputs() inline at every call site.
+ */
+export const profileToInputs = (
+  profileInputs: Record<string, string | boolean | number | undefined>,
+  termRates: Record<number, number>,
+  currentMode: 'mortgage' | 'cc'
+): Inputs => {
+  const isMortgage = currentMode === 'mortgage';
+  const pitiOn = isMortgage && profileInputs.pitiToggle === true;
+  return {
+    homePrice: parseFloat(String(profileInputs.homePrice || '0')),
+    downPayment: parseFloat(String(profileInputs.downPayment || '0')),
+    ccBalance: parseFloat(String(profileInputs.ccBalance || '0')),
+    province: String(profileInputs.province || 'ON'),
+    annualRate: parseFloat(String(profileInputs.rate || '0')),
+    amortizationYears: parseFloat(String(profileInputs.amortization || '0')),
+    termYears: parseFloat(String(profileInputs.term || '0')),
+    compounding: (profileInputs.compounding || 'semi') as 'semi' | 'monthly',
+    frequency: (profileInputs.frequency || 'monthly') as Inputs['frequency'],
+    usePiti: pitiOn,
+    taxRate: pitiOn ? parseFloat(String(profileInputs.tax || '0')) : 0,
+    insRate: pitiOn ? parseFloat(String(profileInputs.ins || '0')) : 0,
+    hoaRate: pitiOn ? parseFloat(String(profileInputs.hoa || '0')) : 0,
+    pmiRate: pitiOn ? parseFloat(String(profileInputs.pmi || '0')) : 0,
+    useOppCost: profileInputs.oppCostToggle === true,
+    investRate:
+      profileInputs.oppCostToggle === true
+        ? parseFloat(String(profileInputs.investRate || '7.0'))
+        : 7.0,
+    extraPayment: parseFloat(String(profileInputs.extra || '0')),
+    startDate: String(profileInputs.date || ''),
+    rateShockEnabled: isMortgage && profileInputs.rateShockToggle === true,
+    termRates
   };
 };

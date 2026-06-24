@@ -146,6 +146,17 @@ export const setupBlueprintSync = (
   });
 
   const handleFileImport = (file: File) => {
+    // QW-8: Guard against unreasonably large files before reading into memory.
+    // A valid encrypted or plain JSON blueprint is never more than a few KB.
+    const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
+    if (file.size > MAX_FILE_BYTES) {
+      showFeedback(
+        `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum allowed size is 5 MB.`,
+        true
+      );
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       const rawText = ((e.target?.result as string) || '').trim();

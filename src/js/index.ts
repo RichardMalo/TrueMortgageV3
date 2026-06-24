@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { AppState, Inputs, ScheduleResult } from './types.js';
+import { AppState, ScheduleResult } from './types.js';
 import { DEFAULT_INPUTS, PREFILLED_DATE, RESIZE_DEBOUNCE_MS, getPrefersDark } from './constants.js';
 import { generateMortgageSchedule, generateCCSchedule, calculateMilestones } from './math.js';
 import { renderCharts, clearVisibleChartsCache, resizeChart } from './charts.js';
@@ -22,7 +22,11 @@ import {
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
-import { validateForm, getCalculationsInputs } from './form.js';
+import {
+  getCalculationsInputs,
+  validateForm,
+  profileToInputs
+} from './form.js';
 import { syncRateShockTimeline } from './rate-shock.js';
 import { renderBankWages, setupBankWagesToggle } from './wages-viz.js';
 import { renderMilestonesUI } from './milestones-ui.js';
@@ -44,6 +48,12 @@ const state: AppState = {
   profiles: {},
   bankWagesView: 'wages'
 };
+
+/** Builds the full body className string from current state — single source of truth. */
+const buildBodyClass = (s: AppState): string =>
+  `mode-${s.currentMode} ${s.isDark ? 'dark-mode' : 'light-mode'} complexity-${s.complexity}`
+    .replace(/\s+/g, ' ')
+    .trim();
 
 let lastBaseData: ScheduleResult | null = null;
 let lastActData: ScheduleResult | null = null;
@@ -185,43 +195,11 @@ const calculate = (e?: Event) => {
   ) {
     const compProfile = state.profiles[state.comparisonProfileId];
     const isCompMortgage = compProfile.currentMode === 'mortgage';
-    const compInputs: Inputs = {
-      homePrice: parseFloat(compProfile.inputs.homePrice) || 0,
-      downPayment: parseFloat(compProfile.inputs.downPayment) || 0,
-      ccBalance: parseFloat(compProfile.inputs.ccBalance) || 0,
-      province: compProfile.inputs.province,
-      annualRate: parseFloat(compProfile.inputs.rate) || 0,
-      amortizationYears: parseFloat(compProfile.inputs.amortization) || 0,
-      termYears: parseFloat(compProfile.inputs.term) || 0,
-      compounding: compProfile.inputs.compounding as 'semi' | 'monthly',
-      frequency: compProfile.inputs.frequency as Inputs['frequency'],
-      usePiti: isCompMortgage && compProfile.inputs.pitiToggle === true,
-      taxRate:
-        isCompMortgage && compProfile.inputs.pitiToggle === true
-          ? parseFloat(compProfile.inputs.tax) || 0
-          : 0,
-      insRate:
-        isCompMortgage && compProfile.inputs.pitiToggle === true
-          ? parseFloat(compProfile.inputs.ins) || 0
-          : 0,
-      hoaRate:
-        isCompMortgage && compProfile.inputs.pitiToggle === true
-          ? parseFloat(compProfile.inputs.hoa) || 0
-          : 0,
-      pmiRate:
-        isCompMortgage && compProfile.inputs.pitiToggle === true
-          ? parseFloat(compProfile.inputs.pmi) || 0
-          : 0,
-      useOppCost: compProfile.inputs.oppCostToggle === true,
-      investRate:
-        compProfile.inputs.oppCostToggle === true
-          ? parseFloat(compProfile.inputs.investRate) || 7.0
-          : 7.0,
-      extraPayment: parseFloat(compProfile.inputs.extra) || 0,
-      startDate: compProfile.inputs.date,
-      rateShockEnabled: isCompMortgage && compProfile.inputs.rateShockToggle === true,
-      termRates: compProfile.termRates || {}
-    };
+    const compInputs = profileToInputs(
+      compProfile.inputs as Record<string, string | boolean | number | undefined>,
+      compProfile.termRates || {},
+      compProfile.currentMode || 'mortgage'
+    );
     compData = isCompMortgage
       ? generateMortgageSchedule(compInputs, false)
       : generateCCSchedule(compInputs, false);
@@ -317,10 +295,7 @@ const handleProfileSwitch = (profileId: string) => {
     });
   }
 
-  document.body.className =
-    `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
-      .replace(/\s+/g, ' ')
-      .trim();
+  document.body.className = buildBodyClass(state);
   if (els.modeSwitch) els.modeSwitch.checked = state.isDark;
 
   els.masterBtns.forEach((btn) => {
@@ -485,10 +460,7 @@ const setupComplexityToggle = () => {
       btnEl.classList.add('active');
       state.complexity = btnEl.getAttribute('data-complexity') as AppState['complexity'];
 
-      document.body.className =
-        `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
-          .replace(/\s+/g, ' ')
-          .trim();
+      document.body.className = buildBodyClass(state);
 
       calculate();
       saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
@@ -645,10 +617,7 @@ const bootApp = () => {
         if (innerLabel) innerLabel.textContent = 'Principal';
       }
 
-      document.body.className =
-        `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
-          .replace(/\s+/g, ' ')
-          .trim();
+      document.body.className = buildBodyClass(state);
       els.masterBtns.forEach((b) =>
         b.classList.toggle('active', b.getAttribute('data-mode') === state.currentMode)
       );
@@ -667,10 +636,7 @@ const bootApp = () => {
   // Dark mode switch checkbox
   els.modeSwitch?.addEventListener('change', (e) => {
     state.isDark = (e.target as HTMLInputElement).checked;
-    document.body.className =
-      `mode-${state.currentMode} ${state.isDark ? 'dark-mode' : 'light-mode'} complexity-${state.complexity}`
-        .replace(/\s+/g, ' ')
-        .trim();
+    document.body.className = buildBodyClass(state);
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
     calculate();
@@ -756,12 +722,19 @@ const bootApp = () => {
   });
 
   // Inputs event binds
+  // Debounce the localStorage save so it fires once after the user stops typing
+  // rather than on every keystroke (prevents main-thread blocking).
+  let saveTimer: ReturnType<typeof setTimeout> | undefined;
   Object.values(els.inputs).forEach((inp) => {
     if (inp && !['oppCostToggle', 'includePitiToggle', 'rateShockToggle'].includes(inp.id)) {
       inp.addEventListener('blur', () => calculate());
-      inp.addEventListener('input', () =>
-        saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false)
-      );
+      inp.addEventListener('input', () => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(
+          () => saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false),
+          300
+        );
+      });
       if (inp.tagName === 'SELECT' && inp.id !== 'country-select' && inp.id !== 'compounding') {
         inp.addEventListener('change', () => calculate());
       }
@@ -770,13 +743,16 @@ const bootApp = () => {
 
   els.form?.addEventListener('submit', calculate);
 
-  // Resize window triggers debounced calculation
+  // Resize window: only resize visible Plotly charts — do NOT re-run calculate().
+  // Calculation results are viewport-independent; re-running the full amortization
+  // engine on every resize causes unnecessary main-thread work.
   let resizeTimer: ReturnType<typeof setTimeout> | undefined;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      clearVisibleChartsCache();
-      calculate();
+      document
+        .querySelectorAll<HTMLElement>('.plotly-container')
+        .forEach((chartDiv) => resizeChart(chartDiv));
     }, RESIZE_DEBOUNCE_MS);
   });
 
@@ -843,10 +819,14 @@ if (
   document.addEventListener('DOMContentLoaded', bootApp);
 }
 
-// Export references for testing context
-const win = window as unknown as Record<string, unknown>;
-win.generateMortgageSchedule = generateMortgageSchedule;
-win.generateCCSchedule = generateCCSchedule;
-win.calculateMilestones = calculateMilestones;
-win.validate = validateForm;
-win.els = els;
+// QW-1: Guard window.* exposure — only available in development builds.
+// Vite's tree-shaker eliminates this entire block from production bundles,
+// removing the live attack surface of exposing internal DOM refs globally.
+if (import.meta.env.DEV || (window as unknown as { __TESTING__?: boolean }).__TESTING__) {
+  const win = window as unknown as Record<string, unknown>;
+  win.generateMortgageSchedule = generateMortgageSchedule;
+  win.generateCCSchedule = generateCCSchedule;
+  win.calculateMilestones = calculateMilestones;
+  win.validate = validateForm;
+  win.els = els;
+}

@@ -5,7 +5,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: false,
+    sourcemap: 'hidden',
     minify: 'esbuild',
     rollupOptions: {
       output: {
@@ -41,10 +41,10 @@ export default defineConfig({
         'vite.config.js'
       ],
       thresholds: {
-        statements: 65,
-        branches: 50,
-        functions: 65,
-        lines: 65
+        statements: 72,
+        branches: 62,
+        functions: 72,
+        lines: 74
       }
     }
   }

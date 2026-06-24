@@ -3,6 +3,20 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Content Security Policy: restricts resource origins as a defense-in-depth measure. -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src  'self' 'unsafe-inline' blob:;
+        style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src    'self' https://fonts.gstatic.com;
+        img-src     'self' data: blob:;
+        connect-src 'self' https://fonts.gstatic.com;
+        object-src  'none';
+        base-uri    'self';
+      "
+    />
     <title>Debt Elimination Engine | Algorithmic Mortgage & Credit Card Optimizer</title>
     <!-- SEO Optimization Meta Tags -->
     <meta
@@ -232,7 +246,7 @@
         </div>
       </header>
 
-      <div id="error-message"></div>
+      <div id="error-message" role="status" aria-live="assertive" aria-atomic="true"></div>
 
       <main class="dashboard-layout">
         <div class="column gsap-slide-up">
@@ -765,7 +779,12 @@
             </div>
           </div>
 
-          <div class="bento-card">
+          <div
+            class="bento-card"
+            aria-live="polite"
+            aria-atomic="true"
+            aria-label="Financial Summary Results"
+          >
             <h2 class="section-title">Financial Summary</h2>
             <div class="stats-grid">
               <div class="stat-box squishy-interactive">
