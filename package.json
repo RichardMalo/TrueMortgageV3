@@ -41,6 +41,9 @@
     "vite": "^8.0.16",
     "vitest": "^4.1.8"
   },
+  "overrides": {
+    "dompurify": "^3.4.11"
+  },
   "lint-staged": {
     "*.{ts,js}": "eslint --fix",
     "*.css": "npx prettier --write",

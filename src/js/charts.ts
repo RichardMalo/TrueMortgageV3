@@ -649,10 +649,12 @@ const renderOpportunityCostChart = (
   let cY = p1X[p1X.length - 1];
   const mY = baseData.schedule[baseData.schedule.length - 1].year;
 
-  // Use the last row's payment capacity for future investments
-  const lastActRow = actualData.schedule[actualData.schedule.length - 1];
-  const actualCapacityPerPeriod = lastActRow
-    ? lastActRow.principal + lastActRow.interest + lastActRow.extra
+  // Use the first row's standard periodic payment as post-payoff investment capacity.
+  // The last row is almost always a tiny partial payment (balance remnant) that would
+  // drastically underestimate the freed-up cash flow redirected into investments.
+  const firstActRow = actualData.schedule[0];
+  const actualCapacityPerPeriod = firstActRow
+    ? firstActRow.principal + firstActRow.interest + firstActRow.extra
     : 0;
 
   while (cY < mY) {
@@ -679,9 +681,9 @@ const renderOpportunityCostChart = (
     if (actRow) {
       actualDebtServiceAnn =
         (actRow.principal + actRow.interest + actRow.extra) * actualData.summary.periodsPerYear;
-    } else if (lastActRow) {
+    } else if (firstActRow) {
       actualDebtServiceAnn =
-        (lastActRow.principal + lastActRow.interest + lastActRow.extra) *
+        (firstActRow.principal + firstActRow.interest + firstActRow.extra) *
         actualData.summary.periodsPerYear;
     }
 
@@ -732,9 +734,9 @@ const renderOpportunityCostChart = (
         compY.push(hp - d.balance);
       });
       let ccY = compX[compX.length - 1];
-      const lastCompRow = cSched[cSched.length - 1];
-      const compCapacityPerPeriod = lastCompRow
-        ? lastCompRow.principal + lastCompRow.interest + lastCompRow.extra
+      const firstCompRow = cSched[0];
+      const compCapacityPerPeriod = firstCompRow
+        ? firstCompRow.principal + firstCompRow.interest + firstCompRow.extra
         : 0;
 
       while (ccY < mY) {

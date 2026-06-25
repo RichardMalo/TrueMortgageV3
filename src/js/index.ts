@@ -296,12 +296,16 @@ const handleProfileSwitch = (profileId: string) => {
   if (els.modeSwitch) els.modeSwitch.checked = state.isDark;
 
   els.masterBtns.forEach((btn) => {
-    btn.classList.toggle('active', btn.getAttribute('data-mode') === state.currentMode);
+    const isActive = btn.getAttribute('data-mode') === state.currentMode;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 
   const complexityBtns = document.querySelectorAll('.complexity-btn');
   complexityBtns.forEach((btn) => {
-    btn.classList.toggle('active', btn.getAttribute('data-complexity') === state.complexity);
+    const isActive = btn.getAttribute('data-complexity') === state.complexity;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 
   const innerLabel = document.getElementById('inner-circle-label');
@@ -330,11 +334,15 @@ const handleProfileSwitch = (profileId: string) => {
 
   const wageToggleBtns = document.querySelectorAll('.wage-toggle-btn');
   wageToggleBtns.forEach((btn) => {
-    btn.classList.toggle('active', btn.getAttribute('data-view') === state.bankWagesView);
+    const isActive = btn.getAttribute('data-view') === state.bankWagesView;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 
   document.querySelectorAll('.label-format-btn').forEach((btn) => {
-    btn.classList.toggle('active', btn.getAttribute('data-format') === state.labelFormat);
+    const isActive = btn.getAttribute('data-format') === state.labelFormat;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
 
   if (els.inputs.countrySelect) {
@@ -452,10 +460,13 @@ const setupComplexityToggle = () => {
   const complexityBtns = document.querySelectorAll('.complexity-btn');
   complexityBtns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      complexityBtns.forEach((b) => b.classList.remove('active'));
       const btnEl = e.currentTarget as HTMLElement;
-      btnEl.classList.add('active');
       state.complexity = btnEl.getAttribute('data-complexity') as AppState['complexity'];
+      complexityBtns.forEach((b) => {
+        const isActive = b.getAttribute('data-complexity') === state.complexity;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
 
       document.body.className = buildBodyClass(state);
 
@@ -601,9 +612,11 @@ const bootApp = () => {
       }
 
       document.body.className = buildBodyClass(state);
-      els.masterBtns.forEach((b) =>
-        b.classList.toggle('active', b.getAttribute('data-mode') === state.currentMode)
-      );
+      els.masterBtns.forEach((b) => {
+        const isActive = b.getAttribute('data-mode') === state.currentMode;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
 
       const calcBtn = document.getElementById('calcBtn');
       if (calcBtn) {
@@ -698,7 +711,9 @@ const bootApp = () => {
       state.labelFormat = format;
 
       document.querySelectorAll('.label-format-btn').forEach((b) => {
-        b.classList.toggle('active', b.getAttribute('data-format') === format);
+        const isActive = b.getAttribute('data-format') === format;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
       calculate();
     });

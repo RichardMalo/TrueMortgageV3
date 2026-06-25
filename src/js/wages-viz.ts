@@ -172,7 +172,11 @@ export const setupBankWagesToggle = (
       if (state.bankWagesView === view) return;
 
       state.bankWagesView = view;
-      buttons.forEach((b) => b.classList.toggle('active', b.getAttribute('data-view') === view));
+      buttons.forEach((b) => {
+        const isActive = b.getAttribute('data-view') === view;
+        b.classList.toggle('active', isActive);
+        b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      });
 
       const lastActData = getLastActData();
       if (lastActData) {

@@ -1,6 +1,6 @@
 import { AppState, Inputs } from './types.js';
 import { saveSettingsToStorage, sanitizeProfile } from './storage.js';
-import { showConfirmModal } from './ui.js';
+import { showConfirmModal, trapFocus } from './ui.js';
 
 export const renderSandboxList = (
   state: AppState,
@@ -195,51 +195,15 @@ export const setupScenarioSandbox = (
 
   if (!trigger || !sidebar || !overlay || !closeBtn || !createBtn || !newNameInput) return;
 
-  let previouslyFocusedElement: HTMLElement | null = null;
-
-  const trapFocus = (e: KeyboardEvent) => {
-    if (e.key === 'Tab') {
-      const focusables = Array.from(
-        sidebar.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')
-      ).filter(
-        (el) =>
-          !(el as HTMLButtonElement).disabled &&
-          (el as HTMLElement).offsetWidth > 0 &&
-          (el as HTMLElement).offsetHeight > 0
-      ) as HTMLElement[];
-
-      if (focusables.length === 0) {
-        e.preventDefault();
-        return;
-      }
-
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          last.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === last) {
-          first.focus();
-          e.preventDefault();
-        }
-      }
-    } else if (e.key === 'Escape') {
-      closeSidebar();
-    }
-  };
+  let cleanupSandboxTrap: (() => void) | null = null;
 
   const openSidebar = () => {
-    previouslyFocusedElement = document.activeElement as HTMLElement | null;
     sidebar.classList.add('active');
     overlay.classList.add('active');
 
     renderSandboxList(state, defaultInputs, inputsMap, onProfileSelect, onRecalculate);
 
-    document.addEventListener('keydown', trapFocus);
+    cleanupSandboxTrap = trapFocus(sidebar, trigger as HTMLElement, closeSidebar);
     setTimeout(() => {
       newNameInput.focus();
     }, 100);
@@ -248,10 +212,8 @@ export const setupScenarioSandbox = (
   const closeSidebar = () => {
     sidebar.classList.remove('active');
     overlay.classList.remove('active');
-    document.removeEventListener('keydown', trapFocus);
-    if (previouslyFocusedElement) {
-      previouslyFocusedElement.focus();
-    }
+    cleanupSandboxTrap?.();
+    cleanupSandboxTrap = null;
   };
 
   trigger.addEventListener('click', (e) => {

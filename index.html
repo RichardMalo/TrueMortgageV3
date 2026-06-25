@@ -116,9 +116,11 @@
 
           <div class="header-controls-right">
             <!-- Mortgage/CC selector -->
-            <div class="master-mode-selector">
-              <button class="mode-btn active" data-mode="mortgage">Mortgage</button>
-              <button class="mode-btn" data-mode="cc">Credit Card</button>
+            <div class="master-mode-selector" role="group" aria-label="Calculator Mode Selector">
+              <button class="mode-btn active" data-mode="mortgage" aria-pressed="true">
+                Mortgage
+              </button>
+              <button class="mode-btn" data-mode="cc" aria-pressed="false">Credit Card</button>
             </div>
 
             <!-- Sandbox button -->
@@ -160,9 +162,22 @@
                 <!-- Complexity Mode Selector inside dropdown -->
                 <div class="settings-item-row">
                   <span>Complexity</span>
-                  <div class="master-mode-selector" id="complexity-selector">
-                    <button class="complexity-btn active" data-complexity="simple">Simple</button>
-                    <button class="complexity-btn" data-complexity="advanced">Advanced</button>
+                  <div
+                    class="master-mode-selector"
+                    id="complexity-selector"
+                    role="group"
+                    aria-label="Calculator Complexity Mode Selector"
+                  >
+                    <button
+                      class="complexity-btn active"
+                      data-complexity="simple"
+                      aria-pressed="true"
+                    >
+                      Simple
+                    </button>
+                    <button class="complexity-btn" data-complexity="advanced" aria-pressed="false">
+                      Advanced
+                    </button>
                   </div>
                 </div>
 
@@ -504,6 +519,7 @@
                       class="label-format-btn active"
                       id="labelFormatDate"
                       data-format="date"
+                      aria-pressed="true"
                     >
                       DATE
                     </button>
@@ -512,6 +528,7 @@
                       class="label-format-btn"
                       id="labelFormatPeriod"
                       data-format="period"
+                      aria-pressed="false"
                     >
                       PERIOD
                     </button>
@@ -949,10 +966,19 @@
                     ></span
                   >
                 </h4>
-                <div class="wage-toggle-selector" id="bankWagesToggle">
-                  <button class="wage-toggle-btn active" data-view="wages">Bank Wages</button>
-                  <button class="wage-toggle-btn" data-view="rent">Rent Equivalent</button>
-                  <button class="wage-toggle-btn" data-view="rent-tax-ins">
+                <div
+                  class="wage-toggle-selector"
+                  id="bankWagesToggle"
+                  role="group"
+                  aria-label="Wages Visualization View Selector"
+                >
+                  <button class="wage-toggle-btn active" data-view="wages" aria-pressed="true">
+                    Bank Wages
+                  </button>
+                  <button class="wage-toggle-btn" data-view="rent" aria-pressed="false">
+                    Rent Equivalent
+                  </button>
+                  <button class="wage-toggle-btn" data-view="rent-tax-ins" aria-pressed="false">
                     Rent + Tax & Insurance
                   </button>
                 </div>
