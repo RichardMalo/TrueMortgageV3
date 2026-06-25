@@ -27,7 +27,7 @@ The entire application runs **locally in your browser**—meaning all calculatio
 
 ## 🛠️ Tech Stack
 
-- **Build Tool:** [Vite 5.2+](https://vitejs.dev/)
+- **Build Tool:** [Vite 8.0+](https://vitejs.dev/)
 - **Language:** [TypeScript 5.4+](https://www.typescriptlang.org/) (Strictly typed compiler configurations)
 - **Styling:** CSS3 Custom Properties (Harmonious HSL colors, responsive grids, sleek dark-mode, and focus-visible outlines)
 - **Animations:** [GSAP 3.12](https://greensock.com/gsap/) (High-performance micro-animations and entrance states)
