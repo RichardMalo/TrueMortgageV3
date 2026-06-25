@@ -6,3 +6,7 @@ dist/
 .npm
 .vitest-cache/
 coverage/
+test-results/
+playwright-report/
+blob-report/
+
