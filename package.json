@@ -45,7 +45,10 @@
     "vitest": "^4.1.9"
   },
   "lint-staged": {
-    "*.{ts,js}": "eslint --fix",
+    "*.{ts,js}": [
+      "eslint --fix",
+      "npx prettier --write"
+    ],
     "*.css": "npx prettier --write",
     "*.html": "npx prettier --write"
   }

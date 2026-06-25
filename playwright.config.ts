@@ -22,25 +22,25 @@ export default defineConfig({
 
     /* Collect trace when retrying a failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
-    
+
     /* Disable video recording by default, record only on retry */
-    video: 'on-first-retry',
+    video: 'on-first-retry'
   },
 
   /* Configure projects for major browsers */
   projects: [
     {
       name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      use: { ...devices['Desktop Chrome'] }
     },
     {
       name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
+      use: { ...devices['Desktop Firefox'] }
     },
     {
       name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
+      use: { ...devices['Desktop Safari'] }
+    }
   ],
 
   /* Run your local dev server before starting the tests */
@@ -50,6 +50,6 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     stdout: 'ignore',
     stderr: 'pipe',
-    timeout: 60 * 1000,
-  },
+    timeout: 60 * 1000
+  }
 });
