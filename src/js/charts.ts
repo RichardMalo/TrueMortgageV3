@@ -224,7 +224,7 @@ const renderMonthlyPaymentCircle = (
       margin: { t: 0, b: 0, l: 0, r: 0 },
       annotations: [
         {
-          text: `<b>Total/Period</b><br><span style="font-size: ${fs}; color: ${tc}">${formatCurrency(totPITI)}</span>`,
+          text: `<b>Total/Period</b><br><span style="font-size: 6px;">&nbsp;</span><br><span style="font-size: ${fs}; color: ${tc}">${formatCurrency(totPITI)}</span>`,
           showarrow: false
         }
       ]
