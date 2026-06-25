@@ -5,18 +5,6 @@
 
 👉 **[Live Demo](https://richardmalo.github.io/TrueMortgageV3/)**
 
-## 📸 Interface Preview
-
-![Dashboard Preview](public/assets/dashboard_screenshot.png)
-
-*The Bento-style dashboard displaying mortgage & credit card strategies, concentric interest gravity visualizer, financial summaries, and interactive payoff trajectory charts.*
-
-![Scenario Sandbox Preview](public/assets/sandbox_screenshot.png)
-
-*The Scenario Sandbox sidebar allowing comparison of multiple debt scenarios (e.g. baseline vs. aggressive strategy).*
-
----
-
 Welcome to the **Debt Elimination Engine**, a high-fidelity, client-side financial strategy dashboard. It compiles mortgage and credit card amortization schedules under aggressive pay-down regimes (accelerated frequencies, discretionary surplus, rate shocks) and evaluates them against market investment yield returns (opportunity costs).
 
 The entire application runs **locally in your browser**—meaning all calculations, data scenarios, and blueprints remain 100% private in local storage.
