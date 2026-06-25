@@ -859,7 +859,8 @@ export const setupShareFunctionality = (
     document.body.appendChild(tempContainer);
 
     const modeName = isMortgage ? 'Mortgage' : 'CreditCard';
-    const filename = `Debt_Strategy_Report_${modeName}_${new Date().toISOString().slice(0, 10)}.pdf`;
+    const localDate = new Date().toLocaleDateString('sv-SE');
+    const filename = `Debt_Strategy_Report_${modeName}_${localDate}.pdf`;
     const opt = {
       margin: [10, 10, 10, 10],
       filename,

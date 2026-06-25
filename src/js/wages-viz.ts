@@ -64,13 +64,11 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
 
   // extrapolated run-rate logic for mid-year starts
   const firstYear = years[0];
-  if (yearlyData[firstYear].count < periodsPerYear) {
-    let filledInterest = 0;
-    const limit = Math.min(schedule.length, periodsPerYear);
-    for (let i = 0; i < limit; i++) {
-      filledInterest += schedule[i].interest;
+  if (yearlyData[firstYear].count < periodsPerYear && schedule.length >= periodsPerYear) {
+    const count = yearlyData[firstYear].count;
+    if (count > 0) {
+      yearlyData[firstYear].interest = (yearlyData[firstYear].interest / count) * periodsPerYear;
     }
-    yearlyData[firstYear].interest = filledInterest;
   }
 
   const annualTax = els.inputs.tax ? parseFloat(els.inputs.tax.value) || 0 : 0;

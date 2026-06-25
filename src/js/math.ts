@@ -218,7 +218,7 @@ export const generateCCSchedule = (inputs: Inputs, isBaseline = false): Schedule
     if (balance < 0.01) balance = 0;
 
     totalInterest += interestPortion;
-    totalPrincipal += principalPortion - currentExtraPayment;
+    totalPrincipal += principalPortion;
     totalExtraPaid += currentExtraPayment;
 
     const {

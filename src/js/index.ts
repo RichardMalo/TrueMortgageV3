@@ -2,7 +2,12 @@ import gsap from 'gsap';
 import { AppState, ScheduleResult } from './types.js';
 import { DEFAULT_INPUTS, PREFILLED_DATE, RESIZE_DEBOUNCE_MS, getPrefersDark } from './constants.js';
 import { generateMortgageSchedule, generateCCSchedule, calculateMilestones } from './math.js';
-import { renderCharts, clearVisibleChartsCache, resizeChart } from './charts.js';
+import {
+  renderCharts,
+  clearVisibleChartsCache,
+  resizeChart,
+  cancelPendingChartRenders
+} from './charts.js';
 import {
   saveSettingsToStorage,
   loadSettingsFromStorage,
@@ -115,6 +120,7 @@ const els = {
 // Central calculation execution pipeline
 const calculate = (e?: Event) => {
   if (e) e.preventDefault();
+  cancelPendingChartRenders();
   if (!validateForm(state.currentMode, els.inputs, els.containers.error)) return;
 
   const isMortgage = state.currentMode === 'mortgage';

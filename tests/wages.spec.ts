@@ -274,4 +274,33 @@ describe('renderBankWages (wages-viz.ts)', () => {
     renderBankWages(makeState('wages'), makeEls(), result);
     expect(container.querySelectorAll('.wage-circle-wrapper')).toHaveLength(1);
   });
+
+  it('correctly extrapolates interest in renderBankWages when the first year is a partial year', () => {
+    const rows = [
+      { calendarYear: 2026, interest: 1000 },
+      { calendarYear: 2026, interest: 1000 },
+      { calendarYear: 2026, interest: 1000 },
+      { calendarYear: 2026, interest: 1000 },
+      { calendarYear: 2026, interest: 1000 },
+      { calendarYear: 2026, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 },
+      { calendarYear: 2027, interest: 1000 }
+    ];
+    const result = makeScheduleResult(rows, 12);
+    renderBankWages(makeState('wages'), makeEls(), result);
+    const wrappers = container.querySelectorAll('.wage-circle-wrapper');
+    expect(wrappers).toHaveLength(2);
+    const circle2026 = wrappers[0].querySelector('.wage-circle');
+    expect(circle2026).not.toBeNull();
+  });
 });

@@ -29,7 +29,7 @@
     "@types/node": "^25.9.3",
     "@typescript-eslint/eslint-plugin": "^8.61.0",
     "@typescript-eslint/parser": "^8.61.0",
-    "@vitest/coverage-v8": "^4.1.9",
+    "@vitest/coverage-v8": "^1.6.0",
     "esbuild": "^0.28.1",
     "eslint": "^10.5.0",
     "eslint-config-prettier": "^10.1.8",
@@ -39,10 +39,7 @@
     "prettier": "^3.3.2",
     "typescript": "^5.4.5",
     "vite": "^8.0.16",
-    "vitest": "^4.1.8"
-  },
-  "overrides": {
-    "dompurify": "^3.4.11"
+    "vitest": "^1.6.0"
   },
   "lint-staged": {
     "*.{ts,js}": "eslint --fix",

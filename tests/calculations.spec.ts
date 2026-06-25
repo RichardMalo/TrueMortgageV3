@@ -386,4 +386,47 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(firstRow.pmi).toBeCloseTo(375, 1);
     expect(firstRow.escrow).toBeCloseTo(825, 1);
   });
+
+  it('should correctly calculate totalPrincipal and totalExtra for credit cards when extra payment is non-zero', () => {
+    const inputs: Inputs = {
+      homePrice: 0,
+      downPayment: 0,
+      ccBalance: 1000,
+      province: 'ON',
+      annualRate: 18.0,
+      amortizationYears: 0,
+      termYears: 0,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 100, // Non-zero extra payment
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateCCSchedule(inputs, false);
+    expect(result.schedule.length).toBeGreaterThan(0);
+    const lastRow = result.schedule[result.schedule.length - 1];
+
+    // Total principal paid must equal the starting balance of 1000
+    expect(lastRow.totalPrincipal).toBeCloseTo(1000, 1);
+    expect(lastRow.balance).toBe(0);
+
+    // Let's verify that totalExtra is tracked and is greater than 0
+    expect(lastRow.totalExtra).toBeGreaterThan(0);
+
+    // And make sure that sum of all principal portions in the schedule matches lastRow.totalPrincipal
+    const sumOfPrincipalPortions = result.schedule.reduce(
+      (sum, row) => sum + row.principal + row.extra,
+      0
+    );
+    expect(sumOfPrincipalPortions).toBeCloseTo(1000, 1);
+  });
 });

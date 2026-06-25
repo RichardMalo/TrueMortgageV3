@@ -60,6 +60,14 @@ export const queueChartRender = (
   }
 };
 
+export const cancelPendingChartRenders = () => {
+  if (renderFrameId !== null) {
+    cancelAnimationFrame(renderFrameId);
+    renderFrameId = null;
+  }
+  renderQueue.clear();
+};
+
 const flushRenderQueue = async () => {
   try {
     const Plotly = await loadPlotly();

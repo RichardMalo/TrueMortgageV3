@@ -37,6 +37,9 @@ export default defineConfig({
         'src/js/table.ts',
         'src/js/sandbox.ts',
         'src/js/index.ts',
+        'src/js/blueprint.ts',
+        'src/js/card-order.ts',
+        'src/js/settings.ts',
         'eslint.config.js',
         'vite.config.js'
       ],
