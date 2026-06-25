@@ -313,12 +313,6 @@ const handleProfileSwitch = (profileId: string) => {
     innerLabel.textContent = state.currentMode === 'cc' ? 'CC Balance' : 'Principal';
   }
 
-  const calcBtn = document.getElementById('calcBtn');
-  if (calcBtn) {
-    calcBtn.textContent =
-      state.currentMode === 'cc' ? 'Optimize Credit Card Payoff' : 'Optimize Mortgage Strategy';
-  }
-
   if (els.containers.pitiSection) {
     els.containers.pitiSection.style.display = els.inputs.pitiToggle?.checked ? 'block' : 'none';
   }
@@ -618,12 +612,6 @@ const bootApp = () => {
         b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
 
-      const calcBtn = document.getElementById('calcBtn');
-      if (calcBtn) {
-        calcBtn.textContent =
-          state.currentMode === 'cc' ? 'Optimize Credit Card Payoff' : 'Optimize Mortgage Strategy';
-      }
-
       calculate();
       saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
     });
@@ -739,7 +727,7 @@ const bootApp = () => {
     }
   });
 
-  els.form?.addEventListener('submit', calculate);
+  els.form?.addEventListener('submit', (e) => e.preventDefault());
 
   // Resize window: only resize visible Plotly charts — do NOT re-run calculate().
   // Calculation results are viewport-independent; re-running the full amortization
