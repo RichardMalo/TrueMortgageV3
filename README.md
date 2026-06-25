@@ -90,26 +90,38 @@ npm run lint
 ## 📂 Code Architecture
 
 ```
-├── .github/workflows/    # CI pipelines (Eslint linting + Vitest checks)
+├── .github/workflows/    # CI pipelines (Linting, type-checks, Vitest, pages deployment)
 ├── .husky/               # Pre-commit git hooks triggers
 ├── public/               # Static assets (Robots, Sitemaps, Country Flag SVGs)
 ├── src/
 │   ├── css/              # Core stylesheets & design tokens
 │   │   └── main.css
 │   └── js/               # Application source scripts
-│       ├── index.ts      # Core orchestrator and boot initialization
-│       ├── math.ts       # Decoupled mortgage/CC math algorithms
-│       ├── charts.ts     # Plotly setup and layout render queue
-│       ├── storage.ts    # LocalStorage handling & AES-GCM cryptography
-│       ├── sandbox.ts    # Scenario sidebar management
-│       ├── ui.ts         # DOM counters (GSAP), custom dropdowns, and PDF exports
-│       ├── form.ts       # Input validations and parsers
+│       ├── blueprint.ts  # JSON/Encrypted blueprint import & export logic
+│       ├── card-order.ts # Bento layout card dragging reorder persistence
+│       ├── charts.ts     # Plotly configuration and RAF batch render queue
+│       ├── constants.ts  # Shared system limits, defaults, and thresholds
+│       ├── declarations.d.ts
+│       ├── form.ts       # Input validation logic and schema mapping
+│       ├── index.ts      # Main app entry point and state orchestration
+│       ├── math.ts       # Decoupled mortgage/CC compound math algorithms
+│       ├── milestones-ui.ts # Milestone nodes layout updates
+│       ├── rate-shock.ts # Term renewal rate timeline updates
+│       ├── sandbox.ts    # Scenario sidebar management (accessible dialog)
+│       ├── settings.ts   # Portability and system limits modal bindings
+│       ├── storage.ts    # Session state handling & AES-GCM cryptography
 │       ├── table.ts      # Progressive amortization schedule table renderer
-│       ├── types.ts      # TypeScript interfaces
-│       └── declarations.d.ts
-└── tests/                # Unit test specifications
+│       ├── types.ts      # Shared type definitions
+│       ├── ui.ts         # DOM counters (GSAP), custom dropdowns, and PDF exports
+│       └── wages-viz.ts  # Circle visualization for interest wages / rent
+└── tests/                # Comprehensive test specifications
     ├── calculations.spec.ts
-    └── storage.spec.ts
+    ├── form.spec.ts
+    ├── milestones.spec.ts
+    ├── rate-shock.spec.ts
+    ├── storage.spec.ts
+    ├── ui.spec.ts
+    └── wages.spec.ts
 ```
 
 ---
