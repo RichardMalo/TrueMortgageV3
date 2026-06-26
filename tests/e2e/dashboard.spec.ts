@@ -63,17 +63,17 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     const homePriceInput = page.locator('#homePrice');
     const downPaymentInput = page.locator('#downPayment');
 
-    // Focus and fill downPayment with 0, then tab out to trigger change/blur events safely
+    // Focus and fill downPayment with 0, then blur to trigger change/blur events safely
     await downPaymentInput.fill('0');
-    await downPaymentInput.press('Tab');
+    await downPaymentInput.blur();
 
-    // Focus and fill homePrice with 500000, then tab out
+    // Focus and fill homePrice with 500000, then blur
     await homePriceInput.fill('500000');
-    await homePriceInput.press('Tab');
+    await homePriceInput.blur();
 
-    // Focus and fill downPayment with 100000, then tab out
+    // Focus and fill downPayment with 100000, then blur
     await downPaymentInput.fill('100000');
-    await downPaymentInput.press('Tab');
+    await downPaymentInput.blur();
 
     // Verify stats boxes update
     const mortgageAmount = page.locator('#mortgageAmountDisplay');
@@ -114,5 +114,41 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     const newCard2 = page.locator('.chart-wrapper').nth(1);
     const newId2 = await newCard2.locator('.plotly-container').getAttribute('id');
     expect(newId2).toBe(initialId1);
+  });
+
+  test('should export the active strategy blueprint with only the active profile', async ({
+    page
+  }) => {
+    // Open settings menu
+    await page.click('#settingsTrigger');
+
+    // Open Secure Sync modal
+    await page.click('#settingsOptSync');
+
+    // Make sure Export Scope defaults to active scenario
+    const activeScopeBtn = page.locator('#export-scope-selector .scope-btn[data-scope="active"]');
+    await expect(activeScopeBtn).toHaveClass(/active/);
+
+    // Wait for download event when clicking export blueprint button
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.click('#exportBlueprintBtn')
+    ]);
+
+    // Verify downloaded filename matches active scenario filename pattern
+    const filename = download.suggestedFilename();
+    expect(filename).toContain('mtg_active_strategy_blueprint.json');
+
+    // Read the file content
+    const fs = await import('fs');
+    const path = await download.path();
+    const contents = fs.readFileSync(path, 'utf-8');
+    const json = JSON.parse(contents);
+
+    // Validate active blueprint structure contains version, activeProfileId, and profiles
+    expect(json.version).toBe(2);
+    expect(json.activeProfileId).toBeDefined();
+    expect(Object.keys(json.profiles)).toHaveLength(1);
+    expect(json.profiles[json.activeProfileId]).toBeDefined();
   });
 });

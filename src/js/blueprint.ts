@@ -30,6 +30,7 @@ export const setupBlueprintSync = (
   handleProfileSwitch: (_pId: string) => void
 ) => {
   const formatBtns = document.querySelectorAll('.format-btn');
+  const scopeBtns = document.querySelectorAll('.scope-btn');
   const passcodeWrapper = document.getElementById('passcodeWrapper');
   const passcodeInput = document.getElementById('blueprintPasscode') as HTMLInputElement | null;
   const exportBtn = document.getElementById('exportBlueprintBtn');
@@ -37,15 +38,20 @@ export const setupBlueprintSync = (
   const dropzone = document.getElementById('blueprintDropzone');
   const feedback = document.getElementById('dropzoneFeedback');
   let activeFormat = 'plain';
+  let activeScope = 'active';
 
   if (!passcodeWrapper || !passcodeInput || !exportBtn || !fileInput || !dropzone || !feedback)
     return;
 
   formatBtns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
-      formatBtns.forEach((b) => b.classList.remove('active'));
-      const btnEl = e.target as HTMLElement;
+      formatBtns.forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      const btnEl = e.currentTarget as HTMLElement;
       btnEl.classList.add('active');
+      btnEl.setAttribute('aria-pressed', 'true');
       activeFormat = btnEl.getAttribute('data-format') || 'plain';
 
       if (activeFormat === 'encrypted') {
@@ -54,6 +60,19 @@ export const setupBlueprintSync = (
         passcodeWrapper.classList.remove('active');
         passcodeInput.value = '';
       }
+    });
+  });
+
+  scopeBtns.forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      scopeBtns.forEach((b) => {
+        b.classList.remove('active');
+        b.setAttribute('aria-pressed', 'false');
+      });
+      const btnEl = e.currentTarget as HTMLElement;
+      btnEl.classList.add('active');
+      btnEl.setAttribute('aria-pressed', 'true');
+      activeScope = btnEl.getAttribute('data-scope') || 'active';
     });
   });
 
@@ -77,14 +96,35 @@ export const setupBlueprintSync = (
 
   exportBtn.addEventListener('click', async () => {
     saveSettingsToStorage(state, els.inputs, defaultInputs, false);
-    const data = localStorage.getItem('mtg_calculator_settings');
-    if (!data) {
+    const rawData = localStorage.getItem('mtg_calculator_settings');
+    if (!rawData) {
       showFeedback('No settings found to export! Please calculate first.', true);
       return;
     }
 
-    let outputText = data;
-    let filename = 'mtg_strategy_blueprint.json';
+    let exportPayload = rawData;
+
+    if (activeScope === 'active') {
+      try {
+        const settingsObj = JSON.parse(rawData);
+        const activeId = settingsObj.activeProfileId;
+        if (activeId && settingsObj.profiles && settingsObj.profiles[activeId]) {
+          const activeProfile = settingsObj.profiles[activeId];
+          settingsObj.profiles = { [activeId]: activeProfile };
+          settingsObj.comparisonProfileId = null;
+          settingsObj.compareModeActive = false;
+          exportPayload = JSON.stringify(settingsObj);
+        }
+      } catch (err) {
+        console.error('Failed to prune export settings:', err);
+      }
+    }
+
+    let outputText = exportPayload;
+    let filename =
+      activeScope === 'active'
+        ? 'mtg_active_strategy_blueprint.json'
+        : 'mtg_strategy_blueprint.json';
 
     if (activeFormat === 'encrypted') {
       const passcode = passcodeInput.value.trim();
@@ -96,8 +136,11 @@ export const setupBlueprintSync = (
       try {
         exportBtn.setAttribute('disabled', 'true');
         exportBtn.textContent = 'Encrypting...';
-        outputText = await encryptData(data, passcode);
-        filename = 'mtg_strategy_blueprint.enc.json';
+        outputText = await encryptData(exportPayload, passcode);
+        filename =
+          activeScope === 'active'
+            ? 'mtg_active_strategy_blueprint.enc.json'
+            : 'mtg_strategy_blueprint.enc.json';
       } catch (err) {
         console.error(err);
         showFeedback('Encryption failed!', true);

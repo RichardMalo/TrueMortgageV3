@@ -95,15 +95,17 @@ const flushRenderQueue = async () => {
       }
     });
 
-    // Mutate DOM sequentially (avoids layout thrashing)
-    elementsToRender.forEach(({ el, data, layout, config, elementId }) => {
+    // Mutate DOM sequentially, yielding to the browser's paint loop after each chart to maximize INP performance.
+    for (const { el, data, layout, config, elementId } of elementsToRender) {
       try {
         Plotly.react(el, data, layout, config);
         visibleChartsMap[elementId] = true;
       } catch (e) {
         console.warn(`Plotly render failed for #${elementId}:`, e);
       }
-    });
+      // Yield execution to the browser event loop to allow paint and prevent blocking/layout-thrashing lag
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
   } finally {
     renderQueue.clear();
     renderFrameId = null;

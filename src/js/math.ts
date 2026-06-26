@@ -176,9 +176,7 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
 export const generateCCSchedule = (inputs: Inputs, isBaseline = false): ScheduleResult => {
   const principal = Math.max(0, inputs.ccBalance || 0);
   const safeRate = Math.min(200, Math.max(0, inputs.annualRate || 0));
-  const dailyRate = safeRate / 100 / 365;
-  const daysInMonth = 365 / 12;
-  const monthlyRate = Math.pow(1 + dailyRate, daysInMonth) - 1; // Compounds daily to monthly equivalent
+  const monthlyRate = safeRate / 100 / 12; // Simple interest daily rate posted monthly (Standard credit card calculation: APR / 12)
 
   // Regional minimum payment laws
   const provPct = inputs.province === 'QC' ? 0.05 : 0.03;

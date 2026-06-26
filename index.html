@@ -30,8 +30,8 @@
       content="Algorithmic optimization engine engineered to eliminate interest friction and accelerate your path to zero debt."
     />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://truemortgage.com/" />
-    <meta property="og:image" content="https://truemortgage.com/assets/og-image.png" />
+    <meta property="og:url" content="https://truemortgagemath.com/" />
+    <meta property="og:image" content="https://truemortgagemath.com/assets/og-image.png" />
     <!-- Twitter Card Metadata -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Debt Elimination Engine" />
@@ -39,8 +39,8 @@
       name="twitter:description"
       content="Algorithmic optimization engine engineered to eliminate interest friction and accelerate your path to zero debt."
     />
-    <meta name="twitter:image" content="https://truemortgage.com/assets/og-image.png" />
-    <link rel="canonical" href="https://truemortgage.com/" />
+    <meta name="twitter:image" content="https://truemortgagemath.com/assets/og-image.png" />
+    <link rel="canonical" href="https://truemortgagemath.com/" />
 
     <!-- Favicon & Touch Icons -->
     <link rel="icon" type="image/x-icon" href="./favicon.ico" />
@@ -65,7 +65,7 @@
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Debt Elimination Engine",
-        "url": "https://truemortgage.com/",
+        "url": "https://truemortgagemath.com/",
         "description": "Algorithmic mortgage and credit card optimizer featuring Canadian vs US compounding, refinancing rate shocks, opportunity cost comparisons, and bento dashboard customization.",
         "applicationCategory": "FinanceApplication",
         "operatingSystem": "All",
@@ -1115,13 +1115,53 @@
 
           <div class="flex-col gap-14">
             <div class="flex-col gap-6">
-              <label class="text-xxs font-bold opacity-80">Security Mode</label>
-              <div class="master-mode-selector flex w-full box-border">
-                <button type="button" class="format-btn active" data-format="plain">
+              <label class="text-xxs font-bold opacity-80" id="security-mode-label"
+                >Security Mode</label
+              >
+              <div
+                class="master-mode-selector flex w-full box-border"
+                role="group"
+                aria-labelledby="security-mode-label"
+              >
+                <button
+                  type="button"
+                  class="format-btn active"
+                  data-format="plain"
+                  aria-pressed="true"
+                >
                   Plain JSON
                 </button>
-                <button type="button" class="format-btn" data-format="encrypted">
+                <button
+                  type="button"
+                  class="format-btn"
+                  data-format="encrypted"
+                  aria-pressed="false"
+                >
                   Encrypted 🔒
+                </button>
+              </div>
+            </div>
+
+            <div class="flex-col gap-6">
+              <label class="text-xxs font-bold opacity-80" id="export-scope-label"
+                >Export Scope</label
+              >
+              <div
+                class="master-mode-selector flex w-full box-border"
+                id="export-scope-selector"
+                role="group"
+                aria-labelledby="export-scope-label"
+              >
+                <button
+                  type="button"
+                  class="scope-btn active"
+                  data-scope="active"
+                  aria-pressed="true"
+                >
+                  Active Scenario
+                </button>
+                <button type="button" class="scope-btn" data-scope="all" aria-pressed="false">
+                  All Scenarios
                 </button>
               </div>
             </div>

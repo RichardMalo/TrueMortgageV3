@@ -99,8 +99,8 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const result = generateCCSchedule(inputs, false);
     const firstRow = result.schedule[0];
     expect(firstRow.payment).toBeCloseTo(450.0, 1);
-    expect(firstRow.interest).toBeCloseTo(251.9, 1);
-    expect(firstRow.principal).toBeCloseTo(198.1, 1);
+    expect(firstRow.interest).toBeCloseTo(249.9, 1);
+    expect(firstRow.principal).toBeCloseTo(200.1, 1);
   });
 
   it('should calculate milestones correctly', () => {
@@ -299,8 +299,8 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const result = generateCCSchedule(inputs, false);
     const firstRow = result.schedule[0];
     expect(firstRow.payment).toBeCloseTo(750.0, 1); // 5% of 15000
-    expect(firstRow.interest).toBeCloseTo(251.9, 1);
-    expect(firstRow.principal).toBeCloseTo(498.1, 1);
+    expect(firstRow.interest).toBeCloseTo(249.9, 1);
+    expect(firstRow.principal).toBeCloseTo(500.1, 1);
   });
 
   it('should handle different payment frequencies (semi-monthly, bi-weekly, accelerated bi-weekly)', () => {
