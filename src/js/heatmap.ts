@@ -150,7 +150,7 @@ export const renderHeatmap = (
           <strong>${formatCurrency(cell.interestSaved)}</strong>
         </div>
       </div>
-      <div class="heatmap-details-action" style="display: ${isLocked ? 'flex' : 'none'}">
+      <div class="heatmap-details-action" style="display: flex; visibility: ${isLocked ? 'visible' : 'hidden'}">
         <button type="button" class="heatmap-apply-btn" id="heatmap-apply-strategy-btn">Apply Strategy</button>
       </div>
     `;

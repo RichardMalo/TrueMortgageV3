@@ -2642,12 +2642,12 @@ body.dark-mode .heatmap-row-header {
   flex-direction: column;
   gap: 14px;
   transition: all 0.25s ease;
+  min-height: 206px;
 }
 .heatmap-details-panel.empty {
   align-items: center;
   justify-content: center;
   text-align: center;
-  min-height: 80px;
   color: var(--text-color);
   opacity: 0.6;
   font-style: italic;
