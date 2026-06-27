@@ -34,6 +34,7 @@ import { renderBankWages, setupBankWagesToggle } from './wages-viz.js';
 import { renderMilestonesUI } from './milestones-ui.js';
 import { syncStateCardOrderFromDOM, applyStateCardOrderToDOM } from './card-order.js';
 import { renderHeatmap } from './heatmap.js';
+import { renderGoalSolver } from './goal-solver.js';
 import { setupBlueprintSync } from './blueprint.js';
 import { setupSettingsMenu } from './settings.js';
 
@@ -286,6 +287,26 @@ const calculate = (e?: Event) => {
       }
       if (els.inputs.lumpSum) {
         els.inputs.lumpSum.value = String(lumpSum);
+      }
+      calculate();
+    }
+  );
+
+  renderGoalSolver(
+    state,
+    els,
+    actData,
+    baseData,
+    () => getCalculationsInputs(state.currentMode, els.inputs, state.termRates),
+    (type, value) => {
+      if (type === 'monthly') {
+        if (els.inputs.extra) {
+          els.inputs.extra.value = String(value);
+        }
+      } else {
+        if (els.inputs.lumpSum) {
+          els.inputs.lumpSum.value = String(value);
+        }
       }
       calculate();
     }
