@@ -417,7 +417,7 @@ const resetApplicationData = () => {
     });
 
     // Collapse expanded chart wrappers
-    const expandedWrappers = container.querySelectorAll('.chart-wrapper.expanded');
+    const expandedWrappers = document.querySelectorAll('.chart-wrapper.expanded');
     expandedWrappers.forEach((w) => {
       w.classList.remove('expanded');
       const btn = w.querySelector('.chart-expand-btn') as HTMLElement | null;
@@ -477,50 +477,65 @@ const setupComplexityToggle = () => {
 };
 
 const setupChartExpandButtons = () => {
-  const container = document.getElementById('draggable-charts-container');
-  if (!container) return;
-  const wrappers = container.querySelectorAll('.chart-wrapper');
-  wrappers.forEach((wrapperEl) => {
-    const wrapper = wrapperEl as HTMLElement;
-    if (wrapper.querySelector('.chart-expand-btn')) return;
+  const containers = [
+    document.getElementById('draggable-charts-container'),
+    document.getElementById('draggable-strategy-container')
+  ];
+  containers.forEach((container) => {
+    if (!container) return;
+    const wrappers = container.querySelectorAll('.chart-wrapper');
+    wrappers.forEach((wrapperEl) => {
+      const wrapper = wrapperEl as HTMLElement;
+      if (wrapper.querySelector('.chart-expand-btn')) return;
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'chart-expand-btn';
-    btn.innerHTML = '+';
-    btn.title = 'Enlarge Chart';
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chart-expand-btn';
+      btn.innerHTML = '+';
+      btn.title = 'Enlarge Chart';
 
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
 
-      const isExpanded = wrapper.classList.toggle('expanded');
-      btn.innerHTML = isExpanded ? '−' : '+';
-      btn.title = isExpanded ? 'Shrink Chart' : 'Enlarge Chart';
+        const isExpanded = wrapper.classList.toggle('expanded');
+        btn.innerHTML = isExpanded ? '−' : '+';
+        btn.title = isExpanded ? 'Shrink Chart' : 'Enlarge Chart';
 
-      const chartDiv = wrapper.querySelector('.plotly-container') as HTMLElement | null;
-      if (chartDiv) {
-        resizeChart(chartDiv);
-        setTimeout(() => {
+        const chartDiv = wrapper.querySelector('.plotly-container') as HTMLElement | null;
+        if (chartDiv) {
           resizeChart(chartDiv);
-        }, 150);
-      }
-    });
+          setTimeout(() => {
+            resizeChart(chartDiv);
+          }, 150);
+        }
+      });
 
-    wrapper.appendChild(btn);
+      wrapper.appendChild(btn);
+    });
   });
 };
 
 const setupExpandCollapseAllChartsButtons = () => {
   const expandBtn = document.getElementById('expand-all-charts-btn');
   const collapseBtn = document.getElementById('collapse-all-charts-btn');
-  const container = document.getElementById('draggable-charts-container');
-  if (!expandBtn || !collapseBtn || !container) return;
+  if (!expandBtn || !collapseBtn) return;
 
   const updateCharts = (expand: boolean) => {
-    const wrappers = container.querySelectorAll('.chart-wrapper');
-    wrappers.forEach((wrapperEl) => {
-      const wrapper = wrapperEl as HTMLElement;
+    const containers = [
+      document.getElementById('draggable-charts-container'),
+      document.getElementById('draggable-strategy-container')
+    ];
+    const allWrappers: HTMLElement[] = [];
+    containers.forEach((container) => {
+      if (container) {
+        container.querySelectorAll('.chart-wrapper').forEach((w) => {
+          allWrappers.push(w as HTMLElement);
+        });
+      }
+    });
+
+    allWrappers.forEach((wrapper) => {
       const isExpanded = wrapper.classList.contains('expanded');
       if (expand !== isExpanded) {
         wrapper.classList.toggle('expanded', expand);
@@ -536,7 +551,7 @@ const setupExpandCollapseAllChartsButtons = () => {
       }
     });
     setTimeout(() => {
-      wrappers.forEach((wrapper) => {
+      allWrappers.forEach((wrapper) => {
         const chartDiv = wrapper.querySelector('.plotly-container') as HTMLElement | null;
         if (chartDiv) {
           resizeChart(chartDiv);
