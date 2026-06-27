@@ -13,7 +13,7 @@ export const getHeatmapAxes = (mode: 'mortgage' | 'cc', balance: number) => {
     };
   } else {
     return {
-      monthly: [0, 100, 250, 500, 750, 1000],
+      monthly: [0, 250, 500, 1000, 1500, 2500],
       lumpSum: [0, 5000, 10000, 25000, 50000, 100000].filter((v) => v <= balance + 5000)
     };
   }
