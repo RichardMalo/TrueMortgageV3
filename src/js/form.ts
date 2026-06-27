@@ -117,7 +117,8 @@ export const getCalculationsInputs = (
     extraPayment: parseFloat(inputs.extra?.value || '0'),
     startDate: inputs.date?.value || '',
     rateShockEnabled: isMortgage && !!(inputs.rateShockToggle as HTMLInputElement | null)?.checked,
-    termRates: termRates
+    termRates: termRates,
+    lumpSum: parseFloat(inputs.lumpSum?.value || '0')
   };
 };
 
@@ -156,6 +157,7 @@ export const profileToInputs = (
     extraPayment: parseFloat(String(profileInputs.extra || '0')),
     startDate: String(profileInputs.date || ''),
     rateShockEnabled: isMortgage && profileInputs.rateShockToggle === true,
-    termRates
+    termRates,
+    lumpSum: parseFloat(String(profileInputs.lumpSum || '0'))
   };
 };

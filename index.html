@@ -491,6 +491,29 @@
                   />
                 </div>
               </div>
+              <div class="input-group-row advanced-only">
+                <div class="input-group">
+                  <label for="lumpSumPayment"
+                    >One-Time Lump Sum ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >A one-time payment applied directly to the principal balance at the start
+                        of the schedule. Highly effective for visualising the compound impact of
+                        bonuses, tax returns, or inheritances.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="lumpSumPayment"
+                    inputmode="decimal"
+                    required
+                    value="0"
+                    step="500"
+                    min="0"
+                  />
+                </div>
+              </div>
               <div class="input-group-row">
                 <div class="input-group advanced-only flex-1-5-min">
                   <label for="firstPaymentDate">Start Date</label>
@@ -1010,6 +1033,30 @@
               <div class="bank-wages-container" id="bankWagesCirclesContainer">
                 <!-- Dynamic circle elements -->
               </div>
+            </div>
+          </div>
+
+          <!-- Strategy Impact Heatmap Card Section -->
+          <div class="bento-card mb-24 hidden" id="heatmap-card">
+            <h2 class="section-title m-0">
+              Extra Payment Impact Heatmap
+              <span class="help-tip"
+                >?<span class="tooltip-text"
+                  >A visual matrix showing payoff time reduction (in years) for combinations of
+                  monthly extra payments (rows) and one-time lump sum payments (columns). Click any
+                  cell to apply that strategy immediately.</span
+                ></span
+              >
+            </h2>
+            <div
+              class="heatmap-subtitle mb-15 text-sm text-secondary"
+              style="margin-top: 5px; opacity: 0.8"
+            >
+              Plots Monthly Extra Surplus (Rows) vs. One-Time Lump Sum (Columns). Shows payoff
+              reduction in years. Click a cell to apply.
+            </div>
+            <div class="heatmap-table-container" id="heatmapContainer">
+              <!-- Dynamically populated table -->
             </div>
           </div>
 

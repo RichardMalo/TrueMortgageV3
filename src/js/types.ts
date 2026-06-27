@@ -19,6 +19,7 @@ export interface Inputs {
   startDate: string;
   rateShockEnabled: boolean;
   termRates: Record<number, number>;
+  lumpSum?: number;
 }
 
 export interface ScheduleRow {
@@ -80,6 +81,7 @@ export interface ProfileInputs {
   mortgageExtra: string;
   ccRate: string;
   ccExtra: string;
+  lumpSum?: string;
   [key: string]: string | boolean | undefined;
 }
 

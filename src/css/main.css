@@ -2540,3 +2540,155 @@ body:not(.dark-mode) .scenario-sidebar {
   transition: all 0.3s var(--spring-easing) !important;
   cursor: pointer !important;
 }
+
+/* Extra Payment Impact Heatmap Styles */
+.heatmap-table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 15px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background-color: var(--card-bg);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.02);
+  -webkit-overflow-scrolling: touch;
+}
+.heatmap-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 650px;
+}
+.heatmap-table th,
+.heatmap-table td {
+  padding: 15px 12px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+.heatmap-table th {
+  background-color: rgba(0, 0, 0, 0.02);
+  color: var(--text-color);
+  font-weight: 600;
+}
+body.dark-mode .heatmap-table th {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+.heatmap-corner-cell {
+  position: relative;
+  min-width: 130px;
+  background-color: rgba(0, 0, 0, 0.03) !important;
+}
+body.dark-mode .heatmap-corner-cell {
+  background-color: rgba(255, 255, 255, 0.03) !important;
+}
+.corner-axis-labels {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 0.72rem;
+  font-weight: bold;
+}
+.corner-axis-labels .y-label {
+  align-self: flex-start;
+  color: var(--text-color);
+}
+.corner-axis-labels .x-label {
+  align-self: flex-end;
+  color: var(--text-color);
+  margin-top: 2px;
+}
+.heatmap-row-header {
+  font-weight: 600;
+  background-color: rgba(0, 0, 0, 0.02);
+  min-width: 130px;
+}
+body.dark-mode .heatmap-row-header {
+  background-color: rgba(255, 255, 255, 0.02);
+}
+.heatmap-cell {
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-radius 0.15s ease;
+  user-select: none;
+}
+.heatmap-cell:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  z-index: 10;
+  border-radius: 6px;
+}
+.unit-yrs {
+  font-size: 0.72rem;
+  opacity: 0.8;
+}
+/* Tooltip styling */
+.heatmap-tooltip {
+  visibility: hidden;
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  background-color: rgba(15, 23, 42, 0.96); /* Slate 900 */
+  color: #f8fafc;
+  text-align: left;
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow:
+    0 10px 25px -5px rgba(0, 0, 0, 0.25),
+    0 8px 10px -6px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  opacity: 0;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+  pointer-events: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+}
+.heatmap-cell:hover .heatmap-tooltip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(-5px);
+}
+.tooltip-title {
+  font-weight: 700;
+  font-size: 0.82rem;
+  margin-bottom: 8px;
+  color: #3b82f6; /* Accent blue */
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.tooltip-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.tooltip-item span {
+  opacity: 0.75;
+}
+.tooltip-divider {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin: 6px 0;
+}
+.tooltip-action-hint {
+  text-align: center;
+  font-size: 0.72rem;
+  opacity: 0.6;
+  font-style: italic;
+  margin-top: 6px;
+  color: #60a5fa;
+}
+.text-accent {
+  color: #34d399 !important; /* Emerald green */
+}
+.text-highlight {
+  color: #fbbf24 !important; /* Amber yellow */
+}

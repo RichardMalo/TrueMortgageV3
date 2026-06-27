@@ -41,5 +41,6 @@ export const DEFAULT_INPUTS: Inputs = Object.freeze({
   extraPayment: 0,
   startDate: PREFILLED_DATE,
   rateShockEnabled: false,
-  termRates: {}
+  termRates: {},
+  lumpSum: 0
 });

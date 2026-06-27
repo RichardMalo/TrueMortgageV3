@@ -33,6 +33,7 @@ import { syncRateShockTimeline } from './rate-shock.js';
 import { renderBankWages, setupBankWagesToggle } from './wages-viz.js';
 import { renderMilestonesUI } from './milestones-ui.js';
 import { syncStateCardOrderFromDOM, applyStateCardOrderToDOM } from './card-order.js';
+import { renderHeatmap } from './heatmap.js';
 import { setupBlueprintSync } from './blueprint.js';
 import { setupSettingsMenu } from './settings.js';
 
@@ -83,7 +84,8 @@ const els = {
     investRate: document.getElementById('investRate') as HTMLInputElement | null,
     extra: document.getElementById('extraPayment') as HTMLInputElement | null,
     date: document.getElementById('firstPaymentDate') as HTMLInputElement | null,
-    rateShockToggle: document.getElementById('rateShockToggle') as HTMLInputElement | null
+    rateShockToggle: document.getElementById('rateShockToggle') as HTMLInputElement | null,
+    lumpSum: document.getElementById('lumpSumPayment') as HTMLInputElement | null
   },
   results: {
     mortgageDisplay: document.getElementById('mortgageAmountDisplay'),
@@ -271,6 +273,23 @@ const calculate = (e?: Event) => {
   lastActData = actData;
   lastBaseData = baseData;
   renderBankWages(state, els, actData);
+
+  renderHeatmap(
+    state,
+    els,
+    actData,
+    baseData,
+    () => getCalculationsInputs(state.currentMode, els.inputs, state.termRates),
+    (monthly, lumpSum) => {
+      if (els.inputs.extra) {
+        els.inputs.extra.value = String(monthly);
+      }
+      if (els.inputs.lumpSum) {
+        els.inputs.lumpSum.value = String(lumpSum);
+      }
+      calculate();
+    }
+  );
 
   syncStateCardOrderFromDOM(state);
   saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);

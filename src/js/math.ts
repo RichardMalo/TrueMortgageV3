@@ -107,6 +107,9 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
     const interestPortion = balance * activePeriodicRate;
     let principalPortion = periodicPayment - interestPortion;
     let currentExtraPayment = userExtra;
+    if (i === 1 && !isBaseline) {
+      currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
+    }
 
     if (principalPortion + currentExtraPayment > balance) {
       principalPortion = balance - currentExtraPayment;
@@ -204,6 +207,9 @@ export const generateCCSchedule = (inputs: Inputs, isBaseline = false): Schedule
       calculatedMinimumPayment = balance + interestPortion;
 
     let currentExtraPayment = userExtra;
+    if (i === 1 && !isBaseline) {
+      currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
+    }
     let totalActualPayment = calculatedMinimumPayment + currentExtraPayment;
     if (totalActualPayment > balance + interestPortion) {
       totalActualPayment = balance + interestPortion;
