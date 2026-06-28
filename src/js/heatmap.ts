@@ -80,8 +80,8 @@ export const renderHeatmap = (
       };
 
       const res = isMortgage
-        ? generateMortgageSchedule(cellInputs, false)
-        : generateCCSchedule(cellInputs, false);
+        ? generateMortgageSchedule(cellInputs, false, true)
+        : generateCCSchedule(cellInputs, false, true);
 
       const cellPayoff = res.summary.periodsToPayoff;
       const cellYears = cellPayoff / periodsPerYear;

@@ -25,8 +25,8 @@ export const solveRequiredMonthly = (
     const mid = (min + max) / 2;
     const testInputs = { ...inputs, extraPayment: mid, lumpSum: 0 };
     const res = isMortgage
-      ? generateMortgageSchedule(testInputs, false)
-      : generateCCSchedule(testInputs, false);
+      ? generateMortgageSchedule(testInputs, false, true)
+      : generateCCSchedule(testInputs, false, true);
 
     if (res.summary.periodsToPayoff <= targetPeriods) {
       result = mid;
@@ -59,8 +59,8 @@ export const solveRequiredLumpSum = (
     const mid = (min + max) / 2;
     const testInputs = { ...inputs, extraPayment: 0, lumpSum: mid };
     const res = isMortgage
-      ? generateMortgageSchedule(testInputs, false)
-      : generateCCSchedule(testInputs, false);
+      ? generateMortgageSchedule(testInputs, false, true)
+      : generateCCSchedule(testInputs, false, true);
 
     if (res.summary.periodsToPayoff <= targetPeriods) {
       result = mid;

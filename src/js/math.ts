@@ -25,7 +25,11 @@ export const getMonthlyPayment = (principal: number, rate: number, periods: numb
  * @param isBaseline - If true, baseline calculations are performed without discretionary strategy enhancements.
  * @returns An object containing the array of schedule rows and a summary of totals.
  */
-export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): ScheduleResult => {
+export const generateMortgageSchedule = (
+  inputs: Inputs,
+  isBaseline = false,
+  summaryOnly = false
+): ScheduleResult => {
   // Clamp parameters to safe ranges to ensure main thread safety and prevent infinite loops
   const safeAmort = Math.min(100, Math.max(0.1, inputs.amortizationYears || 0));
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
@@ -74,14 +78,17 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
   let totalExtraPaid = 0;
   let totalEscrow = 0;
   const schedule: ScheduleRow[] = [];
-  const currentDate = inputs.startDate ? new Date(inputs.startDate + 'T00:00:00') : null;
+  const currentDate =
+    !summaryOnly && inputs.startDate ? new Date(inputs.startDate + 'T00:00:00') : null;
   const maxPeriods = Math.ceil(safeAmort * periodsPerYear) + periodsPerYear * 25;
 
   const termYears = safeTerm;
   const amortizationYears = safeAmort;
+  let periodsToPayoff = 0;
 
   for (let i = 1; i <= maxPeriods; i++) {
     if (balance <= 0.009) break;
+    periodsToPayoff = i;
 
     const elapsedYears = (i - 1) / periodsPerYear;
     let activeAnnualRate = safeRate;
@@ -127,39 +134,41 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
     totalExtraPaid += currentExtraPayment;
     totalEscrow += periodicEscrow;
 
-    const {
-      dateLabel: dLbl,
-      yearVal: yLbl,
-      calendarYear
-    } = getRowDateLabel(currentDate, i, freq, periodsPerYear, 'P');
+    if (!summaryOnly) {
+      const {
+        dateLabel: dLbl,
+        yearVal: yLbl,
+        calendarYear
+      } = getRowDateLabel(currentDate, i, freq, periodsPerYear, 'P');
 
-    schedule.push({
-      period: i,
-      year: yLbl,
-      calendarYear,
-      dateLabel: dLbl,
-      ltv: inputs.homePrice > 0 ? (balance / inputs.homePrice) * 100 : 0,
-      payment: principalPortion + interestPortion + periodicEscrow + currentExtraPayment,
-      principal: principalPortion,
-      interest: interestPortion,
-      tax: periodicTax,
-      ins: periodicInsurance,
-      hoa: periodicHOA,
-      pmi: periodicPMI,
-      escrow: periodicEscrow,
-      extra: currentExtraPayment,
-      balance: balance,
-      totalInterest: totalInterest,
-      totalPrincipal: totalPrincipal,
-      totalExtra: totalExtraPaid,
-      totalEscrow: totalEscrow
-    });
+      schedule.push({
+        period: i,
+        year: yLbl,
+        calendarYear,
+        dateLabel: dLbl,
+        ltv: inputs.homePrice > 0 ? (balance / inputs.homePrice) * 100 : 0,
+        payment: principalPortion + interestPortion + periodicEscrow + currentExtraPayment,
+        principal: principalPortion,
+        interest: interestPortion,
+        tax: periodicTax,
+        ins: periodicInsurance,
+        hoa: periodicHOA,
+        pmi: periodicPMI,
+        escrow: periodicEscrow,
+        extra: currentExtraPayment,
+        balance: balance,
+        totalInterest: totalInterest,
+        totalPrincipal: totalPrincipal,
+        totalExtra: totalExtraPaid,
+        totalEscrow: totalEscrow
+      });
+    }
   }
 
   return {
     schedule,
     summary: {
-      periodsToPayoff: schedule.length,
+      periodsToPayoff: periodsToPayoff,
       periodsPerYear: periodsPerYear,
       totalInterest: totalInterest,
       totalPrincipal: totalPrincipal,
@@ -176,7 +185,11 @@ export const generateMortgageSchedule = (inputs: Inputs, isBaseline = false): Sc
  * @param isBaseline - If true, baseline calculations are performed without surplus allocations.
  * @returns An object containing the array of schedule rows and a summary of totals.
  */
-export const generateCCSchedule = (inputs: Inputs, isBaseline = false): ScheduleResult => {
+export const generateCCSchedule = (
+  inputs: Inputs,
+  isBaseline = false,
+  summaryOnly = false
+): ScheduleResult => {
   const principal = Math.max(0, inputs.ccBalance || 0);
   const safeRate = Math.min(200, Math.max(0, inputs.annualRate || 0));
   const monthlyRate = safeRate / 100 / 12; // Simple interest daily rate posted monthly (Standard credit card calculation: APR / 12)
@@ -190,11 +203,14 @@ export const generateCCSchedule = (inputs: Inputs, isBaseline = false): Schedule
   let totalPrincipal = 0;
   let totalExtraPaid = 0;
   const schedule: ScheduleRow[] = [];
-  const currentDate = inputs.startDate ? new Date(inputs.startDate + 'T00:00:00') : null;
+  const currentDate =
+    !summaryOnly && inputs.startDate ? new Date(inputs.startDate + 'T00:00:00') : null;
   const maxMonthsLimit = MAX_CC_PAYOFF_MONTHS;
+  let periodsToPayoff = 0;
 
   for (let i = 1; i <= maxMonthsLimit; i++) {
     if (balance <= 0.01) break;
+    periodsToPayoff = i;
 
     const interestPortion = balance * monthlyRate;
 
@@ -225,39 +241,41 @@ export const generateCCSchedule = (inputs: Inputs, isBaseline = false): Schedule
     totalPrincipal += principalPortion;
     totalExtraPaid += currentExtraPayment;
 
-    const {
-      dateLabel: dLbl,
-      yearVal: yLbl,
-      calendarYear
-    } = getRowDateLabel(currentDate, i, 'monthly', 12, 'M');
+    if (!summaryOnly) {
+      const {
+        dateLabel: dLbl,
+        yearVal: yLbl,
+        calendarYear
+      } = getRowDateLabel(currentDate, i, 'monthly', 12, 'M');
 
-    schedule.push({
-      period: i,
-      year: yLbl,
-      calendarYear,
-      dateLabel: dLbl,
-      ltv: 0,
-      payment: totalActualPayment,
-      principal: principalPortion - currentExtraPayment,
-      interest: interestPortion,
-      tax: 0,
-      ins: 0,
-      hoa: 0,
-      pmi: 0,
-      escrow: 0,
-      extra: currentExtraPayment,
-      balance: balance,
-      totalInterest: totalInterest,
-      totalPrincipal: totalPrincipal,
-      totalExtra: totalExtraPaid,
-      totalEscrow: 0
-    });
+      schedule.push({
+        period: i,
+        year: yLbl,
+        calendarYear,
+        dateLabel: dLbl,
+        ltv: 0,
+        payment: totalActualPayment,
+        principal: principalPortion - currentExtraPayment,
+        interest: interestPortion,
+        tax: 0,
+        ins: 0,
+        hoa: 0,
+        pmi: 0,
+        escrow: 0,
+        extra: currentExtraPayment,
+        balance: balance,
+        totalInterest: totalInterest,
+        totalPrincipal: totalPrincipal,
+        totalExtra: totalExtraPaid,
+        totalEscrow: 0
+      });
+    }
   }
 
   return {
     schedule,
     summary: {
-      periodsToPayoff: schedule.length,
+      periodsToPayoff: periodsToPayoff,
       periodsPerYear: 12,
       totalInterest: totalInterest,
       totalPrincipal: totalPrincipal,
@@ -505,6 +523,8 @@ export const calculateMilestones = (
  * @param fallbackPrefix - Prefix character for period cycles (e.g., 'P' or 'M').
  * @returns Destructured date labeling metadata.
  */
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export const getRowDateLabel = (
   startDate: Date | null,
   period: number,
@@ -525,9 +545,12 @@ export const getRowDateLabel = (
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);
     }
-    dateLabel = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    yearVal = d.getFullYear() + d.getMonth() / 12 + d.getDate() / 365;
-    calendarYear = d.getFullYear();
+    const monthStr = MONTHS[d.getMonth()];
+    const dayStr = d.getDate();
+    const yearStr = d.getFullYear();
+    dateLabel = `${monthStr} ${dayStr}, ${yearStr}`;
+    yearVal = yearStr + d.getMonth() / 12 + dayStr / 365;
+    calendarYear = yearStr;
   }
 
   return { dateLabel, yearVal, calendarYear };
