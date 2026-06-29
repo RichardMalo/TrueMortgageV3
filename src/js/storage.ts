@@ -18,6 +18,75 @@ export interface AppSettings {
 export const CURRENT_ENGINE_VERSION = 2.0;
 
 /**
+ * Detects the standard default country and amortization compounding standard
+ * based on the client browser's local timezone.
+ */
+export const getCountryCompoundingFromTimezone = (): {
+  country: 'semi' | 'monthly' | 'monthly-uk' | 'monthly-au' | 'monthly-nz';
+  compounding: 'semi' | 'monthly';
+} => {
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (!tz) return { country: 'semi', compounding: 'semi' };
+    const tzLower = tz.toLowerCase();
+
+    // Canada check
+    if (
+      tzLower.includes('toronto') ||
+      tzLower.includes('vancouver') ||
+      tzLower.includes('winnipeg') ||
+      tzLower.includes('edmonton') ||
+      tzLower.includes('halifax') ||
+      tzLower.includes('quebec') ||
+      tzLower.includes('montreal') ||
+      tzLower.includes('ottawa') ||
+      tzLower.includes('calgary')
+    ) {
+      return { country: 'semi', compounding: 'semi' };
+    }
+    // United Kingdom check
+    if (tzLower.includes('london') || tzLower.includes('belfast')) {
+      return { country: 'monthly-uk', compounding: 'monthly' };
+    }
+    // Australia check
+    if (
+      tzLower.includes('sydney') ||
+      tzLower.includes('melbourne') ||
+      tzLower.includes('brisbane') ||
+      tzLower.includes('adelaide') ||
+      tzLower.includes('perth') ||
+      tzLower.includes('darwin') ||
+      tzLower.includes('hobart')
+    ) {
+      return { country: 'monthly-au', compounding: 'monthly' };
+    }
+    // New Zealand check
+    if (tzLower.includes('auckland') || tzLower.includes('wellington')) {
+      return { country: 'monthly-nz', compounding: 'monthly' };
+    }
+    // US Timezones check (defaults to US monthly standard)
+    if (
+      tzLower.includes('america') ||
+      tzLower.includes('us/') ||
+      tzLower.includes('hawaii') ||
+      tzLower.includes('alaska') ||
+      tzLower.includes('new_york') ||
+      tzLower.includes('chicago') ||
+      tzLower.includes('denver') ||
+      tzLower.includes('los_angeles') ||
+      tzLower.includes('phoenix') ||
+      tzLower.includes('anchorage') ||
+      tzLower.includes('honolulu')
+    ) {
+      return { country: 'monthly', compounding: 'monthly' };
+    }
+  } catch (e) {
+    // Silent fail
+  }
+  return { country: 'semi', compounding: 'semi' };
+};
+
+/**
  * Encrypts a plain text string using client-side AES-GCM 256-bit encryption.
  * Derives a cryptographic key from the user passcode via PBKDF2 (100K iterations).
  *
@@ -253,7 +322,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
   });
 
   // Preserve mode-specific persistent fields
-  const extraKeys = ['mortgageRate', 'mortgageExtra', 'ccRate', 'ccExtra'];
+  const extraKeys = ['mortgageRate', 'mortgageExtra', 'ccRate', 'ccExtra', 'countrySelect'];
   extraKeys.forEach((k) => {
     if (sourceInputs[k] !== undefined) {
       sanitized.inputs[k] = String(sourceInputs[k]);
@@ -262,6 +331,9 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
       if (k === 'mortgageExtra') sanitized.inputs[k] = '0';
       if (k === 'ccRate') sanitized.inputs[k] = '19.99';
       if (k === 'ccExtra') sanitized.inputs[k] = '0';
+      if (k === 'countrySelect') {
+        sanitized.inputs[k] = getCountryCompoundingFromTimezone().country;
+      }
     }
   });
 
@@ -360,6 +432,7 @@ export const loadSettingsFromStorage = (
   const initializeDefaultState = () => {
     const defaultId = 'profile-default';
     state.profiles = {};
+    const detected = getCountryCompoundingFromTimezone();
     state.profiles[defaultId] = sanitizeProfile(
       {
         id: defaultId,
@@ -370,7 +443,11 @@ export const loadSettingsFromStorage = (
         termRates: {},
         customizedYears: {},
         bankWagesView: 'wages',
-        inputs: defaultInputs
+        inputs: {
+          ...defaultInputs,
+          compounding: detected.compounding,
+          countrySelect: detected.country
+        }
       },
       defaultInputs
     )!;

@@ -1005,20 +1005,48 @@ export const setupShareFunctionality = (
         statusEl.style.display = 'block';
       }
 
-      navigator.clipboard
-        .writeText(text)
-        .then(() => {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard
+          .writeText(text)
+          .then(() => {
+            if (statusEl) {
+              statusEl.textContent = 'Summary text copied to clipboard!';
+              setTimeout(() => {
+                statusEl.style.display = 'none';
+              }, 3000);
+            }
+          })
+          .catch((err: unknown) => {
+            console.error(err);
+            if (statusEl) statusEl.textContent = 'Failed to copy text.';
+          });
+      } else {
+        // Fallback for older browsers, webviews, and insecure contexts
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '0';
+        textarea.style.left = '0';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.focus();
+        textarea.select();
+        try {
+          const successful = document.execCommand('copy');
           if (statusEl) {
-            statusEl.textContent = 'Summary text copied to clipboard!';
+            statusEl.textContent = successful
+              ? 'Summary text copied to clipboard!'
+              : 'Failed to copy text.';
             setTimeout(() => {
               statusEl.style.display = 'none';
             }, 3000);
           }
-        })
-        .catch((err: unknown) => {
-          console.error(err);
+        } catch (copyErr) {
+          console.error(copyErr);
           if (statusEl) statusEl.textContent = 'Failed to copy text.';
-        });
+        }
+        document.body.removeChild(textarea);
+      }
     });
   }
 };

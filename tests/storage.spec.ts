@@ -4,7 +4,8 @@ import {
   decryptData,
   sanitizeProfile,
   saveSettingsToStorage,
-  loadSettingsFromStorage
+  loadSettingsFromStorage,
+  getCountryCompoundingFromTimezone
 } from '../src/js/storage.js';
 import { Inputs, AppState, AppElements } from '../src/js/types.js';
 import { webcrypto } from 'node:crypto';
@@ -363,6 +364,13 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(settings).not.toBeNull();
       expect(state.activeProfileId).toBe('profile-legacy');
       expect(state.profiles['profile-legacy'].inputs.rate).toBe('4.5');
+    });
+
+    it('should detect timezone-based default country and compounding standards', () => {
+      const res = getCountryCompoundingFromTimezone();
+      expect(res).toBeDefined();
+      expect(['semi', 'monthly']).toContain(res.compounding);
+      expect(['semi', 'monthly', 'monthly-uk', 'monthly-au', 'monthly-nz']).toContain(res.country);
     });
 
     it('should reset to default state if migration fails completely', () => {

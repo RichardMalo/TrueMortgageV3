@@ -78,8 +78,13 @@ export const generateMortgageSchedule = (
   let totalExtraPaid = 0;
   let totalEscrow = 0;
   const schedule: ScheduleRow[] = [];
-  const currentDate =
-    !summaryOnly && inputs.startDate ? new Date(inputs.startDate + 'T00:00:00') : null;
+  let currentDate: Date | null = null;
+  if (!summaryOnly && inputs.startDate) {
+    const parsed = new Date(inputs.startDate + 'T00:00:00');
+    if (!isNaN(parsed.getTime())) {
+      currentDate = parsed;
+    }
+  }
   const maxPeriods = Math.ceil(safeAmort * periodsPerYear) + periodsPerYear * 25;
 
   const termYears = safeTerm;
@@ -203,8 +208,13 @@ export const generateCCSchedule = (
   let totalPrincipal = 0;
   let totalExtraPaid = 0;
   const schedule: ScheduleRow[] = [];
-  const currentDate =
-    !summaryOnly && inputs.startDate ? new Date(inputs.startDate + 'T00:00:00') : null;
+  let currentDate: Date | null = null;
+  if (!summaryOnly && inputs.startDate) {
+    const parsed = new Date(inputs.startDate + 'T00:00:00');
+    if (!isNaN(parsed.getTime())) {
+      currentDate = parsed;
+    }
+  }
   const maxMonthsLimit = MAX_CC_PAYOFF_MONTHS;
   let periodsToPayoff = 0;
 
