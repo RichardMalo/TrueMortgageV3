@@ -13,7 +13,8 @@ import {
   loadSettingsFromStorage,
   encryptData,
   decryptData,
-  sanitizeProfile
+  sanitizeProfile,
+  getCountryCompoundingFromTimezone
 } from './storage.js';
 import {
   updateKineticText,
@@ -401,10 +402,11 @@ const resetApplicationData = () => {
     console.error('Error clearing settings from localStorage:', err);
   }
   els.form?.reset();
+  const detected = getCountryCompoundingFromTimezone();
   if (els.inputs.rate) els.inputs.rate.value = '4.39';
   if (els.inputs.extra) els.inputs.extra.value = '0';
   if (els.inputs.date) els.inputs.date.value = DEFAULT_INPUTS.startDate;
-  if (els.inputs.countrySelect) els.inputs.countrySelect.value = 'semi';
+  if (els.inputs.countrySelect) els.inputs.countrySelect.value = detected.country;
   state.labelFormat = 'date';
 
   document.querySelectorAll('.label-format-btn').forEach((b) => {
@@ -432,7 +434,11 @@ const resetApplicationData = () => {
       termRates: {},
       customizedYears: {},
       bankWagesView: 'wages',
-      inputs: DEFAULT_INPUTS
+      inputs: {
+        ...DEFAULT_INPUTS,
+        compounding: detected.compounding,
+        countrySelect: detected.country
+      }
     },
     DEFAULT_INPUTS
   )!;
