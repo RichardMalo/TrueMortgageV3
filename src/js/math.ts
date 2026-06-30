@@ -11,6 +11,7 @@ import { PMI_LTV_THRESHOLD, MAX_CC_PAYOFF_MONTHS, MIN_CC_PAYMENT } from './const
  * @returns The periodic payment amount.
  */
 export const getMonthlyPayment = (principal: number, rate: number, periods: number): number => {
+  if (periods <= 0) return 0;
   return rate === 0
     ? principal / periods
     : (principal * (rate * Math.pow(1 + rate, periods))) / (Math.pow(1 + rate, periods) - 1);
@@ -39,32 +40,39 @@ export const generateMortgageSchedule = (
   const safeTerm = Math.min(safeAmort, Math.max(0.1, inputs.termYears || 0));
 
   // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
-  const standardPeriodicRate =
+  const freq = isBaseline ? 'monthly' : inputs.frequency;
+  let periodsPerYear = 12;
+  if (freq === 'semi-monthly') {
+    periodsPerYear = 24;
+  } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
+    periodsPerYear = 26;
+  }
+
+  // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
+  const standardMonthlyRate =
     inputs.compounding === 'semi'
       ? Math.pow(1 + safeRate / 100 / 2, 1 / 6) - 1
       : safeRate / 100 / 12;
 
-  const baselineMonthlyPayment = getMonthlyPayment(principal, standardPeriodicRate, safeAmort * 12);
-  const freq = isBaseline ? 'monthly' : inputs.frequency;
+  const baselineMonthlyPayment = getMonthlyPayment(principal, standardMonthlyRate, safeAmort * 12);
   const userExtra = isBaseline ? 0 : Math.max(0, inputs.extraPayment || 0);
 
-  // Accelerated frequencies division logic
-  let periodsPerYear: number;
   let periodicPayment: number;
-
-  if (freq === 'monthly') {
-    periodsPerYear = 12;
-    periodicPayment = baselineMonthlyPayment;
-  } else if (freq === 'semi-monthly') {
-    periodsPerYear = 24;
+  if (freq === 'accelerated-bi-weekly') {
+    // Accelerated Bi-Weekly payment is exactly half the standard monthly payment
     periodicPayment = baselineMonthlyPayment / 2;
-  } else if (freq === 'bi-weekly') {
-    periodsPerYear = 26;
-    periodicPayment = (baselineMonthlyPayment * 12) / 26;
   } else {
-    // Accelerated Bi-Weekly (half standard payment 26 times/yr)
-    periodsPerYear = 26;
-    periodicPayment = baselineMonthlyPayment / 2;
+    // For standard frequencies (monthly, semi-monthly, bi-weekly), calculate payment
+    // using the exact frequency-appropriate periodic interest rate to ensure perfect amortization.
+    const standardPeriodicRate =
+      inputs.compounding === 'semi'
+        ? Math.pow(1 + safeRate / 100 / 2, 2 / periodsPerYear) - 1
+        : safeRate / 100 / periodsPerYear;
+    periodicPayment = getMonthlyPayment(
+      principal,
+      standardPeriodicRate,
+      safeAmort * periodsPerYear
+    );
   }
 
   const periodicTax = Math.max(0, inputs.taxRate || 0) / periodsPerYear;
@@ -151,7 +159,7 @@ export const generateMortgageSchedule = (
         year: yLbl,
         calendarYear,
         dateLabel: dLbl,
-        ltv: inputs.homePrice > 0 ? (balance / inputs.homePrice) * 100 : 0,
+        ltv: safeHomePrice > 0 ? (balance / safeHomePrice) * 100 : 0,
         payment: principalPortion + interestPortion + periodicEscrow + currentExtraPayment,
         principal: principalPortion,
         interest: interestPortion,
@@ -229,26 +237,31 @@ export const generateCCSchedule = (
       balance * provPct,
       interestPortion + balance * 0.01
     );
-    if (calculatedMinimumPayment > balance + interestPortion)
+    if (calculatedMinimumPayment > balance + interestPortion) {
       calculatedMinimumPayment = balance + interestPortion;
+    }
+
+    let regularPrincipal = calculatedMinimumPayment - interestPortion;
+    if (regularPrincipal < 0) regularPrincipal = 0;
 
     let currentExtraPayment = userExtra;
     if (i === 1 && !isBaseline) {
       currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
     }
-    let totalActualPayment = calculatedMinimumPayment + currentExtraPayment;
-    if (totalActualPayment > balance + interestPortion) {
-      totalActualPayment = balance + interestPortion;
-      currentExtraPayment = totalActualPayment - calculatedMinimumPayment;
-      if (currentExtraPayment < 0) currentExtraPayment = 0;
+
+    if (regularPrincipal + currentExtraPayment > balance) {
+      currentExtraPayment = balance - regularPrincipal;
+      if (currentExtraPayment < 0) {
+        currentExtraPayment = 0;
+        regularPrincipal = balance;
+      }
     }
 
-    const principalPortion = totalActualPayment - interestPortion;
-    balance -= principalPortion;
+    balance -= regularPrincipal + currentExtraPayment;
     if (balance < 0.01) balance = 0;
 
     totalInterest += interestPortion;
-    totalPrincipal += principalPortion;
+    totalPrincipal += regularPrincipal + currentExtraPayment;
     totalExtraPaid += currentExtraPayment;
 
     if (!summaryOnly) {
@@ -264,8 +277,8 @@ export const generateCCSchedule = (
         calendarYear,
         dateLabel: dLbl,
         ltv: 0,
-        payment: totalActualPayment,
-        principal: principalPortion - currentExtraPayment,
+        payment: regularPrincipal + interestPortion + currentExtraPayment,
+        principal: regularPrincipal,
         interest: interestPortion,
         tax: 0,
         ins: 0,
@@ -350,7 +363,7 @@ export const calculateMilestones = (
     if (!sched || sched.length === 0) return -1;
     switch (type) {
       case 'PMI':
-        return sched.findIndex((row) => row.ltv <= 80);
+        return sched.findIndex((row) => row.ltv <= PMI_LTV_THRESHOLD * 100);
       case 'EQUITY_MASTERY':
         return sched.findIndex((row) => row.principal > row.interest);
       case 'INTEREST_BREAK_EVEN':
@@ -375,9 +388,9 @@ export const calculateMilestones = (
     let badgeText = '';
     let isAchieved = false;
 
-    const startingLtv = inputs.homePrice > 0 ? (startingPrincipal / inputs.homePrice) * 100 : 0;
+    const startingLtv = safeHomePrice > 0 ? (startingPrincipal / safeHomePrice) * 100 : 0;
 
-    if (startingLtv <= 80) {
+    if (startingLtv <= PMI_LTV_THRESHOLD * 100) {
       targetDate = 'Day 1';
       targetPeriod = 'At Start';
       soWhat =
@@ -390,7 +403,7 @@ export const calculateMilestones = (
       const pmiAmt = (startingPrincipal * (inputs.pmiRate / 100)) / periodsPerYear;
       const savingsStr =
         inputs.usePiti && inputs.pmiRate > 0 ? ` saves you $${Math.round(pmiAmt)}/Month` : '';
-      soWhat = `Your Loan-to-Value (LTV) ratio drops to 80%, allowing you to cancel PMI. You shed the mandatory lender insurance tax and keep more cash flow${savingsStr}!`;
+      soWhat = `Your Loan-to-Value (LTV) ratio drops to ${PMI_LTV_THRESHOLD * 100}%, allowing you to cancel PMI. You shed the mandatory lender insurance tax and keep more cash flow${savingsStr}!`;
       isAchieved = true;
 
       if (baseIdx !== -1 && baseIdx > actIdx) {

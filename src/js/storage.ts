@@ -208,7 +208,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
   const p = profile as Record<string, unknown>;
 
   const rawId = p.id ? String(p.id) : '';
-  const cleanId = rawId.replace(/[^a-zA-Z0-9_-]/g, '') || 'profile-' + Date.now();
+  const cleanId = rawId.replace(/[^a-zA-Z0-9_-]/g, '') || generateProfileId();
 
   const sanitized: Profile = {
     id: cleanId,
@@ -374,12 +374,15 @@ export const saveSettingsToStorage = (
   defaultInputs: Inputs,
   skipDomSync = false
 ) => {
+  // Create a deep copy of profiles to do atomic modifications
+  const profilesClone = JSON.parse(JSON.stringify(state.profiles || {}));
+  let activeId = state.activeProfileId;
+
   try {
-    if (!state.activeProfileId || !state.profiles[state.activeProfileId]) {
-      const newId = 'profile-' + Date.now();
-      state.activeProfileId = newId;
-      state.profiles[newId] = {
-        id: newId,
+    if (!activeId || !profilesClone[activeId]) {
+      activeId = generateProfileId();
+      profilesClone[activeId] = {
+        id: activeId,
         name: 'Active Scenario',
         currentMode: state.currentMode,
         complexity: state.complexity,
@@ -392,7 +395,7 @@ export const saveSettingsToStorage = (
     }
 
     if (!skipDomSync) {
-      const activeProfile = state.profiles[state.activeProfileId];
+      const activeProfile = profilesClone[activeId];
       activeProfile.currentMode = state.currentMode;
       activeProfile.complexity = state.complexity;
       activeProfile.isDark = state.isDark;
@@ -418,10 +421,10 @@ export const saveSettingsToStorage = (
 
     const settings: AppSettings = {
       version: CURRENT_ENGINE_VERSION,
-      activeProfileId: state.activeProfileId,
+      activeProfileId: activeId,
       comparisonProfileId: state.comparisonProfileId,
       compareModeActive: state.compareModeActive,
-      profiles: state.profiles,
+      profiles: profilesClone,
       isDark: state.isDark,
       complexity: state.complexity,
       labelFormat: state.labelFormat || 'date',
@@ -431,6 +434,10 @@ export const saveSettingsToStorage = (
     };
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+
+    // Commit state changes only after successful write to localStorage
+    state.activeProfileId = activeId;
+    state.profiles = profilesClone;
   } catch (err) {
     console.error('Error saving settings to localStorage:', err);
   }
@@ -452,7 +459,7 @@ export const loadSettingsFromStorage = (
     const defaultId = 'profile-default';
     state.profiles = {};
     const detected = getCountryCompoundingFromTimezone();
-    state.profiles[defaultId] = sanitizeProfile(
+    const sanitizedDefault = sanitizeProfile(
       {
         id: defaultId,
         name: '30-Year Baseline',
@@ -469,7 +476,10 @@ export const loadSettingsFromStorage = (
         }
       },
       defaultInputs
-    )!;
+    );
+    if (sanitizedDefault) {
+      state.profiles[defaultId] = sanitizedDefault;
+    }
     state.activeProfileId = defaultId;
     state.comparisonProfileId = null;
     state.compareModeActive = false;
@@ -485,7 +495,7 @@ export const loadSettingsFromStorage = (
     if (!data) {
       initializeDefaultState();
     } else {
-      settings = JSON.parse(data) as AppSettings;
+      settings = removePrototypeKeys(JSON.parse(data)) as AppSettings;
       if (!settings || typeof settings !== 'object') {
         throw new Error('Invalid storage structure format');
       }
@@ -600,4 +610,29 @@ export const loadSettingsFromStorage = (
     }
   }
   return settings;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const removePrototypeKeys = (obj: any): any => {
+  if (obj === null || typeof obj !== 'object') {
+    return obj;
+  }
+  if (Array.isArray(obj)) {
+    return obj.map(removePrototypeKeys);
+  }
+  const clean: Record<string, unknown> = {};
+  for (const key of Object.keys(obj)) {
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+      continue;
+    }
+    clean[key] = removePrototypeKeys(obj[key]);
+  }
+  return clean;
+};
+
+export const generateProfileId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return 'profile-' + crypto.randomUUID();
+  }
+  return 'profile-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
 };

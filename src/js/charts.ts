@@ -181,25 +181,41 @@ export const clearVisibleChartsCache = () => {
   });
 };
 
-const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  maximumFractionDigits: 0
-});
-
-const DECIMAL_FORMATTER = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-});
+const getLocaleAndCurrency = () => {
+  const el = document.getElementById('country-select') as HTMLSelectElement | null;
+  const val = el ? el.value : 'semi';
+  switch (val) {
+    case 'semi': // Canada
+      return { locale: 'en-CA', currency: 'CAD' };
+    case 'monthly-uk': // UK
+      return { locale: 'en-GB', currency: 'GBP' };
+    case 'monthly-au': // AU
+      return { locale: 'en-AU', currency: 'AUD' };
+    case 'monthly-nz': // NZ
+      return { locale: 'en-NZ', currency: 'NZD' };
+    case 'monthly': // USA
+    default:
+      return { locale: 'en-US', currency: 'USD' };
+  }
+};
 
 export const formatCurrency = (n: number) => {
-  return CURRENCY_FORMATTER.format(n);
+  const { locale, currency } = getLocaleAndCurrency();
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0
+  }).format(n);
 };
 
 export const formatDecimal = (n: number) => {
-  return DECIMAL_FORMATTER.format(n);
+  const { locale, currency } = getLocaleAndCurrency();
+  return new Intl.NumberFormat(locale, {
+    style: 'currency',
+    currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(n);
 };
 
 const renderMonthlyPaymentCircle = (

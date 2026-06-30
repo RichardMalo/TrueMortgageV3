@@ -1,5 +1,7 @@
 import { AppState, Inputs, AppElements } from './types.js';
 import gsap from 'gsap';
+import { STORAGE_KEY } from './constants.js';
+import { removePrototypeKeys } from './storage.js';
 
 /**
  * Sets up listeners and logic for importing and exporting encrypted or plain
@@ -96,7 +98,7 @@ export const setupBlueprintSync = (
 
   exportBtn.addEventListener('click', async () => {
     saveSettingsToStorage(state, els.inputs, defaultInputs, false);
-    const rawData = localStorage.getItem('mtg_calculator_settings');
+    const rawData = localStorage.getItem(STORAGE_KEY);
     if (!rawData) {
       showFeedback('No settings found to export! Please calculate first.', true);
       return;
@@ -216,7 +218,7 @@ export const setupBlueprintSync = (
 
       if (rawText.startsWith('{')) {
         try {
-          parsedSettings = JSON.parse(rawText);
+          parsedSettings = removePrototypeKeys(JSON.parse(rawText));
         } catch {
           showFeedback('Corrupted or invalid JSON file!', true);
           return;
@@ -236,7 +238,7 @@ export const setupBlueprintSync = (
 
         try {
           const decryptedText = await decryptData(rawText, passcode);
-          parsedSettings = JSON.parse(decryptedText);
+          parsedSettings = removePrototypeKeys(JSON.parse(decryptedText));
         } catch (err) {
           console.error(err);
           showFeedback('Incorrect passcode or corrupted file!', true);
@@ -262,7 +264,7 @@ export const setupBlueprintSync = (
       }
 
       try {
-        localStorage.setItem('mtg_calculator_settings', JSON.stringify(parsedSettings));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedSettings));
         loadSettingsFromStorage(state, defaultInputs);
         handleProfileSwitch(state.activeProfileId as string);
         showFeedback('Strategy Blueprint Restored Successfully! 🎉');

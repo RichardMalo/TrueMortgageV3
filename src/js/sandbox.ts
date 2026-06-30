@@ -1,6 +1,6 @@
 import { AppState, Inputs } from './types.js';
-import { saveSettingsToStorage, sanitizeProfile } from './storage.js';
-import { showConfirmModal, showAlertModal, trapFocus } from './ui.js';
+import { saveSettingsToStorage, sanitizeProfile, generateProfileId } from './storage.js';
+import { showConfirmModal, showAlertModal, trapFocus, escapeHtml } from './ui.js';
 
 export const renderSandboxList = (
   state: AppState,
@@ -18,11 +18,13 @@ export const renderSandboxList = (
     const isCompare = p.id === state.comparisonProfileId && state.compareModeActive;
 
     const card = document.createElement('div');
+    const escId = escapeHtml(p.id);
+    const escName = escapeHtml(p.name);
     card.className = `profile-card ${isSelected ? 'active active-' + (p.currentMode || 'mortgage') : ''}`;
     card.setAttribute('data-id', p.id);
     card.setAttribute('tabindex', '0');
     card.setAttribute('role', 'button');
-    card.setAttribute('aria-label', `Select Scenario Profile: ${p.name}`);
+    card.setAttribute('aria-label', `Select Scenario Profile: ${escName}`);
     card.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
@@ -35,10 +37,10 @@ export const renderSandboxList = (
 
     card.innerHTML = `
       <div class="profile-card-header">
-        <h4 class="profile-card-title" id="title-text-${p.id}"></h4>
+        <h4 class="profile-card-title" id="title-text-${escId}"></h4>
         <div class="profile-card-actions">
-          <button type="button" class="profile-btn clone-btn" title="Clone Scenario" data-id="${p.id}" aria-label="Clone Scenario">📋</button>
-          <button type="button" class="profile-btn delete-btn" title="Delete Scenario" data-id="${p.id}" style="${Object.keys(state.profiles).length <= 1 ? 'display:none' : ''}" aria-label="Delete Scenario">🗑️</button>
+          <button type="button" class="profile-btn clone-btn" title="Clone Scenario" data-id="${escId}" aria-label="Clone Scenario ${escName}">📋</button>
+          <button type="button" class="profile-btn delete-btn" title="Delete Scenario" data-id="${escId}" style="${Object.keys(state.profiles).length <= 1 ? 'display:none' : ''}" aria-label="Delete Scenario ${escName}">🗑️</button>
         </div>
       </div>
       <div class="profile-card-body">
@@ -46,14 +48,14 @@ export const renderSandboxList = (
           <span class="profile-tag">${modeLabel}</span>
           <span class="profile-tag">${tagComp}</span>
         </div>
-        <label class="compare-toggle-label" data-id="${p.id}">
-          <input type="checkbox" role="switch" aria-checked="${isCompare ? 'true' : 'false'}" class="compare-checkbox" data-id="${p.id}" ${isCompare ? 'checked' : ''} ${isSelected ? 'disabled style="opacity:0.5"' : ''}>
+        <label class="compare-toggle-label" data-id="${escId}">
+          <input type="checkbox" role="switch" aria-checked="${isCompare ? 'true' : 'false'}" class="compare-checkbox" data-id="${escId}" ${isCompare ? 'checked' : ''} ${isSelected ? 'disabled style="opacity:0.5"' : ''}>
           <span>COMPARE</span>
         </label>
       </div>
     `;
 
-    const titleEl = card.querySelector(`#title-text-${p.id}`) as HTMLElement | null;
+    const titleEl = card.querySelector(`#title-text-${escId}`) as HTMLElement | null;
     if (titleEl) {
       titleEl.textContent = p.name;
     }
@@ -111,7 +113,7 @@ export const renderSandboxList = (
         );
         return;
       }
-      const newId = 'profile-' + Date.now();
+      const newId = generateProfileId();
       state.profiles[newId] = JSON.parse(JSON.stringify(p));
       state.profiles[newId].id = newId;
       state.profiles[newId].name = `${p.name} (Copy)`;
@@ -133,6 +135,11 @@ export const renderSandboxList = (
           `Are you sure you want to delete scenario "${p.name}"?`
         );
         if (confirmDel) {
+          if (state.comparisonProfileId === p.id) {
+            state.comparisonProfileId = null;
+            state.compareModeActive = false;
+          }
+
           const wasActive = state.activeProfileId === p.id;
           delete state.profiles[p.id];
 
@@ -142,11 +149,6 @@ export const renderSandboxList = (
             onProfileSelect(state.activeProfileId);
           } else {
             saveSettingsToStorage(state, inputsMap, defaultInputs, false);
-          }
-
-          if (state.comparisonProfileId === p.id) {
-            state.comparisonProfileId = null;
-            state.compareModeActive = false;
           }
 
           onRecalculate();
@@ -247,9 +249,9 @@ export const setupScenarioSandbox = (
     }
     saveSettingsToStorage(state, inputsMap, defaultInputs, false);
     const name = newNameInput.value.trim() || `Scenario ${Object.keys(state.profiles).length + 1}`;
-    const newId = 'profile-' + Date.now();
+    const newId = generateProfileId();
 
-    state.profiles[newId] = sanitizeProfile(
+    const sanitized = sanitizeProfile(
       {
         id: newId,
         name,
@@ -262,7 +264,10 @@ export const setupScenarioSandbox = (
         inputs: defaultInputs
       },
       defaultInputs
-    )!;
+    );
+    if (sanitized) {
+      state.profiles[newId] = sanitized;
+    }
 
     state.activeProfileId = newId;
     newNameInput.value = '';

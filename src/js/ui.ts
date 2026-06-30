@@ -6,6 +6,9 @@ import { MOBILE_BREAKPOINT } from './constants.js';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let html2pdfInstance: any = null;
 
+const activeModals: HTMLElement[] = [];
+let modalIdCounter = 0;
+
 const loadHtml2Pdf = async () => {
   if (!html2pdfInstance) {
     const module = await import('html2pdf.js');
@@ -1062,14 +1065,16 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');
     backdrop.className = 'custom-modal-backdrop';
+    activeModals.push(backdrop);
 
     const container = document.createElement('div');
     container.className = 'custom-modal-container';
     container.setAttribute('role', 'dialog');
     container.setAttribute('aria-modal', 'true');
 
-    const modalTitleId = 'confirm-modal-title-' + Date.now();
-    const modalBodyId = 'confirm-modal-body-' + Date.now();
+    const currentModalId = ++modalIdCounter;
+    const modalTitleId = `confirm-modal-title-${currentModalId}`;
+    const modalBodyId = `confirm-modal-body-${currentModalId}`;
 
     container.setAttribute('aria-labelledby', modalTitleId);
     container.setAttribute('aria-describedby', modalBodyId);
@@ -1117,6 +1122,10 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
     cancelBtn.focus();
 
     const cleanup = (result: boolean) => {
+      const idx = activeModals.indexOf(backdrop);
+      if (idx !== -1) {
+        activeModals.splice(idx, 1);
+      }
       backdrop.classList.remove('active');
       setTimeout(() => {
         if (document.body.contains(backdrop)) {
@@ -1132,6 +1141,9 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeModals[activeModals.length - 1] !== backdrop) {
+        return;
+      }
       if (e.key === 'Escape') {
         e.preventDefault();
         cleanup(false);
@@ -1170,14 +1182,16 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
   return new Promise((resolve) => {
     const backdrop = document.createElement('div');
     backdrop.className = 'custom-modal-backdrop';
+    activeModals.push(backdrop);
 
     const container = document.createElement('div');
     container.className = 'custom-modal-container';
     container.setAttribute('role', 'dialog');
     container.setAttribute('aria-modal', 'true');
 
-    const modalTitleId = 'alert-modal-title-' + Date.now();
-    const modalBodyId = 'alert-modal-body-' + Date.now();
+    const currentModalId = ++modalIdCounter;
+    const modalTitleId = `alert-modal-title-${currentModalId}`;
+    const modalBodyId = `alert-modal-body-${currentModalId}`;
 
     container.setAttribute('aria-labelledby', modalTitleId);
     container.setAttribute('aria-describedby', modalBodyId);
@@ -1216,6 +1230,10 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
     okBtn.focus();
 
     const cleanup = () => {
+      const idx = activeModals.indexOf(backdrop);
+      if (idx !== -1) {
+        activeModals.splice(idx, 1);
+      }
       backdrop.classList.remove('active');
       setTimeout(() => {
         if (document.body.contains(backdrop)) {
@@ -1231,6 +1249,9 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (activeModals[activeModals.length - 1] !== backdrop) {
+        return;
+      }
       if (e.key === 'Escape' || e.key === 'Enter') {
         e.preventDefault();
         cleanup();

@@ -1,6 +1,12 @@
 import gsap from 'gsap';
 import { AppState, ScheduleResult } from './types.js';
-import { DEFAULT_INPUTS, PREFILLED_DATE, RESIZE_DEBOUNCE_MS, getPrefersDark } from './constants.js';
+import {
+  DEFAULT_INPUTS,
+  PREFILLED_DATE,
+  RESIZE_DEBOUNCE_MS,
+  getPrefersDark,
+  STORAGE_KEY
+} from './constants.js';
 import { generateMortgageSchedule, generateCCSchedule, calculateMilestones } from './math.js';
 import {
   renderCharts,
@@ -397,7 +403,7 @@ const handleProfileSwitch = (profileId: string) => {
 
 const resetApplicationData = () => {
   try {
-    localStorage.removeItem('mtg_calculator_settings');
+    localStorage.removeItem(STORAGE_KEY);
   } catch (err) {
     console.error('Error clearing settings from localStorage:', err);
   }
@@ -424,7 +430,7 @@ const resetApplicationData = () => {
 
   const defaultId = 'profile-default';
   state.profiles = {};
-  state.profiles[defaultId] = sanitizeProfile(
+  const sanitizedDefault = sanitizeProfile(
     {
       id: defaultId,
       name: '30-Year Baseline',
@@ -441,7 +447,10 @@ const resetApplicationData = () => {
       }
     },
     DEFAULT_INPUTS
-  )!;
+  );
+  if (sanitizedDefault) {
+    state.profiles[defaultId] = sanitizedDefault;
+  }
   state.activeProfileId = defaultId;
 
   const sidebar = document.getElementById('scenarioSidebar');

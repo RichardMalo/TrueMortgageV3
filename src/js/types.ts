@@ -147,6 +147,7 @@ export interface AppElements {
     extra: HTMLInputElement | null;
     date: HTMLInputElement | null;
     rateShockToggle: HTMLInputElement | null;
+    lumpSum: HTMLInputElement | null;
   };
   results: {
     mortgageDisplay: HTMLElement | null;

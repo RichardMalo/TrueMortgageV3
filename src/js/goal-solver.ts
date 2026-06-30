@@ -23,7 +23,7 @@ export const solveRequiredMonthly = (
   let result = max;
   for (let i = 0; i < 24; i++) {
     const mid = (min + max) / 2;
-    const testInputs = { ...inputs, extraPayment: mid, lumpSum: 0 };
+    const testInputs = { ...inputs, extraPayment: mid };
     const res = isMortgage
       ? generateMortgageSchedule(testInputs, false, true)
       : generateCCSchedule(testInputs, false, true);
@@ -57,7 +57,7 @@ export const solveRequiredLumpSum = (
   let result = max;
   for (let i = 0; i < 24; i++) {
     const mid = (min + max) / 2;
-    const testInputs = { ...inputs, extraPayment: 0, lumpSum: mid };
+    const testInputs = { ...inputs, lumpSum: mid };
     const res = isMortgage
       ? generateMortgageSchedule(testInputs, false, true)
       : generateCCSchedule(testInputs, false, true);

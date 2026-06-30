@@ -80,7 +80,8 @@ const makeRig = (
       investRate: null,
       extra: null,
       date: null,
-      rateShockToggle: null
+      rateShockToggle: null,
+      lumpSum: null
     },
     containers: { rateShockTimeline: timeline } as unknown as AppElements['containers'],
     results: {} as unknown as AppElements['results'],

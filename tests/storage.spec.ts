@@ -5,7 +5,8 @@ import {
   sanitizeProfile,
   saveSettingsToStorage,
   loadSettingsFromStorage,
-  getCountryCompoundingFromTimezone
+  getCountryCompoundingFromTimezone,
+  removePrototypeKeys
 } from '../src/js/storage.js';
 import { Inputs, AppState, AppElements } from '../src/js/types.js';
 import { webcrypto } from 'node:crypto';
@@ -382,6 +383,24 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(settings).toBeNull();
       expect(state.activeProfileId).toBe('profile-default');
       expect(state.profiles['profile-default']).toBeDefined();
+    });
+
+    it('should strip prototype keys recursively using removePrototypeKeys', () => {
+      const polluted = JSON.parse(
+        '{"__proto__": {"polluted": true}, "normal": 123, "nested": {"constructor": "dangerous", "prototype": "bad", "ok": "yes"}}'
+      );
+      const cleaned = removePrototypeKeys(polluted);
+
+      // Check clean object properties
+      expect(cleaned.normal).toBe(123);
+      expect(cleaned.nested.ok).toBe('yes');
+
+      // Check prototype properties are omitted as own properties
+      expect(Object.prototype.hasOwnProperty.call(cleaned, '__proto__')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(cleaned, 'constructor')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(cleaned, 'prototype')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(cleaned.nested, 'constructor')).toBe(false);
+      expect(Object.prototype.hasOwnProperty.call(cleaned.nested, 'prototype')).toBe(false);
     });
   });
 });

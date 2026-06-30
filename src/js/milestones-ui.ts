@@ -1,4 +1,5 @@
 import { Milestone, AppElements } from './types.js';
+import { escapeHtml } from './ui.js';
 
 /**
  * Renders calculated milestones into the scrollable timeline card in the DOM.
@@ -22,18 +23,19 @@ export const renderMilestonesUI = (els: AppElements, milestones: Milestone[]) =>
   let html = '';
   milestones.forEach((m) => {
     const badgeClass = m.isBaseline ? 'roadmap-node-badge baseline' : 'roadmap-node-badge';
-    const badgeLabel = m.badge || 'BASELINE SCHEDULE';
+    const badgeLabel = escapeHtml(m.badge || 'BASELINE SCHEDULE');
+    const escId = escapeHtml(m.id);
 
     html += `
-      <div class="roadmap-node squishy-interactive" id="node-${m.id}">
+      <div class="roadmap-node squishy-interactive" id="node-${escId}">
         <div class="roadmap-node-header">
           <span class="${badgeClass}">${badgeLabel}</span>
-          <span style="font-size: 0.72rem; opacity: 0.6; font-weight: 700;">${m.period}</span>
+          <span style="font-size: 0.72rem; opacity: 0.6; font-weight: 700;">${escapeHtml(m.period)}</span>
         </div>
-        <h4 class="roadmap-node-title">${m.title}</h4>
-        <div class="roadmap-node-date">${m.date}</div>
-        <div class="roadmap-node-desc">${m.desc}</div>
-        <div class="roadmap-node-sowhat">${m.sowhat}</div>
+        <h4 class="roadmap-node-title">${escapeHtml(m.title)}</h4>
+        <div class="roadmap-node-date">${escapeHtml(m.date)}</div>
+        <div class="roadmap-node-desc">${escapeHtml(m.desc)}</div>
+        <div class="roadmap-node-sowhat">${escapeHtml(m.sowhat)}</div>
       </div>
     `;
   });

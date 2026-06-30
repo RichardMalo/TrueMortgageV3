@@ -1,6 +1,7 @@
 import { ScheduleRow } from './types.js';
 import { formatCurrency } from './charts.js';
 import { TABLE_RENDER_CHUNK_SIZE } from './constants.js';
+import { escapeHtml } from './ui.js';
 
 let tableRenderTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -38,7 +39,7 @@ export const updateTable = (
       const row = schedule[index];
       const tr = document.createElement('tr');
       const eTd = usePiti ? `<td style="color: #8b5cf6">${formatCurrency(row.escrow)}</td>` : '';
-      const label = isPeriod ? `P${row.period}` : row.dateLabel;
+      const label = escapeHtml(isPeriod ? `P${row.period}` : row.dateLabel);
 
       let deltaHtml = '';
       if (compSchedule && compSchedule[index]) {
