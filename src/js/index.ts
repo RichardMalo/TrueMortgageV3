@@ -803,7 +803,13 @@ const bootApp = () => {
     }
   });
 
-  els.form?.addEventListener('submit', (e) => e.preventDefault());
+  els.form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    calculate();
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  });
 
   // Resize window: only resize visible Plotly charts — do NOT re-run calculate().
   // Calculation results are viewport-independent; re-running the full amortization
