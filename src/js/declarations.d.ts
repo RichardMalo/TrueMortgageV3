@@ -10,6 +10,7 @@ declare module 'plotly.js-basic-dist' {
     _layout: unknown,
     _config?: unknown
   ): void;
+  export function purge(_el: HTMLElement): void;
 }
 
 declare module 'html2pdf.js' {

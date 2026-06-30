@@ -804,6 +804,14 @@ export const setupShareFunctionality = (
 
   if (!shareBtn || !shareModal || !closeModalBtn) return;
 
+  let cleanupShareTrap: (() => void) | null = null;
+
+  const closeShare = () => {
+    shareModal.classList.remove('active');
+    cleanupShareTrap?.();
+    cleanupShareTrap = null;
+  };
+
   shareBtn.addEventListener('click', () => {
     calculate(); // Sync latest form adjustments
     shareModal.classList.add('active');
@@ -812,15 +820,14 @@ export const setupShareFunctionality = (
       { scale: 0.9, y: 20 },
       { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
     );
+    cleanupShareTrap = trapFocus(shareModal, shareBtn, closeShare);
   });
 
-  closeModalBtn.addEventListener('click', () => {
-    shareModal.classList.remove('active');
-  });
+  closeModalBtn.addEventListener('click', closeShare);
 
   shareModal.addEventListener('click', (e) => {
     if (e.target === shareModal) {
-      shareModal.classList.remove('active');
+      closeShare();
     }
   });
 
@@ -1061,11 +1068,19 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
     container.setAttribute('role', 'dialog');
     container.setAttribute('aria-modal', 'true');
 
+    const modalTitleId = 'confirm-modal-title-' + Date.now();
+    const modalBodyId = 'confirm-modal-body-' + Date.now();
+
+    container.setAttribute('aria-labelledby', modalTitleId);
+    container.setAttribute('aria-describedby', modalBodyId);
+
     const titleEl = document.createElement('h3');
+    titleEl.id = modalTitleId;
     titleEl.className = 'custom-modal-title';
     titleEl.textContent = title;
 
     const bodyEl = document.createElement('div');
+    bodyEl.id = modalBodyId;
     bodyEl.className = 'custom-modal-body';
     bodyEl.textContent = message;
 
@@ -1161,11 +1176,19 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
     container.setAttribute('role', 'dialog');
     container.setAttribute('aria-modal', 'true');
 
+    const modalTitleId = 'alert-modal-title-' + Date.now();
+    const modalBodyId = 'alert-modal-body-' + Date.now();
+
+    container.setAttribute('aria-labelledby', modalTitleId);
+    container.setAttribute('aria-describedby', modalBodyId);
+
     const titleEl = document.createElement('h3');
+    titleEl.id = modalTitleId;
     titleEl.className = 'custom-modal-title';
     titleEl.textContent = title;
 
     const bodyEl = document.createElement('div');
+    bodyEl.id = modalBodyId;
     bodyEl.className = 'custom-modal-body';
     bodyEl.textContent = message;
 
@@ -1236,11 +1259,19 @@ export const setupTableExpandButton = () => {
   const tableResp = document.querySelector('.table-responsive');
   if (!btn || !tableResp) return;
 
+  btn.setAttribute('aria-expanded', 'false');
+  btn.setAttribute('aria-label', 'Expand amortization ledger table view');
+
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     const isExpanded = tableResp.classList.toggle('expanded');
     btn.innerHTML = isExpanded ? '−' : '+';
     btn.title = isExpanded ? 'Shrink Table' : 'Expand Table';
+    btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    btn.setAttribute(
+      'aria-label',
+      isExpanded ? 'Shrink amortization ledger table view' : 'Expand amortization ledger table view'
+    );
   });
 };

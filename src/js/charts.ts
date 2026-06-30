@@ -92,6 +92,13 @@ const flushRenderQueue = async () => {
         elementsToRender.push({ el, data, layout, config, elementId });
       } else {
         visibleChartsMap[elementId] = false;
+        if (el) {
+          try {
+            Plotly.purge(el);
+          } catch {
+            // Ignore if element is not initialized or invalid
+          }
+        }
       }
     });
 
@@ -161,24 +168,38 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
 export const clearVisibleChartsCache = () => {
   Object.keys(visibleChartsMap).forEach((key) => {
     visibleChartsMap[key] = false;
+    if (plotlyInstance) {
+      const el = document.getElementById(key);
+      if (el) {
+        try {
+          plotlyInstance.purge(el);
+        } catch {
+          // ignore
+        }
+      }
+    }
   });
 };
 
+const CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0
+});
+
+const DECIMAL_FORMATTER = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2
+});
+
 export const formatCurrency = (n: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0
-  }).format(n);
+  return CURRENCY_FORMATTER.format(n);
 };
 
 export const formatDecimal = (n: number) => {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(n);
+  return DECIMAL_FORMATTER.format(n);
 };
 
 const renderMonthlyPaymentCircle = (

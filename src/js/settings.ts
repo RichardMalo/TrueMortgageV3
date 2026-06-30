@@ -49,9 +49,38 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
     cleanupLimitsTrap = null;
   };
 
+  trigger.setAttribute('aria-haspopup', 'true');
+  trigger.setAttribute('aria-expanded', 'false');
+
+  const openDropdown = () => {
+    dropdown.classList.add('active');
+    trigger.setAttribute('aria-expanded', 'true');
+  };
+
+  const closeDropdown = () => {
+    dropdown.classList.remove('active');
+    trigger.setAttribute('aria-expanded', 'false');
+  };
+
+  const toggleDropdown = () => {
+    const isActive = dropdown.classList.toggle('active');
+    trigger.setAttribute('aria-expanded', isActive ? 'true' : 'false');
+  };
+
   trigger.addEventListener('click', (e) => {
     e.stopPropagation();
-    dropdown.classList.toggle('active');
+    toggleDropdown();
+  });
+
+  trigger.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'ArrowDown' || e.key === ' ' || e.key === 'Enter') {
+      e.preventDefault();
+      openDropdown();
+      optSync.focus();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closeDropdown();
+    }
   });
 
   dropdown.addEventListener('click', (e) => {
@@ -63,11 +92,28 @@ export const setupSettingsMenu = (resetApplicationData: () => void) => {
   });
 
   document.addEventListener('click', () => {
-    dropdown.classList.remove('active');
+    closeDropdown();
     const countryDropdown = document.getElementById('country-dropdown');
     if (countryDropdown) {
       countryDropdown.classList.remove('active');
     }
+  });
+
+  // Make menu items keyboard accessible
+  const menuItems = [optSync, optLimits, optReset];
+  menuItems.forEach((item) => {
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('role', 'menuitem');
+    item.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        item.click();
+      } else if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDropdown();
+        trigger.focus();
+      }
+    });
   });
 
   optSync.addEventListener('click', () => {

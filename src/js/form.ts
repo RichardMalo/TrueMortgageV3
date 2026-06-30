@@ -54,6 +54,34 @@ export const validateForm = (
       showError('Extra Payment must be a valid non-negative number.');
       return false;
     }
+    const lump = parseFloat(inputs.lumpSum?.value || '0');
+    if (isNaN(lump) || lump < 0) {
+      showError('Lump Sum Payment must be a valid non-negative number.');
+      return false;
+    }
+    const pitiToggle = inputs.pitiToggle as HTMLInputElement | null;
+    if (pitiToggle && pitiToggle.checked) {
+      const tax = parseFloat(inputs.tax?.value || '0');
+      const ins = parseFloat(inputs.ins?.value || '0');
+      const hoa = parseFloat(inputs.hoa?.value || '0');
+      const pmi = parseFloat(inputs.pmi?.value || '0');
+      if (isNaN(tax) || tax < 0) {
+        showError('Property Tax must be a valid non-negative number.');
+        return false;
+      }
+      if (isNaN(ins) || ins < 0) {
+        showError('Home Insurance must be a valid non-negative number.');
+        return false;
+      }
+      if (isNaN(hoa) || hoa < 0) {
+        showError('HOA Fees must be a valid non-negative number.');
+        return false;
+      }
+      if (isNaN(pmi) || pmi < 0 || pmi > 100) {
+        showError('PMI Rate must be a valid number between 0% and 100%.');
+        return false;
+      }
+    }
   } else if (currentMode === 'cc') {
     const bal = parseFloat(inputs.ccBalance?.value || '0');
     const rate = parseFloat(inputs.rate?.value || '0');

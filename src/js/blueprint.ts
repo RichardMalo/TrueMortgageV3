@@ -189,6 +189,12 @@ export const setupBlueprintSync = (
   });
 
   const handleFileImport = (file: File) => {
+    const nameLower = file.name.toLowerCase();
+    if (!nameLower.endsWith('.json') && !nameLower.endsWith('.txt')) {
+      showFeedback('Invalid file type! Strategy Blueprint files must be .json or .txt', true);
+      return;
+    }
+
     // QW-8: Guard against unreasonably large files before reading into memory.
     // A valid encrypted or plain JSON blueprint is never more than a few KB.
     const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -201,6 +207,9 @@ export const setupBlueprintSync = (
     }
 
     const reader = new FileReader();
+    reader.onerror = () => {
+      showFeedback('Failed to read file from disk!', true);
+    };
     reader.onload = async (e) => {
       const rawText = ((e.target?.result as string) || '').trim();
       let parsedSettings: unknown;

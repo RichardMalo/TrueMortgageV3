@@ -1,6 +1,6 @@
 import { AppState, Inputs } from './types.js';
 import { saveSettingsToStorage, sanitizeProfile } from './storage.js';
-import { showConfirmModal, trapFocus } from './ui.js';
+import { showConfirmModal, showAlertModal, trapFocus } from './ui.js';
 
 export const renderSandboxList = (
   state: AppState,
@@ -104,6 +104,13 @@ export const renderSandboxList = (
     // Clone scenario
     card.querySelector('.clone-btn')?.addEventListener('click', (e) => {
       e.stopPropagation();
+      if (Object.keys(state.profiles).length >= 20) {
+        showAlertModal(
+          'Scenario Limit Reached',
+          'You can have a maximum of 20 scenarios. Please delete an existing scenario first.'
+        );
+        return;
+      }
       const newId = 'profile-' + Date.now();
       state.profiles[newId] = JSON.parse(JSON.stringify(p));
       state.profiles[newId].id = newId;
@@ -231,6 +238,13 @@ export const setupScenarioSandbox = (
   });
 
   createBtn.addEventListener('click', () => {
+    if (Object.keys(state.profiles).length >= 20) {
+      showAlertModal(
+        'Scenario Limit Reached',
+        'You can have a maximum of 20 scenarios. Please delete an existing scenario first.'
+      );
+      return;
+    }
     saveSettingsToStorage(state, inputsMap, defaultInputs, false);
     const name = newNameInput.value.trim() || `Scenario ${Object.keys(state.profiles).length + 1}`;
     const newId = 'profile-' + Date.now();

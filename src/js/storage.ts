@@ -216,12 +216,31 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     currentMode: p.currentMode === 'cc' ? 'cc' : 'mortgage',
     complexity: p.complexity === 'advanced' ? 'advanced' : 'simple',
     isDark: p.isDark === true,
-    termRates:
-      typeof p.termRates === 'object' && p.termRates ? (p.termRates as Record<number, number>) : {},
-    customizedYears:
-      typeof p.customizedYears === 'object' && p.customizedYears
-        ? (p.customizedYears as Record<number, boolean>)
-        : {},
+    termRates: (() => {
+      const rates: Record<number, number> = {};
+      if (typeof p.termRates === 'object' && p.termRates) {
+        Object.entries(p.termRates).forEach(([k, v]) => {
+          const yr = parseInt(k, 10);
+          const rateVal = parseFloat(String(v));
+          if (!isNaN(yr) && !isNaN(rateVal)) {
+            rates[yr] = Math.min(200, Math.max(0, rateVal));
+          }
+        });
+      }
+      return rates;
+    })(),
+    customizedYears: (() => {
+      const years: Record<number, boolean> = {};
+      if (typeof p.customizedYears === 'object' && p.customizedYears) {
+        Object.entries(p.customizedYears).forEach(([k, v]) => {
+          const yr = parseInt(k, 10);
+          if (!isNaN(yr)) {
+            years[yr] = v === true || v === 'true';
+          }
+        });
+      }
+      return years;
+    })(),
     bankWagesView: ['wages', 'rent', 'rent-tax-ins'].includes(String(p.bankWagesView))
       ? (p.bankWagesView as 'wages' | 'rent' | 'rent-tax-ins')
       : 'wages',

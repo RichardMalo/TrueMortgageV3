@@ -310,6 +310,9 @@ const formatPeriodDelta = (periods: number, periodsPerYear: number): string | nu
   if (yrs > 0) {
     return `${yrs} Year${yrs > 1 ? 's' : ''}${mos > 0 ? `, ${mos} Month${mos > 1 ? 's' : ''}` : ''}`;
   }
+  if (mos === 0) {
+    return `< 1 Month`;
+  }
   return `${mos} Month${mos > 1 ? 's' : ''}`;
 };
 
@@ -332,8 +335,12 @@ export const calculateMilestones = (
   const isMortgage = currentMode === 'mortgage';
   const baseSched = baseData.schedule;
   const actSched = actData.schedule;
+  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const startingPrincipal = isMortgage
+    ? safeHomePrice - safeDownPayment
+    : Math.max(0, inputs.ccBalance || 0);
   const periodsPerYear = actData.summary.periodsPerYear;
-  const startingPrincipal = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
 
   if (!actSched || actSched.length === 0) return [];
 
@@ -551,7 +558,13 @@ export const getRowDateLabel = (
     if (freq === 'monthly') {
       d.setMonth(d.getMonth() + (period - 1));
     } else if (freq === 'semi-monthly') {
-      d.setDate(d.getDate() + (period - 1) * 15);
+      const halfIndex = period - 1;
+      const monthsToAdd = Math.floor(halfIndex / 2);
+      const isSecondHalf = halfIndex % 2 === 1;
+      d.setMonth(d.getMonth() + monthsToAdd);
+      if (isSecondHalf) {
+        d.setDate(d.getDate() + 15);
+      }
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);
     }
