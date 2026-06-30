@@ -80,7 +80,7 @@ export const getCountryCompoundingFromTimezone = (): {
     ) {
       return { country: 'monthly', compounding: 'monthly' };
     }
-  } catch (e) {
+  } catch {
     // Silent fail
   }
   return { country: 'semi', compounding: 'semi' };

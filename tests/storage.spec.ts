@@ -6,7 +6,8 @@ import {
   saveSettingsToStorage,
   loadSettingsFromStorage,
   getCountryCompoundingFromTimezone,
-  removePrototypeKeys
+  removePrototypeKeys,
+  generateProfileId
 } from '../src/js/storage.js';
 import { Inputs, AppState, AppElements } from '../src/js/types.js';
 import { webcrypto } from 'node:crypto';
@@ -367,11 +368,39 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(state.profiles['profile-legacy'].inputs.rate).toBe('4.5');
     });
 
-    it('should detect timezone-based default country and compounding standards', () => {
-      const res = getCountryCompoundingFromTimezone();
-      expect(res).toBeDefined();
-      expect(['semi', 'monthly']).toContain(res.compounding);
-      expect(['semi', 'monthly', 'monthly-uk', 'monthly-au', 'monthly-nz']).toContain(res.country);
+    it('should detect timezone-based default country and compounding standards for various regions', () => {
+      const originalDateTimeFormat = Intl.DateTimeFormat;
+
+      const testTz = (
+        tz: string | undefined,
+        expectedCountry: string,
+        expectedCompounding: string
+      ) => {
+        // Mock Intl.DateTimeFormat constructor using standard factory function
+        const MockDateTimeFormat = function () {
+          return {
+            resolvedOptions: () => ({ timeZone: tz })
+          };
+        };
+
+        // Temporarily override
+        Intl.DateTimeFormat = MockDateTimeFormat as unknown as typeof Intl.DateTimeFormat;
+
+        const res = getCountryCompoundingFromTimezone();
+        expect(res.country).toBe(expectedCountry);
+        expect(res.compounding).toBe(expectedCompounding);
+      };
+
+      testTz('America/Toronto', 'semi', 'semi');
+      testTz('Europe/London', 'monthly-uk', 'monthly');
+      testTz('Australia/Sydney', 'monthly-au', 'monthly');
+      testTz('Pacific/Auckland', 'monthly-nz', 'monthly');
+      testTz('America/New_York', 'monthly', 'monthly');
+      testTz('Etc/UTC', 'semi', 'semi');
+      testTz(undefined, 'semi', 'semi');
+
+      // Restore Intl.DateTimeFormat
+      Intl.DateTimeFormat = originalDateTimeFormat;
     });
 
     it('should reset to default state if migration fails completely', () => {
@@ -401,6 +430,29 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(Object.prototype.hasOwnProperty.call(cleaned, 'prototype')).toBe(false);
       expect(Object.prototype.hasOwnProperty.call(cleaned.nested, 'constructor')).toBe(false);
       expect(Object.prototype.hasOwnProperty.call(cleaned.nested, 'prototype')).toBe(false);
+    });
+
+    it('should generate profile IDs with randomUUID or fallback', () => {
+      // 1. With standard crypto.randomUUID
+      const id1 = generateProfileId();
+      expect(id1).toContain('profile-');
+
+      // 2. Fallback mode (temporarily remove crypto from global context)
+      const originalCrypto = globalThis.crypto;
+      const originalWindowCrypto = globalThis.window.crypto;
+
+      Object.defineProperty(globalThis, 'crypto', { value: undefined, configurable: true });
+      Object.defineProperty(globalThis.window, 'crypto', { value: undefined, configurable: true });
+
+      const id2 = generateProfileId();
+      expect(id2).toContain('profile-');
+
+      // Restore
+      Object.defineProperty(globalThis, 'crypto', { value: originalCrypto, configurable: true });
+      Object.defineProperty(globalThis.window, 'crypto', {
+        value: originalWindowCrypto,
+        configurable: true
+      });
     });
   });
 });
