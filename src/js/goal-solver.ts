@@ -17,6 +17,15 @@ export const solveRequiredMonthly = (
     return 0;
   }
 
+  // Early return if 0 extra payment is already enough (target met by other inputs)
+  const testZero = { ...inputs, extraPayment: 0 };
+  const resZero = isMortgage
+    ? generateMortgageSchedule(testZero, false, true)
+    : generateCCSchedule(testZero, false, true);
+  if (resZero.summary.periodsToPayoff <= targetPeriods) {
+    return 0;
+  }
+
   let min = 0;
   let max = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
 
@@ -35,7 +44,7 @@ export const solveRequiredMonthly = (
       min = mid;
     }
   }
-  return Math.ceil(result);
+  return result < 1.0 ? 0 : Math.ceil(result);
 };
 
 /**
@@ -48,6 +57,15 @@ export const solveRequiredLumpSum = (
   baseData: ScheduleResult
 ): number => {
   if (baseData.summary.periodsToPayoff <= targetPeriods) {
+    return 0;
+  }
+
+  // Early return if 0 lump sum is already enough (target met by other inputs)
+  const testZero = { ...inputs, lumpSum: 0 };
+  const resZero = isMortgage
+    ? generateMortgageSchedule(testZero, false, true)
+    : generateCCSchedule(testZero, false, true);
+  if (resZero.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
@@ -69,7 +87,7 @@ export const solveRequiredLumpSum = (
       min = mid;
     }
   }
-  return Math.ceil(result);
+  return result < 1.0 ? 0 : Math.ceil(result);
 };
 
 /**
