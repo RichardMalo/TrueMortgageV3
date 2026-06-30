@@ -13,7 +13,7 @@ export const solveRequiredMonthly = (
   isMortgage: boolean,
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.periodsToPayoff <= targetPeriods) {
+  if (baseData.summary.periodsToPayoff <= targetPeriods + 1) {
     return 0;
   }
 
@@ -22,7 +22,7 @@ export const solveRequiredMonthly = (
   const resZero = isMortgage
     ? generateMortgageSchedule(testZero, false, true)
     : generateCCSchedule(testZero, false, true);
-  if (resZero.summary.periodsToPayoff <= targetPeriods) {
+  if (resZero.summary.periodsToPayoff <= targetPeriods + 1) {
     return 0;
   }
 
@@ -56,7 +56,7 @@ export const solveRequiredLumpSum = (
   isMortgage: boolean,
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.periodsToPayoff <= targetPeriods) {
+  if (baseData.summary.periodsToPayoff <= targetPeriods + 1) {
     return 0;
   }
 
@@ -65,7 +65,7 @@ export const solveRequiredLumpSum = (
   const resZero = isMortgage
     ? generateMortgageSchedule(testZero, false, true)
     : generateCCSchedule(testZero, false, true);
-  if (resZero.summary.periodsToPayoff <= targetPeriods) {
+  if (resZero.summary.periodsToPayoff <= targetPeriods + 1) {
     return 0;
   }
 
@@ -170,11 +170,14 @@ export const renderGoalSolver = (
     solvedMonthly = solveRequiredMonthly(targetPeriods, inputs, isMortgage, baseData);
     solvedLumpSum = solveRequiredLumpSum(targetPeriods, inputs, isMortgage, baseData);
 
-    monthlyValEl.innerHTML = `+${formatCurrency(solvedMonthly)}<span class="box-unit">/mo</span>`;
-    lumpSumValEl.textContent = `+${formatCurrency(solvedLumpSum)}`;
+    const displayMonthly = Math.max(0, solvedMonthly - (inputs.extraPayment || 0));
+    const displayLumpSum = Math.max(0, solvedLumpSum - (inputs.lumpSum || 0));
+
+    monthlyValEl.innerHTML = `+${formatCurrency(displayMonthly)}<span class="box-unit">/mo</span>`;
+    lumpSumValEl.textContent = `+${formatCurrency(displayLumpSum)}`;
 
     // Show/hide error if solver fails or returns zero while baseline is longer
-    if (solvedMonthly === 0 && targetPeriods < baselinePayoff) {
+    if (solvedMonthly === 0 && targetPeriods < baselinePayoff - 1) {
       errorEl.classList.remove('hidden');
     } else {
       errorEl.classList.add('hidden');
