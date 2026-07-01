@@ -31,7 +31,8 @@ import {
   setupShareFunctionality,
   showConfirmModal,
   showAlertModal,
-  setupTableExpandButton
+  setupTableExpandButton,
+  updateLabelCurrencySymbols
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
@@ -135,6 +136,7 @@ const calculate = (e?: Event) => {
 
   const isMortgage = state.currentMode === 'mortgage';
   const inputs = getCalculationsInputs(state.currentMode, els.inputs, state.termRates);
+  updateLabelCurrencySymbols();
 
   // visibility updates on toggles
   if (els.containers.pitiSection) {

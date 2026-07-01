@@ -89,9 +89,15 @@ export const cancelPendingChartRenders = () => {
   renderQueue.clear();
 };
 
+let lastRenderedCurrency = '';
+
 const flushRenderQueue = async () => {
   try {
     const Plotly = await loadPlotly();
+    const currentCurrency = getCurrencySymbol();
+    const currencyChanged = currentCurrency !== lastRenderedCurrency;
+    lastRenderedCurrency = currentCurrency;
+
     const elementsToRender: Array<{
       el: HTMLElement;
       data: unknown[];
@@ -110,6 +116,13 @@ const flushRenderQueue = async () => {
         !el.classList.contains('hidden') &&
         el.style.display !== 'none'
       ) {
+        if (currencyChanged && visibleChartsMap[elementId]) {
+          try {
+            Plotly.purge(el);
+          } catch {
+            // Ignore if purge fails
+          }
+        }
         elementsToRender.push({ el, data, layout, config, elementId });
       } else {
         visibleChartsMap[elementId] = false;
@@ -211,6 +224,7 @@ export const clearVisibleChartsCache = () => {
 const getLocaleAndCurrency = () => {
   const el = document.getElementById('country-select') as HTMLSelectElement | null;
   const val = el ? el.value : 'semi';
+  console.log('getLocaleAndCurrency selected value:', val);
   switch (val) {
     case 'semi': // Canada
       return { locale: 'en-CA', currency: 'CAD' };

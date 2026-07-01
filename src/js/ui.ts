@@ -16,7 +16,7 @@ const loadHtml2Pdf = async () => {
   }
   return html2pdfInstance;
 };
-import { formatCurrency, formatDecimal } from './charts.js';
+import { formatCurrency, formatDecimal, getCurrencySymbol } from './charts.js';
 
 // HTML escaping helper to prevent script injection in exports (Security Fix)
 export const escapeHtml = (str: string): string => {
@@ -903,10 +903,11 @@ export const setupShareFunctionality = (
   const getReportSummaryText = (formatMarkdown: boolean): string => {
     const isMortgage = state.currentMode === 'mortgage';
     const modeText = isMortgage ? 'Mortgage' : 'Credit Card';
-    const balance = els.results.mortgageDisplay?.textContent || '$0';
+    const sym = getCurrencySymbol();
+    const balance = els.results.mortgageDisplay?.textContent || `${sym}0`;
     const payoff = els.results.paidOffIn?.textContent || '0';
-    const saved = els.results.saved?.textContent || '$0';
-    const actualLifetime = els.results.actualLifetimePaidValue?.textContent || '$0';
+    const saved = els.results.saved?.textContent || `${sym}0`;
+    const actualLifetime = els.results.actualLifetimePaidValue?.textContent || `${sym}0`;
 
     if (formatMarkdown) {
       return (
@@ -1295,4 +1296,50 @@ export const setupTableExpandButton = () => {
       isExpanded ? 'Shrink amortization ledger table view' : 'Expand amortization ledger table view'
     );
   });
+};
+
+/**
+ * Dynamically updates currency label symbols (e.g. $, £) on form fields and limits modal.
+ */
+export const updateLabelCurrencySymbols = () => {
+  const sym = getCurrencySymbol();
+
+  // Sweep all labels in the mortgage form
+  const form = document.getElementById('mortgageForm');
+  if (form) {
+    const labels = form.querySelectorAll('label');
+    labels.forEach((label) => {
+      let html = label.innerHTML;
+      if (
+        html.includes('($)') ||
+        html.includes('(£)') ||
+        html.includes('($/Year)') ||
+        html.includes('(£/Year)') ||
+        html.includes('($/Month)') ||
+        html.includes('(£/Month)')
+      ) {
+        html = html
+          .replace(/\(\$\)/g, `(${sym})`)
+          .replace(/\(£\)/g, `(${sym})`)
+          .replace(/\(\$\/Year\)/g, `(${sym}/Year)`)
+          .replace(/\(£\/Year\)/g, `(${sym}/Year)`)
+          .replace(/\(\$\/Month\)/g, `(${sym}/Month)`)
+          .replace(/\(£\/Month\)/g, `(${sym}/Month)`);
+        label.innerHTML = html;
+      }
+    });
+  }
+
+  // Sweep limitsModal
+  const limitsModal = document.getElementById('limitsModal');
+  if (limitsModal) {
+    const strongs = limitsModal.querySelectorAll('strong');
+    strongs.forEach((strong) => {
+      let html = strong.innerHTML;
+      if (html.includes('$') || html.includes('£')) {
+        html = html.replace(/\$/g, sym).replace(/£/g, sym);
+        strong.innerHTML = html;
+      }
+    });
+  }
 };
