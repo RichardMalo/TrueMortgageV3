@@ -62,7 +62,8 @@ export const queueChartRender = (
     const xLabel = xTitle ? `${xTitle} ` : '';
     dat.forEach((trace) => {
       if (trace && typeof trace === 'object') {
-        if ((trace.type === 'scatter' || trace.type === 'bar') && !trace.hovertemplate) {
+        const traceType = trace.type || 'scatter';
+        if ((traceType === 'scatter' || traceType === 'bar') && !trace.hovertemplate) {
           trace.hovertemplate = `<b>${trace.name || ''}</b><br>${xLabel}%{x}: ${sym}%{y:,.0f}<extra></extra>`;
         }
       }

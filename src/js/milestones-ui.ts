@@ -1,5 +1,6 @@
 import { Milestone, AppElements } from './types.js';
 import { escapeHtml } from './ui.js';
+import { getCurrencySymbol } from './charts.js';
 
 /**
  * Renders calculated milestones into the scrollable timeline card in the DOM.
@@ -13,6 +14,7 @@ export const renderMilestonesUI = (els: AppElements, milestones: Milestone[]) =>
   if (!container) return;
 
   const currentScrollLeft = container.scrollLeft;
+  const sym = getCurrencySymbol();
 
   if (milestones.length === 0) {
     container.innerHTML =
@@ -23,8 +25,11 @@ export const renderMilestonesUI = (els: AppElements, milestones: Milestone[]) =>
   let html = '';
   milestones.forEach((m) => {
     const badgeClass = m.isBaseline ? 'roadmap-node-badge baseline' : 'roadmap-node-badge';
-    const badgeLabel = escapeHtml(m.badge || 'BASELINE SCHEDULE');
+    const badgeLabel = escapeHtml(m.badge || 'BASELINE SCHEDULE').replace(/\$/g, sym);
     const escId = escapeHtml(m.id);
+    const title = escapeHtml(m.title).replace(/\$/g, sym);
+    const desc = escapeHtml(m.desc).replace(/\$/g, sym);
+    const sowhat = escapeHtml(m.sowhat).replace(/\$/g, sym);
 
     html += `
       <div class="roadmap-node squishy-interactive" id="node-${escId}">
@@ -32,10 +37,10 @@ export const renderMilestonesUI = (els: AppElements, milestones: Milestone[]) =>
           <span class="${badgeClass}">${badgeLabel}</span>
           <span style="font-size: 0.72rem; opacity: 0.6; font-weight: 700;">${escapeHtml(m.period)}</span>
         </div>
-        <h4 class="roadmap-node-title">${escapeHtml(m.title)}</h4>
+        <h4 class="roadmap-node-title">${title}</h4>
         <div class="roadmap-node-date">${escapeHtml(m.date)}</div>
-        <div class="roadmap-node-desc">${escapeHtml(m.desc)}</div>
-        <div class="roadmap-node-sowhat">${escapeHtml(m.sowhat)}</div>
+        <div class="roadmap-node-desc">${desc}</div>
+        <div class="roadmap-node-sowhat">${sowhat}</div>
       </div>
     `;
   });
