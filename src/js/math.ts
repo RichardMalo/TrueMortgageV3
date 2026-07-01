@@ -46,6 +46,8 @@ export const generateMortgageSchedule = (
     periodsPerYear = 24;
   } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
     periodsPerYear = 26;
+  } else if (freq === 'weekly') {
+    periodsPerYear = 52;
   }
 
   // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
@@ -586,6 +588,8 @@ export const getRowDateLabel = (
           d.setDate(startDay - 15);
         }
       }
+    } else if (freq === 'weekly') {
+      d.setDate(d.getDate() + (period - 1) * 7);
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);
     }

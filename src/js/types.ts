@@ -7,7 +7,7 @@ export interface Inputs {
   amortizationYears: number;
   termYears: number;
   compounding: 'semi' | 'monthly';
-  frequency: 'monthly' | 'semi-monthly' | 'bi-weekly' | 'accelerated-bi-weekly';
+  frequency: 'monthly' | 'semi-monthly' | 'bi-weekly' | 'accelerated-bi-weekly' | 'weekly';
   usePiti: boolean;
   /** Annual Property Tax in dollars ($/Year) */
   taxRate: number;

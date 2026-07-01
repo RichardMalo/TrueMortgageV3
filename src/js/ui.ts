@@ -447,7 +447,7 @@ export const generateReportHtml = (
     actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear
   );
   const rem_paid = actualData.summary.periodsToPayoff % actualData.summary.periodsPerYear;
-  const frequencyLabel = isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months';
+  const frequencyLabel = isMortgage && inputs.frequency !== 'monthly' ? 'Periods' : 'Months';
   const payoffVal = `${yrs_paid} Years, ${rem_paid} ${frequencyLabel}`;
 
   const savedVal = formatCurrency(

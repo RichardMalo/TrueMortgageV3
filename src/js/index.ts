@@ -261,7 +261,7 @@ const calculate = (e?: Event) => {
     const rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
     updateKineticText(
       els.results.paidOffIn,
-      `${yrs_paid} Years, ${rem_paid} ${isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months'}`,
+      `${yrs_paid} Years, ${rem_paid} ${isMortgage && inputs.frequency !== 'monthly' ? 'Periods' : 'Months'}`,
       false
     );
   }

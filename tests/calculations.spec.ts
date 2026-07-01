@@ -341,6 +341,11 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     );
     expect(biWeeklyResult.summary.periodsPerYear).toBe(26);
 
+    // Weekly
+    const weeklyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'weekly' }, false);
+    expect(weeklyResult.summary.periodsPerYear).toBe(52);
+    expect(weeklyResult.schedule.length).toBeGreaterThan(0);
+
     // Accelerated bi-weekly
     const accBiWeeklyResult = generateMortgageSchedule(
       { ...baseInputs, frequency: 'accelerated-bi-weekly' },
