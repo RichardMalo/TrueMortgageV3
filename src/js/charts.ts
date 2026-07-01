@@ -122,10 +122,15 @@ const flushRenderQueue = async () => {
 const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: boolean) => {
   const c = isDark ? '#f8fafc' : '#1e293b';
   const g = isDark ? '#334155' : '#e2e8f0';
-  const isCurrency = yTitle && (yTitle.includes('$') || yTitle === '$');
+  const sym = getCurrencySymbol();
+  let cleanYTitle = yTitle;
+  if (cleanYTitle) {
+    cleanYTitle = cleanYTitle.replace(/\$/g, sym);
+  }
+  const isCurrency = cleanYTitle && (cleanYTitle.includes(sym) || cleanYTitle === sym);
   const yaxisConfig: Record<string, unknown> = {
     title: {
-      text: yTitle === '$' ? '' : yTitle,
+      text: cleanYTitle === sym ? '' : cleanYTitle,
       font: { size: 12 }
     },
     gridcolor: g,
@@ -134,7 +139,8 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
     fixedrange: true
   };
   if (isCurrency) {
-    yaxisConfig.tickformat = '$,.0f';
+    yaxisConfig.tickprefix = sym;
+    yaxisConfig.tickformat = ',.0f';
   }
   return {
     title: { text: title, font: { color: c, size: 16, weight: 800 }, y: 0.98 },
@@ -199,23 +205,56 @@ const getLocaleAndCurrency = () => {
   }
 };
 
-export const formatCurrency = (n: number) => {
+export const getCurrencySymbol = (): string => {
+  const { currency } = getLocaleAndCurrency();
+  switch (currency) {
+    case 'GBP':
+      return '£';
+    case 'CAD':
+    case 'AUD':
+    case 'NZD':
+    case 'USD':
+    default:
+      return '$';
+  }
+};
+
+let cachedLocale = '';
+let cachedCurrency = '';
+let cachedFormatCurrency: Intl.NumberFormat | null = null;
+let cachedFormatDecimal: Intl.NumberFormat | null = null;
+
+const getFormatter = (style: 'currency' | 'decimal'): Intl.NumberFormat => {
   const { locale, currency } = getLocaleAndCurrency();
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    maximumFractionDigits: 0
-  }).format(n);
+  if (
+    locale !== cachedLocale ||
+    currency !== cachedCurrency ||
+    !cachedFormatCurrency ||
+    !cachedFormatDecimal
+  ) {
+    cachedLocale = locale;
+    cachedCurrency = currency;
+    cachedFormatCurrency = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 0
+    });
+    cachedFormatDecimal = new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+  return style === 'currency' ? cachedFormatCurrency : cachedFormatDecimal;
+};
+
+export const formatCurrency = (n: number) => {
+  return getFormatter('currency').format(n);
 };
 
 export const formatDecimal = (n: number) => {
-  const { locale, currency } = getLocaleAndCurrency();
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(n);
+  return getFormatter('decimal').format(n);
 };
 
 const renderMonthlyPaymentCircle = (
@@ -261,7 +300,7 @@ const renderMonthlyPaymentCircle = (
           ]
         },
         textinfo: 'none',
-        hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>'
+        hovertemplate: `<b>%{label}</b><br>${getCurrencySymbol()}%{value:,.2f}<extra></extra>`
       }
     ],
     {
@@ -293,7 +332,7 @@ const renderPaymentBreakdownCircle = (p1: { principal: number; interest: number 
         hole: 0.6,
         marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest] },
         textinfo: 'none',
-        hovertemplate: '<b>%{label}</b><br>$%{value:,.2f}<extra></extra>'
+        hovertemplate: `<b>%{label}</b><br>${getCurrencySymbol()}%{value:,.2f}<extra></extra>`
       }
     ],
     {
