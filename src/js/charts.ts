@@ -49,6 +49,26 @@ export const queueChartRender = (
   layout: unknown,
   config: unknown
 ) => {
+  // Postprocess data to add currency formatting to tooltips if it is a currency layout
+  const sym = getCurrencySymbol();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lay = layout as any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const dat = data as any[];
+  const isCurrency = lay && lay.yaxis && lay.yaxis.tickprefix === sym;
+
+  if (isCurrency && Array.isArray(dat)) {
+    const xTitle = lay.xaxis?.title?.text || '';
+    const xLabel = xTitle ? `${xTitle} ` : '';
+    dat.forEach((trace) => {
+      if (trace && typeof trace === 'object') {
+        if ((trace.type === 'scatter' || trace.type === 'bar') && !trace.hovertemplate) {
+          trace.hovertemplate = `<b>${trace.name || ''}</b><br>${xLabel}%{x}: ${sym}%{y:,.0f}<extra></extra>`;
+        }
+      }
+    });
+  }
+
   renderQueue.set(elementId, { data, layout, config });
 
   if (renderFrameId === null) {
