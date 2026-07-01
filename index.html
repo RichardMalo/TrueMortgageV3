@@ -198,6 +198,8 @@
                         class="dropdown-trigger"
                         id="country-trigger"
                         aria-labelledby="region-label country-trigger"
+                        aria-haspopup="listbox"
+                        aria-expanded="false"
                       >
                         <img
                           src="flags/ca.svg"
@@ -208,24 +210,49 @@
                         <span id="selected-country-text">Canada</span>
                         <span class="chevron">▼</span>
                       </button>
-                      <div class="dropdown-menu">
-                        <div class="dropdown-item selected" data-value="semi">
+                      <div class="dropdown-menu" role="listbox">
+                        <div
+                          class="dropdown-item selected"
+                          data-value="semi"
+                          role="option"
+                          aria-selected="true"
+                        >
                           <img src="flags/ca.svg" class="flag-icon" alt="Canada Flag" />
                           <span>Canada</span>
                         </div>
-                        <div class="dropdown-item" data-value="monthly">
+                        <div
+                          class="dropdown-item"
+                          data-value="monthly"
+                          role="option"
+                          aria-selected="false"
+                        >
                           <img src="flags/us.svg" class="flag-icon" alt="USA Flag" />
                           <span>USA</span>
                         </div>
-                        <div class="dropdown-item" data-value="monthly-uk">
+                        <div
+                          class="dropdown-item"
+                          data-value="monthly-uk"
+                          role="option"
+                          aria-selected="false"
+                        >
                           <img src="flags/gb.svg" class="flag-icon" alt="UK Flag" />
                           <span>UK</span>
                         </div>
-                        <div class="dropdown-item" data-value="monthly-au">
+                        <div
+                          class="dropdown-item"
+                          data-value="monthly-au"
+                          role="option"
+                          aria-selected="false"
+                        >
                           <img src="flags/au.svg" class="flag-icon" alt="AU Flag" />
                           <span>AU</span>
                         </div>
-                        <div class="dropdown-item" data-value="monthly-nz">
+                        <div
+                          class="dropdown-item"
+                          data-value="monthly-nz"
+                          role="option"
+                          aria-selected="false"
+                        >
                           <img src="flags/nz.svg" class="flag-icon" alt="NZ Flag" />
                           <span>NZ</span>
                         </div>

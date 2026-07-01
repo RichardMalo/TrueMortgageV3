@@ -64,7 +64,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
             <span style="font-size: 0.75rem; opacity: 0.7; font-weight: 500;" class="remaining-label">${remaining.toFixed(0)} Yrs remaining</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <input type="number" class="term-rate-input" data-year="${y}" step="0.01" min="0" max="100" value="${state.termRates[y].toFixed(2)}">
+            <input type="number" class="term-rate-input" data-year="${y}" step="0.01" min="0" max="100" value="${(state.termRates[y] !== undefined ? state.termRates[y] : baseRate).toFixed(2)}">
             <span style="font-weight: 800; font-size: 0.95rem;">%</span>
           </div>
         </div>
@@ -107,7 +107,9 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
           remainingLabel.textContent = `${remaining.toFixed(0)} Yrs remaining`;
         }
         if (document.activeElement !== input) {
-          input.value = state.termRates[y].toFixed(2);
+          input.value = (state.termRates[y] !== undefined ? state.termRates[y] : baseRate).toFixed(
+            2
+          );
         }
       }
     });

@@ -181,7 +181,10 @@ const calculate = (e?: Event) => {
     updateKineticText(els.results.vampireDrain, dailyVampireCost, true, true);
   }
 
-  const hasStrat = inputs.extraPayment > 0 || (isMortgage && inputs.frequency !== 'monthly');
+  const hasStrat =
+    inputs.extraPayment > 0 ||
+    (inputs.lumpSum || 0) > 0 ||
+    (isMortgage && inputs.frequency !== 'monthly');
 
   if (els.containers.comparison) {
     els.containers.comparison.style.display = hasStrat ? 'block' : 'none';
@@ -245,13 +248,21 @@ const calculate = (e?: Event) => {
   updateKineticText(els.results.actualLifetimePaidValue, totalActualLifetimePaidToBank);
   updateKineticText(els.results.mortgageDisplay, principalBorrowAmount);
 
-  const yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
-  const rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
-  updateKineticText(
-    els.results.paidOffIn,
-    `${yrs_paid} Years, ${rem_paid} ${isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months'}`,
-    false
-  );
+  if (actData.summary.paidOff === false) {
+    updateKineticText(
+      els.results.paidOffIn,
+      isMortgage ? 'Never (Negative Amortization)' : 'Never (No Payoff)',
+      false
+    );
+  } else {
+    const yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
+    const rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
+    updateKineticText(
+      els.results.paidOffIn,
+      `${yrs_paid} Years, ${rem_paid} ${isMortgage && inputs.frequency.includes('bi') ? 'Periods' : 'Months'}`,
+      false
+    );
+  }
 
   if (isMortgage) {
     const termPer = Math.ceil(inputs.termYears * actData.summary.periodsPerYear);
@@ -834,9 +845,12 @@ const bootApp = () => {
     if (!lastActData || !lastBaseData) {
       calculate();
     }
+    if (!lastActData || !lastBaseData) {
+      throw new Error('Calculation failed to generate data.');
+    }
     return {
-      actualData: lastActData!,
-      baseData: lastBaseData!
+      actualData: lastActData,
+      baseData: lastBaseData
     };
   });
   setupComplexityToggle();

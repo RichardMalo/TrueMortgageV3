@@ -2,8 +2,6 @@ import { AppState, Inputs, ScheduleResult, AppElements } from './types.js';
 import { generateMortgageSchedule, generateCCSchedule } from './math.js';
 import { formatCurrency } from './charts.js';
 
-let currentTargetYears = 15;
-
 /**
  * Solves for the required monthly extra payment using a binary search.
  */
@@ -148,12 +146,14 @@ export const renderGoalSolver = (
   minLabel.textContent = '1 Year';
   maxLabel.textContent = `${baselineYears} Years`;
 
+  state.currentTargetYears = state.currentTargetYears || 15;
+
   // Cap target value at baseline years
-  if (currentTargetYears > baselineYears || currentTargetYears < 1) {
-    currentTargetYears = Math.max(1, Math.min(15, Math.floor(baselineYears / 2)));
-    slider.value = String(currentTargetYears);
+  if (state.currentTargetYears > baselineYears || state.currentTargetYears < 1) {
+    state.currentTargetYears = Math.max(1, Math.min(15, Math.floor(baselineYears / 2)));
+    slider.value = String(state.currentTargetYears);
   } else {
-    slider.value = String(currentTargetYears);
+    slider.value = String(state.currentTargetYears);
   }
 
   // Active solved amounts
@@ -162,7 +162,7 @@ export const renderGoalSolver = (
 
   const runSolver = () => {
     const targetYears = parseInt(slider.value, 10);
-    currentTargetYears = targetYears;
+    state.currentTargetYears = targetYears;
     readout.textContent = `${targetYears} ${targetYears === 1 ? 'Year' : 'Years'}`;
 
     const targetPeriods = targetYears * periodsPerYear;

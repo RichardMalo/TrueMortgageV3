@@ -9,8 +9,11 @@ export interface Inputs {
   compounding: 'semi' | 'monthly';
   frequency: 'monthly' | 'semi-monthly' | 'bi-weekly' | 'accelerated-bi-weekly';
   usePiti: boolean;
+  /** Annual Property Tax in dollars ($/Year) */
   taxRate: number;
+  /** Annual Home Insurance in dollars ($/Year) */
   insRate: number;
+  /** Monthly HOA fees in dollars ($/Month) */
   hoaRate: number;
   pmiRate: number;
   useOppCost: boolean;
@@ -50,6 +53,8 @@ export interface ScheduleSummary {
   totalInterest: number;
   totalPrincipal: number;
   totalEscrow: number;
+  /** Whether the debt was fully paid off within max periods limit */
+  paidOff?: boolean;
 }
 
 export interface ScheduleResult {
@@ -111,6 +116,7 @@ export interface AppState {
   bankWagesView: 'wages' | 'rent' | 'rent-tax-ins';
   chartsOrder?: (string | null)[];
   strategyOrder?: (string | null)[];
+  currentTargetYears?: number;
 }
 
 export interface Milestone {

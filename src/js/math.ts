@@ -185,7 +185,8 @@ export const generateMortgageSchedule = (
       periodsPerYear: periodsPerYear,
       totalInterest: totalInterest,
       totalPrincipal: totalPrincipal,
-      totalEscrow: totalEscrow
+      totalEscrow: totalEscrow,
+      paidOff: balance <= 0.009
     }
   };
 };
@@ -302,7 +303,8 @@ export const generateCCSchedule = (
       periodsPerYear: 12,
       totalInterest: totalInterest,
       totalPrincipal: totalPrincipal,
-      totalEscrow: 0
+      totalEscrow: 0,
+      paidOff: balance <= 0.01
     }
   };
 };
@@ -576,7 +578,13 @@ export const getRowDateLabel = (
       const isSecondHalf = halfIndex % 2 === 1;
       d.setMonth(d.getMonth() + monthsToAdd);
       if (isSecondHalf) {
-        d.setDate(d.getDate() + 15);
+        const startDay = startDate.getDate();
+        if (startDay <= 15) {
+          d.setDate(startDay + 15);
+        } else {
+          d.setMonth(d.getMonth() + 1);
+          d.setDate(startDay - 15);
+        }
       }
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);

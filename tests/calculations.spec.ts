@@ -429,4 +429,65 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     );
     expect(sumOfPrincipalPortions).toBeCloseTo(1000, 1);
   });
+
+  it('should handle semi-monthly date labeling correctly without accumulation drift', () => {
+    const inputs: Inputs = {
+      homePrice: 800000,
+      downPayment: 160000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.39,
+      amortizationYears: 30,
+      termYears: 5,
+      compounding: 'monthly',
+      frequency: 'semi-monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-20',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    expect(result.schedule[0].dateLabel).toBe('Jul 20, 2026');
+    expect(result.schedule[1].dateLabel).toBe('Aug 5, 2026');
+    expect(result.schedule[2].dateLabel).toBe('Aug 20, 2026');
+    expect(result.schedule[3].dateLabel).toBe('Sep 5, 2026');
+  });
+
+  it('should correctly set paidOff to false under negative amortization / unpaid status', () => {
+    const inputs: Inputs = {
+      homePrice: 800000,
+      downPayment: 0,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 1.0,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: true,
+      termRates: {
+        5: 30.0
+      }
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    expect(result.summary.paidOff).toBe(false);
+  });
 });

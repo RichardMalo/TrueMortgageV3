@@ -29,8 +29,13 @@ export default [
     }
   },
   {
+    files: ['**/*.js'],
     rules: {
-      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+      'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }]
+    }
+  },
+  {
+    rules: {
       'no-console': 'off',
       'no-debugger': 'error',
       'prefer-const': 'error'
