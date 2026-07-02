@@ -568,25 +568,33 @@ export const getRowDateLabel = (
 ): { dateLabel: string; yearVal: number; calendarYear: number } => {
   let dateLabel = `${fallbackPrefix}${period}`;
   let yearVal = period / periodsPerYear;
-  let calendarYear = new Date().getFullYear() + Math.floor(period / periodsPerYear);
+  let calendarYear = new Date().getFullYear() + Math.floor((period - 1) / periodsPerYear);
 
   if (startDate) {
     const d = new Date(startDate.getTime());
+    const startDay = startDate.getDate();
     if (freq === 'monthly') {
+      d.setDate(1);
       d.setMonth(d.getMonth() + (period - 1));
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      d.setDate(Math.min(startDay, lastDay));
     } else if (freq === 'semi-monthly') {
       const halfIndex = period - 1;
       const monthsToAdd = Math.floor(halfIndex / 2);
       const isSecondHalf = halfIndex % 2 === 1;
+      d.setDate(1);
       d.setMonth(d.getMonth() + monthsToAdd);
+      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
       if (isSecondHalf) {
-        const startDay = startDate.getDate();
         if (startDay <= 15) {
-          d.setDate(startDay + 15);
+          d.setDate(Math.min(startDay + 15, lastDay));
         } else {
           d.setMonth(d.getMonth() + 1);
-          d.setDate(startDay - 15);
+          const nextLastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+          d.setDate(Math.min(startDay - 15, nextLastDay));
         }
+      } else {
+        d.setDate(Math.min(startDay, lastDay));
       }
     } else if (freq === 'weekly') {
       d.setDate(d.getDate() + (period - 1) * 7);

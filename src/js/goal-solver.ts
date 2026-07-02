@@ -25,7 +25,10 @@ export const solveRequiredMonthly = (
   }
 
   let min = 0;
-  let max = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
+  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const principal = safeHomePrice - safeDownPayment;
+  let max = isMortgage ? principal : inputs.ccBalance;
 
   let result = max;
   for (let i = 0; i < 24; i++) {
@@ -68,7 +71,10 @@ export const solveRequiredLumpSum = (
   }
 
   let min = 0;
-  let max = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
+  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const principal = safeHomePrice - safeDownPayment;
+  let max = isMortgage ? principal : inputs.ccBalance;
 
   let result = max;
   for (let i = 0; i < 24; i++) {
@@ -104,7 +110,10 @@ export const renderGoalSolver = (
 
   const isMortgage = state.currentMode === 'mortgage';
   const inputs = getInputs();
-  const balance = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
+  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const principal = safeHomePrice - safeDownPayment;
+  const balance = isMortgage ? principal : inputs.ccBalance;
 
   // Hide solver card if no debt
   if (balance <= 0) {
@@ -136,9 +145,29 @@ export const renderGoalSolver = (
   const applyLumpSumBtn = document.getElementById(
     'goalApplyLumpSumBtn'
   ) as HTMLButtonElement | null;
+  const monthlyLabelEl = document.getElementById('goalMonthlyLabel');
 
   if (!slider || !readout || !minLabel || !maxLabel || !monthlyValEl || !lumpSumValEl || !errorEl)
     return;
+
+  const freq = isMortgage ? inputs.frequency : 'monthly';
+  let freqLabel = 'Required Monthly Extra';
+  let freqUnit = '/mo';
+  let btnText = 'Apply to Monthly';
+
+  if (freq === 'weekly') {
+    freqLabel = 'Required Weekly Extra';
+    freqUnit = '/wk';
+    btnText = 'Apply to Weekly';
+  } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
+    freqLabel = 'Required Bi-Weekly Extra';
+    freqUnit = '/bi-wk';
+    btnText = 'Apply to Bi-Weekly';
+  } else if (freq === 'semi-monthly') {
+    freqLabel = 'Required Semi-Monthly Extra';
+    freqUnit = '/semi-mo';
+    btnText = 'Apply to Semi-Monthly';
+  }
 
   // Update slider range attributes dynamically
   slider.min = '1';
@@ -173,7 +202,13 @@ export const renderGoalSolver = (
     const displayMonthly = Math.max(0, solvedMonthly - (inputs.extraPayment || 0));
     const displayLumpSum = Math.max(0, solvedLumpSum - (inputs.lumpSum || 0));
 
-    monthlyValEl.innerHTML = `+${formatCurrency(displayMonthly)}<span class="box-unit">/mo</span>`;
+    if (monthlyLabelEl) {
+      monthlyLabelEl.textContent = freqLabel;
+    }
+    if (applyMonthlyBtn) {
+      applyMonthlyBtn.textContent = btnText;
+    }
+    monthlyValEl.innerHTML = `+${formatCurrency(displayMonthly)}<span class="box-unit">${freqUnit}</span>`;
     lumpSumValEl.textContent = `+${formatCurrency(displayLumpSum)}`;
 
     // Show/hide error if solver fails or returns zero while baseline is longer
