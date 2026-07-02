@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
 import { validateForm, getCalculationsInputs } from '../src/js/form.js';
 
 describe('Form Validation & Parsing (form.ts)', () => {
@@ -248,6 +248,126 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(parsed.useOppCost).toBe(true);
       expect(parsed.investRate).toBe(8.0);
       expect(parsed.termRates).toEqual({ 5: 6.0 });
+    });
+  });
+
+  describe('validateForm & getCalculationsInputs - Scheduled Lump Sums', () => {
+    let container: HTMLElement;
+
+    beforeEach(() => {
+      // Setup base inputs to be valid
+      inputs.homePrice!.value = '500000';
+      inputs.downPayment!.value = '100000';
+      inputs.amortization!.value = '25';
+      inputs.term!.value = '5';
+      inputs.rate!.value = '4.5';
+      inputs.extra!.value = '100';
+      inputs.lumpSum = document.createElement('input');
+      inputs.lumpSum.value = '5000';
+
+      // Create container in DOM
+      container = document.createElement('div');
+      container.id = 'scheduledLumpSumsContainer';
+      document.body.appendChild(container);
+    });
+
+    afterEach(() => {
+      if (document.body.contains(container)) {
+        document.body.removeChild(container);
+      }
+    });
+
+    it('should validate form with valid dynamic lump sum rows', () => {
+      const row = document.createElement('div');
+      row.className = 'lump-sum-row';
+      row.setAttribute('data-id', 'l1');
+
+      const amountInput = document.createElement('input');
+      amountInput.className = 'lump-sum-amount';
+      amountInput.value = '10000';
+
+      const paymentInput = document.createElement('input');
+      paymentInput.className = 'lump-sum-payment-number';
+      paymentInput.value = '12';
+
+      row.appendChild(amountInput);
+      row.appendChild(paymentInput);
+      container.appendChild(row);
+
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(true);
+
+      const parsed = getCalculationsInputs('mortgage', inputs, {});
+      expect(parsed.lumpSums).toEqual([{ id: 'l1', amount: 10000, paymentNumber: 12 }]);
+    });
+
+    it('should fail validation with invalid dynamic lump sum amount', () => {
+      const row = document.createElement('div');
+      row.className = 'lump-sum-row';
+
+      const amountInput = document.createElement('input');
+      amountInput.className = 'lump-sum-amount';
+      amountInput.value = 'invalid';
+
+      const paymentInput = document.createElement('input');
+      paymentInput.className = 'lump-sum-payment-number';
+      paymentInput.value = '12';
+
+      row.appendChild(amountInput);
+      row.appendChild(paymentInput);
+      container.appendChild(row);
+
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(false);
+      expect(errorContainer.textContent).toBe(
+        'Scheduled Lump Sum amount must be a valid non-negative number.'
+      );
+    });
+
+    it('should fail validation with negative dynamic lump sum amount', () => {
+      const row = document.createElement('div');
+      row.className = 'lump-sum-row';
+
+      const amountInput = document.createElement('input');
+      amountInput.className = 'lump-sum-amount';
+      amountInput.value = '-500';
+
+      const paymentInput = document.createElement('input');
+      paymentInput.className = 'lump-sum-payment-number';
+      paymentInput.value = '12';
+
+      row.appendChild(amountInput);
+      row.appendChild(paymentInput);
+      container.appendChild(row);
+
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(false);
+      expect(errorContainer.textContent).toBe(
+        'Scheduled Lump Sum amount must be a valid non-negative number.'
+      );
+    });
+
+    it('should fail validation with invalid dynamic payment number', () => {
+      const row = document.createElement('div');
+      row.className = 'lump-sum-row';
+
+      const amountInput = document.createElement('input');
+      amountInput.className = 'lump-sum-amount';
+      amountInput.value = '1000';
+
+      const paymentInput = document.createElement('input');
+      paymentInput.className = 'lump-sum-payment-number';
+      paymentInput.value = '0';
+
+      row.appendChild(amountInput);
+      row.appendChild(paymentInput);
+      container.appendChild(row);
+
+      const isValid = validateForm('mortgage', inputs, errorContainer);
+      expect(isValid).toBe(false);
+      expect(errorContainer.textContent).toBe(
+        'Scheduled Lump Sum Payment Number must be a valid positive integer (>= 1).'
+      );
     });
   });
 });
