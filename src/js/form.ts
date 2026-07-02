@@ -1,4 +1,4 @@
-import { Inputs } from './types.js';
+import { Inputs, LumpSumItem } from './types.js';
 
 /**
  * Validates the mortgage and credit card form input values.
@@ -59,6 +59,26 @@ export const validateForm = (
       showError('Lump Sum Payment must be a valid non-negative number.');
       return false;
     }
+
+    const dynamicRowEls = document.querySelectorAll('.lump-sum-row');
+    for (let idx = 0; idx < dynamicRowEls.length; idx++) {
+      const row = dynamicRowEls[idx];
+      const amountInput = row.querySelector('.lump-sum-amount') as HTMLInputElement | null;
+      const paymentInput = row.querySelector('.lump-sum-payment-number') as HTMLInputElement | null;
+      if (amountInput && paymentInput) {
+        const amt = parseFloat(amountInput.value || '0');
+        const pmt = parseInt(paymentInput.value || '0', 10);
+        if (isNaN(amt) || amt < 0) {
+          showError('Scheduled Lump Sum amount must be a valid non-negative number.');
+          return false;
+        }
+        if (isNaN(pmt) || pmt < 1) {
+          showError('Scheduled Lump Sum Payment Number must be a valid positive integer (>= 1).');
+          return false;
+        }
+      }
+    }
+
     const pitiToggle = inputs.pitiToggle as HTMLInputElement | null;
     if (pitiToggle && pitiToggle.checked) {
       const tax = parseFloat(inputs.tax?.value || '0');
@@ -99,6 +119,27 @@ export const validateForm = (
       showError('Monthly Surplus must be a valid non-negative number.');
       return false;
     }
+
+    if (inputs.province?.value === 'CUSTOM') {
+      const minPct = parseFloat((inputs.ccMinPercent as HTMLInputElement | null)?.value || '0');
+      const minPrin = parseFloat(
+        (inputs.ccMinPrincipalPct as HTMLInputElement | null)?.value || '0'
+      );
+      const minFlat = parseFloat((inputs.ccMinFlat as HTMLInputElement | null)?.value || '0');
+
+      if (isNaN(minPct) || minPct < 0 || minPct > 100) {
+        showError('Minimum Payment % must be a valid number between 0% and 100%.');
+        return false;
+      }
+      if (isNaN(minPrin) || minPrin < 0 || minPrin > 100) {
+        showError('Interest + Principal % must be a valid number between 0% and 100%.');
+        return false;
+      }
+      if (isNaN(minFlat) || minFlat < 0) {
+        showError('Flat Minimum Payment must be a valid non-negative number.');
+        return false;
+      }
+    }
   }
 
   const oppCostToggle = inputs.oppCostToggle as HTMLInputElement | null;
@@ -123,11 +164,32 @@ export const getCalculationsInputs = (
   const isMortgage = currentMode === 'mortgage';
   // Extract once to avoid repeating the cast 5 times
   const pitiOn = isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked;
+
+  const lumpSums: LumpSumItem[] = [];
+  const dynamicRowEls = document.querySelectorAll('.lump-sum-row');
+  dynamicRowEls.forEach((row) => {
+    const amountInput = row.querySelector('.lump-sum-amount') as HTMLInputElement | null;
+    const paymentInput = row.querySelector('.lump-sum-payment-number') as HTMLInputElement | null;
+    if (amountInput && paymentInput) {
+      const id = row.getAttribute('data-id') || '';
+      const amount = parseFloat(amountInput.value) || 0;
+      const paymentNumber = parseInt(paymentInput.value, 10) || 1;
+      if (amount > 0 && paymentNumber >= 1) {
+        lumpSums.push({ id, amount, paymentNumber });
+      }
+    }
+  });
+
   return {
     homePrice: parseFloat(inputs.homePrice?.value || '0'),
     downPayment: parseFloat(inputs.downPayment?.value || '0'),
     ccBalance: parseFloat(inputs.ccBalance?.value || '0'),
     province: inputs.province?.value || 'ON',
+    ccMinPercent: inputs.ccMinPercent ? parseFloat(inputs.ccMinPercent.value) : undefined,
+    ccMinPrincipalPct: inputs.ccMinPrincipalPct
+      ? parseFloat(inputs.ccMinPrincipalPct.value)
+      : undefined,
+    ccMinFlat: inputs.ccMinFlat ? parseFloat(inputs.ccMinFlat.value) : undefined,
     annualRate: parseFloat(inputs.rate?.value || '0'),
     amortizationYears: parseFloat(inputs.amortization?.value || '0'),
     termYears: parseFloat(inputs.term?.value || '0'),
@@ -146,7 +208,8 @@ export const getCalculationsInputs = (
     startDate: inputs.date?.value || '',
     rateShockEnabled: isMortgage && !!(inputs.rateShockToggle as HTMLInputElement | null)?.checked,
     termRates: termRates,
-    lumpSum: parseFloat(inputs.lumpSum?.value || '0')
+    lumpSum: parseFloat(inputs.lumpSum?.value || '0'),
+    lumpSums
   };
 };
 
@@ -156,7 +219,7 @@ export const getCalculationsInputs = (
  * getCalculationsInputs() inline at every call site.
  */
 export const profileToInputs = (
-  profileInputs: Record<string, string | boolean | number | undefined>,
+  profileInputs: Record<string, string | boolean | number | LumpSumItem[] | undefined>,
   termRates: Record<number, number>,
   currentMode: 'mortgage' | 'cc'
 ): Inputs => {
@@ -167,6 +230,18 @@ export const profileToInputs = (
     downPayment: parseFloat(String(profileInputs.downPayment || '0')),
     ccBalance: parseFloat(String(profileInputs.ccBalance || '0')),
     province: String(profileInputs.province || 'ON'),
+    ccMinPercent:
+      profileInputs.ccMinPercent !== undefined
+        ? parseFloat(String(profileInputs.ccMinPercent))
+        : undefined,
+    ccMinPrincipalPct:
+      profileInputs.ccMinPrincipalPct !== undefined
+        ? parseFloat(String(profileInputs.ccMinPrincipalPct))
+        : undefined,
+    ccMinFlat:
+      profileInputs.ccMinFlat !== undefined
+        ? parseFloat(String(profileInputs.ccMinFlat))
+        : undefined,
     annualRate: parseFloat(String(profileInputs.rate || '0')),
     amortizationYears: parseFloat(String(profileInputs.amortization || '0')),
     termYears: parseFloat(String(profileInputs.term || '0')),
@@ -186,6 +261,7 @@ export const profileToInputs = (
     startDate: String(profileInputs.date || ''),
     rateShockEnabled: isMortgage && profileInputs.rateShockToggle === true,
     termRates,
-    lumpSum: parseFloat(String(profileInputs.lumpSum || '0'))
+    lumpSum: parseFloat(String(profileInputs.lumpSum || '0')),
+    lumpSums: Array.isArray(profileInputs.lumpSums) ? (profileInputs.lumpSums as LumpSumItem[]) : []
   };
 };

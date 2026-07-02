@@ -1,8 +1,17 @@
+export interface LumpSumItem {
+  id: string;
+  amount: number;
+  paymentNumber: number;
+}
+
 export interface Inputs {
   homePrice: number;
   downPayment: number;
   ccBalance: number;
   province: string;
+  ccMinPercent?: number;
+  ccMinPrincipalPct?: number;
+  ccMinFlat?: number;
   annualRate: number;
   amortizationYears: number;
   termYears: number;
@@ -23,6 +32,7 @@ export interface Inputs {
   rateShockEnabled: boolean;
   termRates: Record<number, number>;
   lumpSum?: number;
+  lumpSums?: LumpSumItem[];
 }
 
 export interface ScheduleRow {
@@ -67,6 +77,9 @@ export interface ProfileInputs {
   downPayment: string;
   ccBalance: string;
   province: string;
+  ccMinPercent?: string;
+  ccMinPrincipalPct?: string;
+  ccMinFlat?: string;
   rate: string;
   amortization: string;
   term: string;
@@ -87,7 +100,8 @@ export interface ProfileInputs {
   ccRate: string;
   ccExtra: string;
   lumpSum?: string;
-  [key: string]: string | boolean | undefined;
+  lumpSums?: LumpSumItem[];
+  [key: string]: string | boolean | LumpSumItem[] | undefined;
 }
 
 export interface Profile {
@@ -117,6 +131,8 @@ export interface AppState {
   chartsOrder?: (string | null)[];
   strategyOrder?: (string | null)[];
   currentTargetYears?: number;
+  hiddenCards?: string[];
+  fullWidthCards?: string[];
 }
 
 export interface Milestone {
@@ -137,6 +153,9 @@ export interface AppElements {
     downPayment: HTMLInputElement | null;
     ccBalance: HTMLInputElement | null;
     province: HTMLSelectElement | null;
+    ccMinPercent?: HTMLInputElement | null;
+    ccMinPrincipalPct?: HTMLInputElement | null;
+    ccMinFlat?: HTMLInputElement | null;
     rate: HTMLInputElement | null;
     amortization: HTMLInputElement | null;
     term: HTMLInputElement | null;
@@ -182,6 +201,7 @@ export interface AppElements {
     rateShockTimeline: HTMLElement | null;
     milestoneCard: HTMLElement | null;
     milestoneTimeline: HTMLElement | null;
+    lumpSumsContainer?: HTMLElement | null;
   };
   modeSwitch: HTMLInputElement | null;
   masterBtns: NodeListOf<Element>;

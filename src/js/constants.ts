@@ -9,7 +9,7 @@ export const getPrefersDark = (): boolean => {
 };
 
 export const PMI_LTV_THRESHOLD = 0.8;
-export const PBKDF2_ITERATIONS = 100000;
+export const PBKDF2_ITERATIONS = 600000;
 export const MAX_CC_PAYOFF_MONTHS = 600;
 export const MIN_CC_PAYMENT = 10;
 export const MOBILE_BREAKPOINT = 768;
@@ -26,6 +26,9 @@ export const DEFAULT_INPUTS: Inputs = Object.freeze({
   downPayment: 160000,
   ccBalance: 15000,
   province: 'ON',
+  ccMinPercent: 3,
+  ccMinPrincipalPct: 1,
+  ccMinFlat: 10,
   annualRate: 4.39,
   amortizationYears: 30,
   termYears: 5,
@@ -42,5 +45,6 @@ export const DEFAULT_INPUTS: Inputs = Object.freeze({
   startDate: PREFILLED_DATE,
   rateShockEnabled: false,
   termRates: {},
-  lumpSum: 0
+  lumpSum: 0,
+  lumpSums: []
 });

@@ -81,6 +81,53 @@ describe('Storage & Cryptography (storage.ts)', () => {
       await expect(encryptData(plaintext, '   ')).rejects.toThrow('Passcode cannot be empty');
       await expect(decryptData('some-ciphertext', '')).rejects.toThrow('Passcode cannot be empty');
     });
+
+    it('should fall back and decrypt legacy payloads encrypted with 100,000 iterations', async () => {
+      const plaintext = 'legacy-data-payload';
+      const passcode = 'my-legacy-password';
+
+      // Manually encrypt with 100,000 iterations to match legacy blueprints
+      const salt = window.crypto.getRandomValues(new Uint8Array(16));
+      const enc = new TextEncoder();
+      const passwordKey = await window.crypto.subtle.importKey(
+        'raw',
+        enc.encode(passcode),
+        { name: 'PBKDF2' },
+        false,
+        ['deriveKey']
+      );
+      const key = await window.crypto.subtle.deriveKey(
+        {
+          name: 'PBKDF2',
+          salt,
+          iterations: 100000, // Legacy iteration count
+          hash: 'SHA-256'
+        },
+        passwordKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt']
+      );
+      const iv = window.crypto.getRandomValues(new Uint8Array(12));
+      const encrypted = await window.crypto.subtle.encrypt(
+        { name: 'AES-GCM', iv },
+        key,
+        enc.encode(plaintext)
+      );
+      const combined = new Uint8Array(salt.byteLength + iv.byteLength + encrypted.byteLength);
+      combined.set(salt, 0);
+      combined.set(iv, salt.byteLength);
+      combined.set(new Uint8Array(encrypted), salt.byteLength + iv.byteLength);
+      let binary = '';
+      for (let i = 0; i < combined.length; i++) {
+        binary += String.fromCharCode(combined[i]);
+      }
+      const legacyCiphertext = btoa(binary);
+
+      // Verify decryptData falls back and decrypts it
+      const decrypted = await decryptData(legacyCiphertext, passcode);
+      expect(decrypted).toBe(plaintext);
+    });
   });
 
   describe('Profile Sanitization & Schema Migration', () => {
@@ -412,6 +459,17 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(settings).toBeNull();
       expect(state.activeProfileId).toBe('profile-default');
       expect(state.profiles['profile-default']).toBeDefined();
+
+      // Verify that the corrupted backup was created
+      let foundCorruptedBackup = false;
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('mtg_calculator_settings_corrupted_')) {
+          expect(localStorage.getItem(key)).toBe('invalid-json-{');
+          foundCorruptedBackup = true;
+        }
+      }
+      expect(foundCorruptedBackup).toBe(true);
     });
 
     it('should strip prototype keys recursively using removePrototypeKeys', () => {

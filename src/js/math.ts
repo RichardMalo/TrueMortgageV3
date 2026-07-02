@@ -132,6 +132,13 @@ export const generateMortgageSchedule = (
     if (i === 1 && !isBaseline) {
       currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
     }
+    if (inputs.lumpSums && !isBaseline) {
+      inputs.lumpSums.forEach((item) => {
+        if (item.paymentNumber === i) {
+          currentExtraPayment += Math.max(0, item.amount || 0);
+        }
+      });
+    }
 
     if (principalPortion + currentExtraPayment > balance) {
       principalPortion = balance - currentExtraPayment;
@@ -210,8 +217,21 @@ export const generateCCSchedule = (
   const safeRate = Math.min(200, Math.max(0, inputs.annualRate || 0));
   const monthlyRate = safeRate / 100 / 12; // Simple interest daily rate posted monthly (Standard credit card calculation: APR / 12)
 
-  // Regional minimum payment laws
-  const provPct = inputs.province === 'QC' ? 0.05 : 0.03;
+  // Regional minimum payment laws / Custom presets
+  let provPct = 0.03;
+  let principalPct = 0.01;
+  let flatMin = MIN_CC_PAYMENT;
+
+  if (inputs.province === 'QC') {
+    provPct = 0.05;
+    principalPct = 0.01;
+    flatMin = MIN_CC_PAYMENT;
+  } else if (inputs.province === 'CUSTOM') {
+    provPct = (inputs.ccMinPercent !== undefined ? inputs.ccMinPercent : 3) / 100;
+    principalPct = (inputs.ccMinPrincipalPct !== undefined ? inputs.ccMinPrincipalPct : 1) / 100;
+    flatMin = Math.max(0, inputs.ccMinFlat !== undefined ? inputs.ccMinFlat : MIN_CC_PAYMENT);
+  }
+
   const userExtra = isBaseline ? 0 : Math.max(0, inputs.extraPayment || 0);
 
   let balance = principal;
@@ -236,9 +256,9 @@ export const generateCCSchedule = (
     const interestPortion = balance * monthlyRate;
 
     let calculatedMinimumPayment = Math.max(
-      MIN_CC_PAYMENT,
+      flatMin,
       balance * provPct,
-      interestPortion + balance * 0.01
+      interestPortion + balance * principalPct
     );
     if (calculatedMinimumPayment > balance + interestPortion) {
       calculatedMinimumPayment = balance + interestPortion;
@@ -250,6 +270,13 @@ export const generateCCSchedule = (
     let currentExtraPayment = userExtra;
     if (i === 1 && !isBaseline) {
       currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
+    }
+    if (inputs.lumpSums && !isBaseline) {
+      inputs.lumpSums.forEach((item) => {
+        if (item.paymentNumber === i) {
+          currentExtraPayment += Math.max(0, item.amount || 0);
+        }
+      });
     }
 
     if (regularPrincipal + currentExtraPayment > balance) {

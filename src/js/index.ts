@@ -7,7 +7,12 @@ import {
   getPrefersDark,
   STORAGE_KEY
 } from './constants.js';
-import { generateMortgageSchedule, generateCCSchedule, calculateMilestones } from './math.js';
+import {
+  generateMortgageSchedule,
+  generateCCSchedule,
+  calculateMilestones,
+  getRowDateLabel
+} from './math.js';
 import {
   renderCharts,
   clearVisibleChartsCache,
@@ -32,7 +37,9 @@ import {
   showConfirmModal,
   showAlertModal,
   setupTableExpandButton,
-  updateLabelCurrencySymbols
+  updateLabelCurrencySymbols,
+  applyCardCustomizationsToDOM,
+  renderScheduledLumpSumRows
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
@@ -78,6 +85,9 @@ const els = {
     downPayment: document.getElementById('downPayment') as HTMLInputElement | null,
     ccBalance: document.getElementById('ccBalance') as HTMLInputElement | null,
     province: document.getElementById('province') as HTMLSelectElement | null,
+    ccMinPercent: document.getElementById('ccMinPercent') as HTMLInputElement | null,
+    ccMinPrincipalPct: document.getElementById('ccMinPrincipalPct') as HTMLInputElement | null,
+    ccMinFlat: document.getElementById('ccMinFlat') as HTMLInputElement | null,
     rate: document.getElementById('interestRate') as HTMLInputElement | null,
     amortization: document.getElementById('amortization') as HTMLInputElement | null,
     term: document.getElementById('term') as HTMLInputElement | null,
@@ -122,7 +132,8 @@ const els = {
     rateShockSection: document.getElementById('rateShockSection'),
     rateShockTimeline: document.getElementById('rateShockTimeline'),
     milestoneCard: document.getElementById('milestoneRoadmapCard'),
-    milestoneTimeline: document.getElementById('milestoneTimelineContainer')
+    milestoneTimeline: document.getElementById('milestoneTimelineContainer'),
+    lumpSumsContainer: document.getElementById('scheduledLumpSumsContainer')
   },
   modeSwitch: document.getElementById('mode-switch') as HTMLInputElement | null,
   masterBtns: document.querySelectorAll('.mode-btn')
@@ -137,10 +148,18 @@ const calculate = (e?: Event) => {
   const isMortgage = state.currentMode === 'mortgage';
   const inputs = getCalculationsInputs(state.currentMode, els.inputs, state.termRates);
   updateLabelCurrencySymbols();
+  updateScheduledLumpSumDatesInPlace();
 
   // visibility updates on toggles
   if (els.containers.pitiSection) {
     els.containers.pitiSection.style.display = inputs.usePiti ? 'block' : 'none';
+  }
+
+  const ccCustomMinEl = document.getElementById('ccCustomMinPaymentSection');
+  if (ccCustomMinEl) {
+    const showCustom =
+      !isMortgage && state.complexity === 'advanced' && inputs.province === 'CUSTOM';
+    ccCustomMinEl.style.display = showCustom ? 'flex' : 'none';
   }
 
   const rentTaxInsBtn = document.querySelector(
@@ -294,6 +313,7 @@ const calculate = (e?: Event) => {
   lastActData = actData;
   lastBaseData = baseData;
   renderBankWages(state, els, actData);
+  applyCardCustomizationsToDOM(state);
 
   renderHeatmap(
     state,
@@ -334,6 +354,97 @@ const calculate = (e?: Event) => {
 
   syncStateCardOrderFromDOM(state);
   saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+};
+
+const triggerLumpSumsRepaint = () => {
+  const activeProfile = state.profiles[state.activeProfileId as string];
+  if (!activeProfile || !els.containers.lumpSumsContainer) return;
+
+  const list = activeProfile.inputs.lumpSums || [];
+  const start = els.inputs.date?.value || '';
+  const freq = els.inputs.frequency?.value || 'monthly';
+
+  renderScheduledLumpSumRows(
+    els.containers.lumpSumsContainer,
+    list,
+    start,
+    freq,
+    () => {
+      saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+      calculate();
+    },
+    (idToDelete) => {
+      const activeProf = state.profiles[state.activeProfileId as string];
+      if (!activeProf) return;
+      const currentList = activeProf.inputs.lumpSums || [];
+      activeProf.inputs.lumpSums = currentList.filter((item) => item.id !== idToDelete);
+      triggerLumpSumsRepaint();
+      saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+      calculate();
+    }
+  );
+};
+
+const updateScheduledLumpSumDatesInPlace = () => {
+  const container = els.containers.lumpSumsContainer;
+  if (!container) return;
+
+  const start = els.inputs.date?.value || '';
+  const freq = els.inputs.frequency?.value || 'monthly';
+  const parsedDate = start ? new Date(start + 'T00:00:00') : null;
+
+  const freqMap: Record<string, number> = {
+    monthly: 12,
+    'semi-monthly': 24,
+    'bi-weekly': 26,
+    'accelerated-bi-weekly': 26,
+    weekly: 52
+  };
+  const periodsPerYear = freqMap[freq] || 12;
+
+  const rows = container.querySelectorAll('.lump-sum-row');
+  rows.forEach((row) => {
+    const paymentInput = row.querySelector('.lump-sum-payment-number') as HTMLInputElement | null;
+    const dateBadge = row.querySelector('.lump-sum-date-badge') as HTMLElement | null;
+    if (paymentInput && dateBadge) {
+      const pmtNum = parseInt(paymentInput.value, 10);
+      if (isNaN(pmtNum) || pmtNum < 1) {
+        dateBadge.textContent = 'Invalid payment #';
+        dateBadge.style.color = '#ef4444';
+      } else {
+        const { dateLabel } = getRowDateLabel(parsedDate, pmtNum, freq, periodsPerYear, 'P');
+        dateBadge.textContent = dateLabel;
+        dateBadge.style.color = 'var(--primary-color)';
+      }
+    }
+  });
+};
+
+const setupScheduledLumpSums = () => {
+  const addBtn = document.getElementById('addLumpSumBtn');
+  if (!addBtn) return;
+
+  addBtn.addEventListener('click', () => {
+    const activeProfile = state.profiles[state.activeProfileId as string];
+    if (!activeProfile) return;
+    if (!activeProfile.inputs.lumpSums) {
+      activeProfile.inputs.lumpSums = [];
+    }
+
+    const activeList = activeProfile.inputs.lumpSums;
+    const nextPmt =
+      activeList.length > 0 ? Math.max(...activeList.map((item) => item.paymentNumber)) + 12 : 12;
+
+    activeList.push({
+      id: 'lump-' + Math.random().toString(36).substring(2, 9),
+      amount: 1000,
+      paymentNumber: nextPmt
+    });
+
+    triggerLumpSumsRepaint();
+    saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+    calculate();
+  });
 };
 
 const handleProfileSwitch = (profileId: string) => {
@@ -382,6 +493,14 @@ const handleProfileSwitch = (profileId: string) => {
   if (els.containers.pitiSection) {
     els.containers.pitiSection.style.display = els.inputs.pitiToggle?.checked ? 'block' : 'none';
   }
+  const ccCustomMinEl = document.getElementById('ccCustomMinPaymentSection');
+  if (ccCustomMinEl) {
+    const showCustom =
+      state.currentMode === 'cc' &&
+      state.complexity === 'advanced' &&
+      els.inputs.province?.value === 'CUSTOM';
+    ccCustomMinEl.style.display = showCustom ? 'flex' : 'none';
+  }
   if (els.containers.oppCostSection) {
     els.containers.oppCostSection.style.display = els.inputs.oppCostToggle?.checked
       ? 'block'
@@ -410,6 +529,7 @@ const handleProfileSwitch = (profileId: string) => {
   }
 
   clearVisibleChartsCache();
+  triggerLumpSumsRepaint();
   calculate();
   renderSandboxList(state, DEFAULT_INPUTS, els.inputs, handleProfileSwitch, calculate);
 };
@@ -876,7 +996,11 @@ const bootApp = () => {
     decryptData,
     handleProfileSwitch
   );
-  setupSettingsMenu(resetApplicationData);
+  setupSettingsMenu(state, resetApplicationData, () => {
+    saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+    calculate();
+  });
+  setupScheduledLumpSums();
   setupScenarioSandbox(state, DEFAULT_INPUTS, els.inputs, handleProfileSwitch, calculate);
 
   // GSAP Entrance Animations (run immediately on boot)

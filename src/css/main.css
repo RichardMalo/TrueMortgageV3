@@ -2811,3 +2811,137 @@ body.dark-mode .goal-result-box:hover {
 .goal-apply-btn:active {
   transform: translateY(0);
 }
+
+/* Dashboard Widget Customizer Styles */
+.layout-card-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+.layout-card-controls {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.layout-card-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+  color: var(--text-color);
+}
+.layout-card-controls input[type='checkbox'] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+.layout-settings-list span {
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: var(--text-color);
+}
+
+/* Visibility and Width Modifiers for Bento Grid */
+.chart-wrapper.custom-hidden,
+.bento-card.custom-hidden,
+.concentric-visualization-card.custom-hidden {
+  display: none !important;
+}
+
+.chart-wrapper.full-width,
+.bento-card.full-width,
+.concentric-visualization-card.full-width {
+  grid-column: 1 / -1 !important;
+}
+
+/* Scheduled Lump Sum Dynamic Row Styles */
+.lump-sum-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  animation: slideDownIn 0.25s ease-out forwards;
+}
+
+@keyframes slideDownIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.lump-sum-amount {
+  width: 110px !important;
+  padding: 8px 10px !important;
+  font-size: 0.85rem !important;
+  border-radius: 8px !important;
+  height: 36px !important;
+}
+
+.lump-sum-payment-number-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.lump-sum-payment-number {
+  width: 100% !important;
+  padding: 8px 10px !important;
+  font-size: 0.85rem !important;
+  border-radius: 8px !important;
+  height: 36px !important;
+}
+
+.lump-sum-date-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary-color);
+  opacity: 0.8;
+  margin-top: 3px;
+  padding-left: 2px;
+  min-height: 12px;
+}
+
+.lump-sum-delete-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-color);
+  background-color: var(--input-bg);
+  color: var(--text-color);
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.15s ease;
+  user-select: none;
+  margin-top: 0;
+}
+
+.lump-sum-delete-btn:hover {
+  background-color: rgba(239, 68, 68, 0.12);
+  border-color: #ef4444;
+  color: #ef4444;
+  transform: translateY(-1px);
+}
+
+.lump-sum-delete-btn:active {
+  transform: translateY(0);
+}

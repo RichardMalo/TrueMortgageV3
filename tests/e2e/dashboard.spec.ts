@@ -63,17 +63,23 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     const homePriceInput = page.locator('#homePrice');
     const downPaymentInput = page.locator('#downPayment');
 
-    // Focus and fill downPayment with 0, then blur to trigger change/blur events safely
+    // Focus, fill downPayment with 0, and move focus via Tab
+    await downPaymentInput.click();
     await downPaymentInput.fill('0');
-    await downPaymentInput.blur();
+    await downPaymentInput.press('Tab');
+    await page.waitForTimeout(150);
 
-    // Focus and fill homePrice with 500000, then blur
+    // Focus, fill homePrice with 500000, and move focus via Tab
+    await homePriceInput.click();
     await homePriceInput.fill('500000');
-    await homePriceInput.blur();
+    await homePriceInput.press('Tab');
+    await page.waitForTimeout(150);
 
-    // Focus and fill downPayment with 100000, then blur
+    // Focus, fill downPayment with 100000, and move focus via Tab
+    await downPaymentInput.click();
     await downPaymentInput.fill('100000');
-    await downPaymentInput.blur();
+    await downPaymentInput.press('Tab');
+    await page.waitForTimeout(150);
 
     // Verify stats boxes update
     const mortgageAmount = page.locator('#mortgageAmountDisplay');
@@ -150,5 +156,115 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     expect(json.activeProfileId).toBeDefined();
     expect(Object.keys(json.profiles)).toHaveLength(1);
     expect(json.profiles[json.activeProfileId]).toBeDefined();
+  });
+
+  test('should toggle custom credit card minimum payment fields and calculate dynamically', async ({
+    page
+  }) => {
+    // 1. Switch mode to CC
+    await page.click('.mode-btn[data-mode="cc"]');
+    await expect(page.locator('body')).toHaveClass(/mode-cc/);
+
+    // 2. Switch complexity to Advanced
+    await page.click('#settingsTrigger');
+    await page.click('.complexity-btn[data-complexity="advanced"]');
+    await page.click('#settingsTrigger'); // close dropdown
+
+    // 3. Check custom CC fields are initially hidden
+    const customSection = page.locator('#ccCustomMinPaymentSection');
+    await expect(customSection).not.toBeVisible();
+
+    // 4. Select CUSTOM minimum payment rule
+    await page.selectOption('#province', 'CUSTOM');
+    await expect(customSection).toBeVisible();
+
+    // 5. Fill custom parameters
+    await page.locator('#ccMinPercent').fill('4');
+    await page.locator('#ccMinPercent').press('Tab');
+    await page.locator('#ccMinPrincipalPct').fill('2');
+    await page.locator('#ccMinPrincipalPct').press('Tab');
+    await page.locator('#ccMinFlat').fill('25');
+    await page.locator('#ccMinFlat').press('Tab');
+
+    // Wait for the daily vampire drain output to exist/render
+    const vampireText = page.locator('#dailyVampireDrain');
+    await expect(vampireText).toBeVisible();
+  });
+
+  test('should customize widget visibility and grid layout width using layout modal', async ({
+    page
+  }) => {
+    // 1. Switch complexity to Advanced so widgets are present
+    await page.click('#settingsTrigger');
+    await page.click('.complexity-btn[data-complexity="advanced"]');
+
+    // 2. Open Layout modal
+    await page.click('#settingsOptLayout');
+    const layoutModal = page.locator('#layoutModal');
+    await expect(layoutModal).toHaveClass(/active/);
+
+    // 3. Verify focus is trapped inside the layout modal (on the close button)
+    const closeBtn = page.locator('#closeLayoutModalBtn');
+    await expect(closeBtn).toBeFocused();
+
+    // 4. Toggle chart3 visibility (uncheck) and chart6 width (check full-width)
+    const showChart3 = page.locator('#layoutShow-chart3');
+    await expect(showChart3).toBeChecked();
+    await showChart3.uncheck();
+
+    const fullChart6 = page.locator('#layoutFull-chart6');
+    await expect(fullChart6).not.toBeChecked();
+    await fullChart6.check();
+
+    // 5. Apply and save
+    await page.click('#saveLayoutBtn');
+    await expect(layoutModal).not.toHaveClass(/active/);
+
+    // 6. Verify CSS classes applied to widget wrappers in the bento grid
+    const chart3Wrapper = page.locator('#chart3').locator('..');
+    await expect(chart3Wrapper).toHaveClass(/custom-hidden/);
+
+    const chart6Wrapper = page.locator('#chart6').locator('..');
+    await expect(chart6Wrapper).toHaveClass(/full-width/);
+  });
+
+  test('should dynamically add, edit, and delete scheduled lump sums', async ({ page }) => {
+    // 1. Switch complexity to Advanced so scheduled lump sums sections are visible
+    await page.click('#settingsTrigger');
+    await page.click('.complexity-btn[data-complexity="advanced"]');
+    await page.click('#settingsTrigger'); // close settings
+
+    // 2. Click + Add Scheduled Row
+    const addBtn = page.locator('#addLumpSumBtn');
+    await addBtn.click();
+
+    // 3. Verify a row with class lump-sum-row is added
+    const row = page.locator('.lump-sum-row').first();
+    await expect(row).toBeVisible();
+
+    // 4. Fill amount and payment number
+    const amountInput = row.locator('.lump-sum-amount');
+    const paymentInput = row.locator('.lump-sum-payment-number');
+
+    await amountInput.click();
+    await amountInput.fill('15000');
+    await amountInput.press('Tab');
+    await page.waitForTimeout(100);
+
+    await paymentInput.click();
+    await paymentInput.fill('24');
+    await paymentInput.press('Tab');
+    await page.waitForTimeout(100);
+
+    // 5. Verify dynamic date label updates correctly (should contain 2028)
+    const dateLabel = row.locator('.lump-sum-date-badge');
+    await expect(dateLabel).toContainText('2028');
+
+    // 6. Delete the row
+    const deleteBtn = row.locator('.lump-sum-delete-btn');
+    await deleteBtn.click();
+
+    // 7. Verify row is deleted
+    await expect(row).not.toBeVisible();
   });
 });

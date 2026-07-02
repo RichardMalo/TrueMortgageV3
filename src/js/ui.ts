@@ -1,6 +1,7 @@
 import gsap from 'gsap';
-import { AppState, Inputs, ScheduleResult, ScheduleRow } from './types.js';
+import { AppState, Inputs, ScheduleResult, ScheduleRow, LumpSumItem } from './types.js';
 import { getCalculationsInputs } from './form.js';
+import { getRowDateLabel } from './math.js';
 import { MOBILE_BREAKPOINT } from './constants.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -529,7 +530,13 @@ export const generateReportHtml = (
         <span>Starting Balance:</span><strong>${escapeHtml(formatCurrency(inputs.ccBalance))}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Province:</span><strong>${inputs.province === 'QC' ? 'Quebec (5%)' : 'Ontario (3%)'}</strong>
+        <span>Min. Payment Rule:</span><strong>${
+          inputs.province === 'QC'
+            ? 'Quebec Preset (5%)'
+            : inputs.province === 'CUSTOM'
+              ? `Custom (${inputs.ccMinPercent}% / Int + ${inputs.ccMinPrincipalPct}% / $${inputs.ccMinFlat})`
+              : 'Ontario Preset (3%)'
+        }</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
         <span>Monthly Surplus Payment:</span><strong>${escapeHtml(formatCurrency(inputs.extraPayment))}/Month</strong>
@@ -1342,4 +1349,179 @@ export const updateLabelCurrencySymbols = () => {
       }
     });
   }
+};
+
+/**
+ * Sweeps the DOM dashboard widget containers and applies hidden/full-width class toggles
+ * according to layout customizations saved in the AppState.
+ *
+ * @param state - The shared AppState store.
+ */
+export const applyCardCustomizationsToDOM = (state: AppState) => {
+  const hidden = state.hiddenCards || [];
+  const fullWidth = state.fullWidthCards || [];
+
+  const cards = [
+    { id: 'chart3', el: document.getElementById('chart3')?.parentElement },
+    { id: 'chart', el: document.getElementById('chart')?.parentElement },
+    { id: 'chart2', el: document.getElementById('chart2')?.parentElement },
+    { id: 'chart11', el: document.getElementById('chart11')?.parentElement },
+    { id: 'chart6', el: document.getElementById('chart6')?.parentElement },
+    { id: 'chart9', el: document.getElementById('chart9')?.parentElement },
+    { id: 'chart12', el: document.getElementById('chart12')?.parentElement },
+    {
+      id: 'chartLTV',
+      el:
+        document.getElementById('chartLTV')?.parentElement ||
+        document.getElementById('ltv-container')
+    },
+    {
+      id: 'chartOppCost',
+      el:
+        document.getElementById('chartOppCost')?.parentElement ||
+        document.getElementById('oppcost-container')
+    },
+    { id: 'concentric', el: document.querySelector('.concentric-visualization-card') },
+    { id: 'wages', el: document.getElementById('bank-wages-card') },
+    { id: 'milestones', el: document.getElementById('milestoneRoadmapCard') }
+  ];
+
+  cards.forEach((card) => {
+    if (!card.el) return;
+    const isHidden = hidden.includes(card.id);
+    card.el.classList.toggle('custom-hidden', isHidden);
+
+    const isFullWidth = fullWidth.includes(card.id);
+    card.el.classList.toggle('full-width', isFullWidth);
+  });
+
+  // Force Plotly charts resize to fit newly adjusted grids
+  window.dispatchEvent(new Event('resize'));
+};
+
+/**
+ * Renders the collection of scheduled future lump-sum payments dynamically
+ * into the sidebar container. Installs keyboard validations and calendar month/year
+ * calculations inline.
+ *
+ * @param container - The parent container element.
+ * @param lumpSums - Collection of active scheduled payments.
+ * @param startDateStr - Starting calendar date of the schedule.
+ * @param frequency - The payment frequency (e.g. 'monthly', 'bi-weekly').
+ * @param onUpdate - Callback triggered when input amounts/payment numbers change.
+ * @param onDelete - Callback triggered when a delete trash button is clicked.
+ */
+export const renderScheduledLumpSumRows = (
+  container: HTMLElement,
+  lumpSums: LumpSumItem[],
+  startDateStr: string,
+  frequency: string,
+  onUpdate: () => void,
+  onDelete: (id: string) => void
+) => {
+  container.innerHTML = '';
+
+  const parsedDate = startDateStr ? new Date(startDateStr + 'T00:00:00') : null;
+  const freqMap: Record<string, number> = {
+    monthly: 12,
+    'semi-monthly': 24,
+    'bi-weekly': 26,
+    'accelerated-bi-weekly': 26,
+    weekly: 52
+  };
+  const periodsPerYear = freqMap[frequency] || 12;
+
+  lumpSums.forEach((item) => {
+    const row = document.createElement('div');
+    row.className = 'lump-sum-row';
+    row.setAttribute('data-id', item.id);
+
+    // Amount input container
+    const amountGroup = document.createElement('div');
+    amountGroup.style.display = 'flex';
+    amountGroup.style.flexDirection = 'column';
+
+    const amountInput = document.createElement('input');
+    amountInput.type = 'number';
+    amountInput.className = 'lump-sum-amount';
+    amountInput.inputMode = 'decimal';
+    amountInput.min = '0';
+    amountInput.step = '100';
+    amountInput.value = item.amount > 0 ? String(item.amount) : '';
+    amountInput.placeholder = '$ Amount';
+    amountInput.ariaLabel = `Scheduled Lump Sum Amount`;
+    amountGroup.appendChild(amountInput);
+
+    // Payment number container
+    const paymentGroup = document.createElement('div');
+    paymentGroup.className = 'lump-sum-payment-number-container';
+
+    const paymentInput = document.createElement('input');
+    paymentInput.type = 'number';
+    paymentInput.className = 'lump-sum-payment-number';
+    paymentInput.inputMode = 'numeric';
+    paymentInput.min = '1';
+    paymentInput.value = item.paymentNumber > 0 ? String(item.paymentNumber) : '';
+    paymentInput.placeholder = 'Pmt #';
+    paymentInput.ariaLabel = `Scheduled Lump Sum Payment Number`;
+    paymentGroup.appendChild(paymentInput);
+
+    // Dynamic date badge
+    const dateBadge = document.createElement('span');
+    dateBadge.className = 'lump-sum-date-badge';
+    paymentGroup.appendChild(dateBadge);
+
+    const updateDateBadge = () => {
+      const pmtNum = parseInt(paymentInput.value, 10);
+      if (isNaN(pmtNum) || pmtNum < 1) {
+        dateBadge.textContent = 'Invalid payment #';
+        dateBadge.style.color = '#ef4444';
+      } else {
+        const { dateLabel } = getRowDateLabel(parsedDate, pmtNum, frequency, periodsPerYear, 'P');
+        dateBadge.textContent = dateLabel;
+        dateBadge.style.color = 'var(--primary-color)';
+      }
+    };
+    updateDateBadge();
+
+    // Delete button
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'lump-sum-delete-btn';
+    deleteBtn.innerHTML = '🗑️';
+    deleteBtn.title = 'Delete scheduled payment';
+    deleteBtn.ariaLabel = 'Delete scheduled payment';
+
+    // Event listeners
+    amountInput.addEventListener('change', () => {
+      const val = parseFloat(amountInput.value) || 0;
+      item.amount = val;
+      onUpdate();
+    });
+    amountInput.addEventListener('input', () => {
+      const val = parseFloat(amountInput.value) || 0;
+      item.amount = val;
+    });
+
+    paymentInput.addEventListener('change', () => {
+      const val = parseInt(paymentInput.value, 10) || 1;
+      item.paymentNumber = val;
+      updateDateBadge();
+      onUpdate();
+    });
+    paymentInput.addEventListener('input', () => {
+      const val = parseInt(paymentInput.value, 10) || 1;
+      item.paymentNumber = val;
+      updateDateBadge();
+    });
+
+    deleteBtn.addEventListener('click', () => {
+      onDelete(item.id);
+    });
+
+    row.appendChild(amountGroup);
+    row.appendChild(paymentGroup);
+    row.appendChild(deleteBtn);
+    container.appendChild(row);
+  });
 };

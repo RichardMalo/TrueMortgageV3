@@ -303,6 +303,109 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(firstRow.principal).toBeCloseTo(500.1, 1);
   });
 
+  it('should calculate credit card payoffs with custom minimum payment rules', () => {
+    const inputs: Inputs = {
+      homePrice: 0,
+      downPayment: 0,
+      ccBalance: 15000,
+      province: 'CUSTOM',
+      ccMinPercent: 4, // 4% minimum outstanding balance
+      ccMinPrincipalPct: 1.5, // Interest + 1.5% remaining principal
+      ccMinFlat: 20, // Floor of $20
+      annualRate: 19.99,
+      amortizationYears: 0,
+      termYears: 0,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateCCSchedule(inputs, false);
+    const firstRow = result.schedule[0];
+
+    // Interest portion = 15000 * (19.99 / 100 / 12) = 249.875
+    // Rule 1: Outstanding balance * 4% = 15000 * 0.04 = 600
+    // Rule 2: Interest + remaining principal * 1.5% = 249.875 + 15000 * 0.015 = 249.875 + 225 = 474.875
+    // Rule 3: Flat minimum = 20
+    // Max of these is 600. So first payment should be 600.
+    expect(firstRow.payment).toBeCloseTo(600.0, 1);
+    expect(firstRow.interest).toBeCloseTo(249.9, 1);
+    expect(firstRow.principal).toBeCloseTo(350.1, 1);
+
+    // Let's test a low balance to verify the flat floor minimum rule
+    const lowBalanceInputs = { ...inputs, ccBalance: 100 };
+    const lowResult = generateCCSchedule(lowBalanceInputs, false);
+    const lowFirstRow = lowResult.schedule[0];
+
+    // Outstanding balance * 4% = 4
+    // Interest + principal * 1.5% = (100 * 0.1999 / 12) + 1.5 = 1.666 + 1.5 = 3.166
+    // Flat minimum = 20
+    // Max of these is 20. So payment should be 20.
+    expect(lowFirstRow.payment).toBeCloseTo(20.0, 1);
+  });
+
+  it('should apply multiple scheduled lump sums correctly inside mortgage schedule', () => {
+    const inputs: Inputs = {
+      homePrice: 500000,
+      downPayment: 100000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.5,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'semi',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {},
+      lumpSum: 5000, // at payment 1
+      lumpSums: [
+        { id: 'l1', amount: 10000, paymentNumber: 12 }, // at payment 12
+        { id: 'l2', amount: 20000, paymentNumber: 24 } // at payment 24
+      ]
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+
+    // Check first payment has the initial 5000 lump sum
+    const firstRow = result.schedule[0];
+    const standardPayment = 2213.89;
+    expect(firstRow.payment).toBeCloseTo(standardPayment + 5000, 0);
+
+    // Check payment 12 has the 10000 lump sum
+    const row12 = result.schedule[11];
+    expect(row12.payment).toBeCloseTo(standardPayment + 10000, 0);
+
+    // Check payment 24 has the 20000 lump sum
+    const row24 = result.schedule[23];
+    expect(row24.payment).toBeCloseTo(standardPayment + 20000, 0);
+
+    // Check that lifetime interest is significantly lower than a baseline with only the initial lump sum
+    const baselineInputs = { ...inputs, lumpSums: [] };
+    const baselineResult = generateMortgageSchedule(baselineInputs, false);
+
+    expect(result.summary.totalInterest).toBeLessThan(baselineResult.summary.totalInterest);
+    expect(result.summary.periodsToPayoff).toBeLessThan(baselineResult.summary.periodsToPayoff);
+  });
+
   it('should handle different payment frequencies (semi-monthly, bi-weekly, accelerated bi-weekly)', () => {
     const baseInputs: Inputs = {
       homePrice: 500000,

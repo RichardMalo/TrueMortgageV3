@@ -150,6 +150,9 @@
                 <div class="settings-item" id="settingsOptSync">
                   <span>🔑</span> Secure Sync & Portability
                 </div>
+                <div class="settings-item" id="settingsOptLayout">
+                  <span>📊</span> Customize Dashboard Layout
+                </div>
                 <div class="settings-menu-divider"></div>
                 <div class="settings-menu-header">Engine Logic</div>
                 <div class="settings-item" id="settingsOptLimits">
@@ -408,12 +411,81 @@
                 </div>
                 <div class="input-group cc-only advanced-only">
                   <label for="province"
-                    >Province <span class="inline-tooltip-text">(Min. Payment Law)</span></label
+                    >Minimum Payment Rule
+                    <span class="inline-tooltip-text">(Standard / Law)</span></label
                   >
                   <select id="province" class="custom-select">
-                    <option value="ON">Ontario (Standard 3%)</option>
-                    <option value="QC">Quebec (Legal 5%)</option>
+                    <option value="ON">Ontario Preset (3% / Int + 1% / min $10)</option>
+                    <option value="QC">Quebec Preset (5% / Int + 1% / min $10)</option>
+                    <option value="CUSTOM">Custom Formula...</option>
                   </select>
+                </div>
+              </div>
+
+              <!-- Custom Credit Card Minimum Payment Fields (Dynamic) -->
+              <div
+                class="input-group-row cc-only cc-custom-min-payment-row advanced-only"
+                id="ccCustomMinPaymentSection"
+                style="display: none; gap: 12px"
+              >
+                <div class="input-group" style="flex: 1">
+                  <label for="ccMinPercent"
+                    >Min Payment %
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >Percentage of outstanding balance to charge as the minimum payment
+                        threshold.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="ccMinPercent"
+                    inputmode="decimal"
+                    value="3"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+                <div class="input-group" style="flex: 1">
+                  <label for="ccMinPrincipalPct"
+                    >Interest + Principal %
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The interest portion of the cycle plus this percentage of the remaining
+                        principal balance.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="ccMinPrincipalPct"
+                    inputmode="decimal"
+                    value="1"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                  />
+                </div>
+                <div class="input-group" style="flex: 1">
+                  <label for="ccMinFlat"
+                    >Flat Minimum ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The absolute floor payment amount. The calculated minimum will never fall
+                        below this limit.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="ccMinFlat"
+                    inputmode="decimal"
+                    value="10"
+                    step="1"
+                    min="0"
+                  />
                 </div>
               </div>
 
@@ -540,6 +612,39 @@
                     step="500"
                     min="0"
                   />
+                </div>
+              </div>
+
+              <!-- Scheduled Future Lump Sums Section -->
+              <div
+                class="input-group-row advanced-only flex-col"
+                style="gap: 12px; margin-bottom: 8px"
+              >
+                <div class="flex items-center justify-between" style="width: 100%">
+                  <span class="text-xs font-bold opacity-80" style="color: var(--text-color)"
+                    >Scheduled Future Lump Sums</span
+                  >
+                  <button
+                    type="button"
+                    id="addLumpSumBtn"
+                    class="btn text-xs py-4 px-8 flex items-center gap-4"
+                    style="
+                      background: rgba(var(--primary-rgb), 0.1);
+                      border: 1px dashed var(--primary-color);
+                      border-radius: 6px;
+                      color: var(--primary-color);
+                      cursor: pointer;
+                      font-weight: 600;
+                    "
+                  >
+                    <span>+</span> Add Scheduled Row
+                  </button>
+                </div>
+                <div
+                  id="scheduledLumpSumsContainer"
+                  style="display: flex; flex-direction: column; gap: 8px; width: 100%"
+                >
+                  <!-- Dynamic rows go here -->
                 </div>
               </div>
               <div class="input-group-row">
@@ -1562,6 +1667,140 @@
               <span class="opacity-80">Discretionary Payment</span>
               <strong class="text-primary">Non-negative (&ge; $0)</strong>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Layout Customizer Modal -->
+    <div id="layoutModal" class="modal-overlay">
+      <div class="modal-card max-w-500">
+        <div class="modal-header">
+          <h3 class="m-0 flex items-center text-md">
+            <span class="mr-8">📊</span> Dashboard Widgets
+          </h3>
+          <button id="closeLayoutModalBtn" class="close-btn" aria-label="Close Layout Modal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm mb-20 lh-1-45">
+            Customize which charts and visualizations are visible on your dashboard, and adjust
+            their sizes.
+          </p>
+          <div
+            class="layout-settings-list"
+            style="
+              max-height: 380px;
+              overflow-y: auto;
+              display: flex;
+              flex-direction: column;
+              gap: 10px;
+              margin-bottom: 20px;
+              padding-right: 4px;
+            "
+          >
+            <!-- Amortization Balance Chart -->
+            <div class="layout-card-item">
+              <span>Amortization Balance Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chart3" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chart3" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Equity Build Up Chart -->
+            <div class="layout-card-item mortgage-only">
+              <span>Equity Build Up Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chart" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chart" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Cumulative Outflow Chart -->
+            <div class="layout-card-item">
+              <span>Cumulative Outflow Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chart2" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chart2" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Annual Cash Flow Chart -->
+            <div class="layout-card-item">
+              <span>Annual Cash Flow Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chart11" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chart11" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Payment Composition Chart -->
+            <div class="layout-card-item">
+              <span>Payment Composition Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chart6" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chart6" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Interest Comparison Chart -->
+            <div class="layout-card-item comp-only">
+              <span>Interest Comparison Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chart9" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chart9" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Payoff Time Comparison Chart -->
+            <div class="layout-card-item comp-only">
+              <span>Payoff Time Comparison Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chart12" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chart12" /> Full Width</label>
+              </div>
+            </div>
+            <!-- LTV Chart -->
+            <div class="layout-card-item mortgage-only">
+              <span>LTV Chart</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-chartLTV" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-chartLTV" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Opportunity Cost Chart -->
+            <div class="layout-card-item opp-only">
+              <span>Opportunity Cost Chart</span>
+              <div class="layout-card-controls">
+                <label
+                  ><input type="checkbox" id="layoutShow-chartOppCost" checked /> Visible</label
+                >
+                <label><input type="checkbox" id="layoutFull-chartOppCost" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Concentric Cost Stack -->
+            <div class="layout-card-item">
+              <span>The Gravity of the Debt</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-concentric" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-concentric" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Interest Wages Circle Map -->
+            <div class="layout-card-item">
+              <span>Interest Wages Visualizer</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-wages" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-wages" /> Full Width</label>
+              </div>
+            </div>
+            <!-- Milestones Timeline -->
+            <div class="layout-card-item">
+              <span>Milestone Timeline Nodes</span>
+              <div class="layout-card-controls">
+                <label><input type="checkbox" id="layoutShow-milestones" checked /> Visible</label>
+                <label><input type="checkbox" id="layoutFull-milestones" /> Full Width</label>
+              </div>
+            </div>
+          </div>
+          <div class="flex justify-end gap-12">
+            <button id="saveLayoutBtn" class="btn btn-primary">Apply & Save Layout</button>
           </div>
         </div>
       </div>
