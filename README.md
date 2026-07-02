@@ -15,12 +15,12 @@ The entire application runs **locally in your browser**—meaning all calculatio
 
 - **Dual Engine Modes:**
   - **Mortgage:** Supports standard monthly amortization alongside regional compounding options, including **Canadian fixed (semi-annual compounding by law)** and **US/UK/AU/NZ (monthly compounding)**.
-  - **Credit Card:** Accounts for revolving debt calculation rules and **minimum payment laws (Ontario 3% vs. Quebec legal 5%)**.
-- **Aggressive Pay-down Strategies:** Simulates accelerated payments (accelerated bi-weekly, bi-weekly, semi-monthly) and optional extra surplus cash-flow injections.
+  - **Credit Card:** Accounts for revolving debt calculation rules and **minimum payment laws (Ontario 3% vs. Quebec legal 5%)**, with full support for custom rule templates (e.g. balance percentages, interest + principal ratios, and flat minimum floors).
+- **Aggressive Pay-down Strategies:** Simulates accelerated payment schedules (accelerated bi-weekly, bi-weekly, semi-monthly), discretionary surplus cash flow, and **dynamic scheduled future lump-sum payments** at specific intervals (e.g. annual bonuses, tax returns) with dynamic calendar date calculations.
 - **Refinancing Rate Shocks:** Simulates dynamic interest rate changes at renewal milestones (e.g., modeling rate hikes/drops at 5-year intervals) to assess impact on amortization.
 - **Opportunity Cost Analytics:** Directly compares the net worth trajectory of paying off low-interest debt early versus investing discretionary cash-flow surplus in index funds.
-- **Customizable Bento Dashboard:** Drag-and-drop dashboard grid allows you to customize the order of Plotly.js charts and analysis cards.
-- **Secure Sync & Portability:** Export scenario profiles as plain text JSON blueprints, or encrypt them locally using AES-GCM 256-bit cryptography with PBKDF2 passcode stretching.
+- **Customizable Bento Dashboard:** Drag-and-drop dashboard grid allows you to customize the order of Plotly.js charts and analysis cards, customize card visibility, and expand card sizes to full-width.
+- **Secure Sync & Portability:** Export scenario profiles as plain text JSON blueprints, or encrypt them locally using AES-GCM 256-bit cryptography with PBKDF2 passcode stretching hardened to **600,000 iterations** (with backward compatibility) and corrupted local storage auto-backup recovery.
 - **Shareable Strategy Reports:** Generate clean, formatted PDF reports locally using a styled dynamic canvas exporter, copy quick text summaries, or share directly via WhatsApp.
 
 ---
