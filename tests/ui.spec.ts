@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { escapeHtml, setupTableExpandButton } from '../src/js/ui.js';
+import { escapeHtml, setupTableExpandButton, updateLabelCurrencySymbols } from '../src/js/ui.js';
 
 describe('UI Helper Functions (ui.ts)', () => {
   describe('escapeHtml', () => {
@@ -56,6 +56,56 @@ describe('UI Helper Functions (ui.ts)', () => {
       // Cleanup
       document.body.removeChild(btn);
       document.body.removeChild(tableResp);
+    });
+  });
+
+  describe('updateLabelCurrencySymbols & Dynamic Frequency', () => {
+    it('should inject dynamic frequency words and update currency symbols in labels', () => {
+      // 1. Setup mock DOM structure
+      const form = document.createElement('form');
+      form.id = 'mortgageForm';
+
+      const select = document.createElement('select');
+      select.id = 'paymentFrequency';
+      const opt1 = document.createElement('option');
+      opt1.value = 'monthly';
+      const opt2 = document.createElement('option');
+      opt2.value = 'bi-weekly';
+      const opt3 = document.createElement('option');
+      opt3.value = 'weekly';
+      select.appendChild(opt1);
+      select.appendChild(opt2);
+      select.appendChild(opt3);
+      select.value = 'bi-weekly';
+
+      const label = document.createElement('label');
+      label.setAttribute('for', 'extraPayment');
+      label.className = 'mortgage-only';
+      label.innerHTML = 'Extra Payment Surplus ($) <span class="help-tip">?</span>';
+
+      const countrySelect = document.createElement('select');
+      countrySelect.id = 'countrySelect';
+      countrySelect.value = 'CA';
+
+      form.appendChild(select);
+      form.appendChild(label);
+      form.appendChild(countrySelect);
+      document.body.appendChild(form);
+
+      // 2. Run update
+      updateLabelCurrencySymbols();
+
+      // 3. Verify
+      expect(label.innerHTML).toContain('Extra Bi-Weekly Surplus Payment ($)');
+      expect(label.innerHTML).toContain('help-tip');
+
+      // 4. Test weekly
+      select.value = 'weekly';
+      updateLabelCurrencySymbols();
+      expect(label.innerHTML).toContain('Extra Weekly Surplus Payment ($)');
+
+      // 5. Cleanup
+      document.body.removeChild(form);
     });
   });
 });

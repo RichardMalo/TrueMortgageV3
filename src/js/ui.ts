@@ -1349,6 +1349,23 @@ export const updateLabelCurrencySymbols = () => {
       }
     });
   }
+
+  // Dynamically inject the payment frequency into the Extra Payment Surplus label
+  const freqEl = document.getElementById('paymentFrequency') as HTMLSelectElement | null;
+  const extraLabel = document.querySelector(
+    'label[for="extraPayment"].mortgage-only'
+  ) as HTMLElement | null;
+  if (extraLabel && freqEl) {
+    const freq = freqEl.value || 'monthly';
+    let freqWord = 'Monthly';
+    if (freq === 'weekly') freqWord = 'Weekly';
+    else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqWord = 'Bi-Weekly';
+    else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
+
+    const helpTip = extraLabel.querySelector('.help-tip');
+    const helpTipHtml = helpTip ? helpTip.outerHTML : '';
+    extraLabel.innerHTML = `Extra ${freqWord} Surplus Payment (${sym}) ${helpTipHtml}`;
+  }
 };
 
 /**
