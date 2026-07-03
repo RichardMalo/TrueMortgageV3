@@ -1,6 +1,7 @@
 import { AppState, ScheduleResult, AppElements } from './types.js';
 import { MOBILE_BREAKPOINT } from './constants.js';
 import { formatCurrency } from './charts.js';
+import { t, currentLanguage } from './i18n.js';
 
 /**
  * Renders the visual representation of annual interest or monthly rent equivalents
@@ -22,23 +23,28 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
 
   if (titleEl) {
     if (isRentTaxIns) {
-      titleEl.textContent = 'How much interest + carrying costs represents monthly if it was rent';
+      titleEl.textContent = t(
+        'How much interest + carrying costs represents monthly if it was rent'
+      );
     } else if (isRent) {
-      titleEl.textContent = 'How much interest represents monthly if it was rent';
+      titleEl.textContent = t('How much interest represents monthly if it was rent');
     } else {
-      titleEl.textContent = "How much interest you pay towards the bank's wages per year";
+      titleEl.textContent = t("How much interest you pay towards the bank's wages per year");
     }
   }
   if (tooltipEl) {
     if (isRentTaxIns) {
-      tooltipEl.textContent =
-        'Annual interest payments plus property tax and home insurance averaged into a monthly rent equivalent. For estimation purposes only.';
+      tooltipEl.textContent = t(
+        'Annual interest payments plus property tax and home insurance averaged into a monthly rent equivalent. For estimation purposes only.'
+      );
     } else if (isRent) {
-      tooltipEl.textContent =
-        'Annual interest payments averaged into a monthly rent equivalent: (Annual Interest / 12), rounded up. For estimation purposes only.';
+      tooltipEl.textContent = t(
+        'Annual interest payments averaged into a monthly rent equivalent: (Annual Interest / 12), rounded up. For estimation purposes only.'
+      );
     } else {
-      tooltipEl.textContent =
-        'Annual interest payments visualized as wages paid to the bank. Circles shrink over time as you build equity.';
+      tooltipEl.textContent = t(
+        'Annual interest payments visualized as wages paid to the bank. Circles shrink over time as you build equity.'
+      );
     }
   }
 
@@ -97,6 +103,8 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
   const minSize = isMobile ? 35 : 55;
   const maxSize = isMobile ? 70 : 110;
 
+  const isFr = currentLanguage() === 'fr';
+
   years.forEach((yr) => {
     const interest = yearlyData[yr].interest;
     const displayVal = displayValues[yr];
@@ -125,13 +133,19 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
           <span class="breakdown-ins">+${formatCurrency(Math.ceil(annualIns / 12))}</span>
         </div>
       `;
-      circle.title = `Year: ${yr}\nRent + Tax & Insurance: ${formatCurrency(displayVal)}/Month\n(Rent: ${formatCurrency(rentAlone)} + Tax: ${formatCurrency(Math.ceil(annualTax / 12))} + Insurance: ${formatCurrency(Math.ceil(annualIns / 12))})`;
+      circle.title = isFr
+        ? `Année : ${yr}\nLoyer + Taxe et assurance : ${formatCurrency(displayVal)}/mois\n(Loyer : ${formatCurrency(rentAlone)} + Taxe : ${formatCurrency(Math.ceil(annualTax / 12))} + Assurance : ${formatCurrency(Math.ceil(annualIns / 12))})`
+        : `Year: ${yr}\nRent + Tax & Insurance: ${formatCurrency(displayVal)}/Month\n(Rent: ${formatCurrency(rentAlone)} + Tax: ${formatCurrency(Math.ceil(annualTax / 12))} + Insurance: ${formatCurrency(Math.ceil(annualIns / 12))})`;
     } else if (isRent) {
       circle.innerHTML = `<span class="wage-circle-value">${formatCurrency(displayVal)}</span>`;
-      circle.title = `Year: ${yr}\nRent Equivalent: ${formatCurrency(displayVal)}/Month`;
+      circle.title = isFr
+        ? `Année : ${yr}\nÉquivalent loyer : ${formatCurrency(displayVal)}/mois`
+        : `Year: ${yr}\nRent Equivalent: ${formatCurrency(displayVal)}/Month`;
     } else {
       circle.innerHTML = `<span class="wage-circle-value">${formatCurrency(displayVal)}</span>`;
-      circle.title = `Year: ${yr}\nInterest: ${formatCurrency(displayVal)}`;
+      circle.title = isFr
+        ? `Année : ${yr}\nIntérêt : ${formatCurrency(displayVal)}`
+        : `Year: ${yr}\nInterest: ${formatCurrency(displayVal)}`;
     }
 
     const yearLbl = document.createElement('div');

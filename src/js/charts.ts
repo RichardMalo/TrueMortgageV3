@@ -1,5 +1,6 @@
 import { AppState, Inputs, ScheduleResult } from './types.js';
 import { MOBILE_BREAKPOINT } from './constants.js';
+import { t, currentLanguage } from './i18n.js';
 
 let plotlyInstance: typeof import('plotly.js-basic-dist') | null = null;
 
@@ -157,7 +158,11 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
   const c = isDark ? '#f8fafc' : '#1e293b';
   const g = isDark ? '#334155' : '#e2e8f0';
   const sym = getCurrencySymbol();
-  let cleanYTitle = yTitle;
+  const transTitle = t(title);
+  const transXTitle = t(xTitle);
+  const transYTitle = t(yTitle);
+
+  let cleanYTitle = transYTitle;
   if (cleanYTitle) {
     cleanYTitle = cleanYTitle.replace(/\$/g, sym);
   }
@@ -177,12 +182,12 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
     yaxisConfig.tickformat = ',.0f';
   }
   return {
-    title: { text: title, font: { color: c, size: 16, weight: 800 }, y: 0.98 },
+    title: { text: transTitle, font: { color: c, size: 16, weight: 800 }, y: 0.98 },
     paper_bgcolor: 'transparent',
     plot_bgcolor: 'transparent',
     font: { color: c, family: 'Inter, sans-serif' },
     xaxis: {
-      title: { text: xTitle, standoff: 12 },
+      title: { text: transXTitle, standoff: 12 },
       gridcolor: g,
       showgrid: true,
       zeroline: false,
@@ -311,9 +316,9 @@ const renderMonthlyPaymentCircle = (
   const values = [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra].filter(
     (v) => v > 0
   );
-  const labels = ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra'].filter(
-    (_, i) => [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra][i] > 0
-  );
+  const labels = ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra']
+    .map((l) => t(l))
+    .filter((_, i) => [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra][i] > 0);
 
   queueChartRender(
     'monthlyPaymentCircle',
@@ -345,7 +350,7 @@ const renderMonthlyPaymentCircle = (
       margin: { t: 0, b: 0, l: 0, r: 0 },
       annotations: [
         {
-          text: `<b>Total/Period</b><br><span style="font-size: 6px;">&nbsp;</span><br><span style="font-size: ${fs}; color: ${tc}">${formatCurrency(totPITI)}</span>`,
+          text: `<b>${t('Total/Period')}</b><br><span style="font-size: 6px;">&nbsp;</span><br><span style="font-size: ${fs}; color: ${tc}">${formatCurrency(totPITI)}</span>`,
           showarrow: false
         }
       ]
@@ -375,7 +380,7 @@ const renderPaymentBreakdownCircle = (p1: { principal: number; interest: number 
       paper_bgcolor: 'rgba(0,0,0,0)',
       margin: { t: 0, b: 0, l: 0, r: 0 },
       annotations: [
-        { text: 'P & I Only', showarrow: false, font: { size: 14, color: tc, weight: 800 } }
+        { text: t('P & I Only'), showarrow: false, font: { size: 14, color: tc, weight: 800 } }
       ]
     },
     PLOT_CONFIG
@@ -398,7 +403,7 @@ const renderDebtBalanceChart = (
     {
       x: baseData.schedule.map((d) => d[xKey]),
       y: baseData.schedule.map((d) => d.balance),
-      name: 'Baseline',
+      name: t('Baseline'),
       type: 'scatter',
       fill: 'tozeroy',
       line: { color: CONFIG.colors.principal }
@@ -408,7 +413,7 @@ const renderDebtBalanceChart = (
     t3.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.balance),
-      name: 'Actual',
+      name: t('Actual'),
       type: 'scatter',
       line: { color: CONFIG.colors.extra, width: 3 }
     });
@@ -440,7 +445,7 @@ const renderDebtBalanceChart = (
     t3.push({
       x: [null],
       y: [null],
-      name: 'Term End',
+      name: t('Term End'),
       type: 'scatter',
       mode: 'lines',
       line: { color: CONFIG.colors.termEnd || '#f97316', width: 2, dash: 'dot' },
@@ -452,7 +457,7 @@ const renderDebtBalanceChart = (
     t3.push({
       x: [null],
       y: [null],
-      name: 'Debt Free',
+      name: t('Debt Free'),
       type: 'scatter',
       mode: 'lines',
       line: { color: CONFIG.colors.interest || '#ef4444', width: 2, dash: 'dot' },
@@ -479,7 +484,7 @@ const renderEquityBuildUpChart = (
     {
       x: baseData.schedule.map((d) => d[xKey]),
       y: baseData.schedule.map((d) => pAmt - d.balance),
-      name: 'Baseline',
+      name: t('Baseline'),
       type: 'scatter',
       line: { color: CONFIG.colors.principal }
     }
@@ -488,7 +493,7 @@ const renderEquityBuildUpChart = (
     t4.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => pAmt - d.balance),
-      name: 'Actual',
+      name: t('Actual'),
       type: 'scatter',
       line: { color: CONFIG.colors.extra }
     });
@@ -514,14 +519,14 @@ const renderCumulativeOutflowChart = (
     {
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.totalInterest),
-      name: 'Interest',
+      name: t('Interest'),
       stackgroup: 'one',
       line: { color: CONFIG.colors.interest }
     },
     {
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.totalPrincipal),
-      name: 'Principal',
+      name: t('Principal'),
       stackgroup: 'one',
       line: { color: CONFIG.colors.principal }
     }
@@ -530,7 +535,7 @@ const renderCumulativeOutflowChart = (
     t2.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.totalEscrow),
-      name: 'Escrow',
+      name: t('Escrow'),
       stackgroup: 'one',
       line: { color: CONFIG.colors.tax }
     });
@@ -568,21 +573,21 @@ const renderAnnualCashFlowChart = (
     {
       x: yrs,
       y: yrs.map((y) => aData[Number(y)].i),
-      name: 'Interest',
+      name: t('Interest'),
       type: 'bar',
       marker: { color: CONFIG.colors.interest }
     },
     {
       x: yrs,
       y: yrs.map((y) => aData[Number(y)].p),
-      name: 'Principal',
+      name: t('Principal'),
       type: 'bar',
       marker: { color: CONFIG.colors.principal }
     },
     {
       x: yrs,
       y: yrs.map((y) => aData[Number(y)].e),
-      name: 'Extra',
+      name: t('Extra'),
       type: 'bar',
       marker: { color: CONFIG.colors.extra }
     }
@@ -591,7 +596,7 @@ const renderAnnualCashFlowChart = (
     t11.splice(1, 0, {
       x: yrs,
       y: yrs.map((y) => aData[Number(y)].esc),
-      name: 'Escrow',
+      name: t('Escrow'),
       type: 'bar',
       marker: { color: CONFIG.colors.tax }
     });
@@ -617,7 +622,7 @@ const renderPaymentCompositionChart = (
       {
         x: actualData.schedule.map((d) => d[xKey]),
         y: actualData.schedule.map((d) => d.interest),
-        name: 'Interest',
+        name: t('Interest'),
         type: 'scatter',
         fill: 'tozeroy',
         line: { color: CONFIG.colors.interest }
@@ -625,7 +630,7 @@ const renderPaymentCompositionChart = (
       {
         x: actualData.schedule.map((d) => d[xKey]),
         y: actualData.schedule.map((d) => d.principal),
-        name: 'Principal',
+        name: t('Principal'),
         type: 'scatter',
         fill: 'tonexty',
         line: { color: CONFIG.colors.principal }
@@ -652,32 +657,32 @@ const renderLifetimeBreakdownChart = (
   };
   const tTot: unknown[] = [
     {
-      x: ['Total Cost'],
+      x: [t('Total Cost')],
       y: [fData.totalInterest],
-      name: 'Interest',
+      name: t('Interest'),
       type: 'bar',
       marker: { color: CONFIG.colors.interest }
     },
     {
-      x: ['Total Cost'],
+      x: [t('Total Cost')],
       y: [fData.totalPrincipal],
-      name: 'Principal',
+      name: t('Principal'),
       type: 'bar',
       marker: { color: CONFIG.colors.principal }
     },
     {
-      x: ['Total Cost'],
+      x: [t('Total Cost')],
       y: [fData.totalExtra],
-      name: 'Extra',
+      name: t('Extra'),
       type: 'bar',
       marker: { color: CONFIG.colors.extra }
     }
   ];
   if (inputs.usePiti && currentMode === 'mortgage') {
     tTot.splice(1, 0, {
-      x: ['Total Cost'],
+      x: [t('Total Cost')],
       y: [fData.totalEscrow],
-      name: 'Escrow',
+      name: t('Escrow'),
       type: 'bar',
       marker: { color: CONFIG.colors.tax }
     });
@@ -704,7 +709,7 @@ const renderLtvChart = (
     {
       x: baseData.schedule.map((d) => d[xKey]),
       y: baseData.schedule.map((d) => d.ltv),
-      name: 'Baseline',
+      name: t('Baseline'),
       type: 'scatter',
       line: { color: CONFIG.colors.principal }
     }
@@ -713,7 +718,7 @@ const renderLtvChart = (
     tLTV.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.ltv),
-      name: 'Actual',
+      name: t('Actual'),
       type: 'scatter',
       line: { color: CONFIG.colors.extra, width: 3 }
     });
@@ -825,14 +830,14 @@ const renderOpportunityCostChart = (
     {
       x: p1X,
       y: p1Y,
-      name: 'Pay Debt Fast',
+      name: t('Pay Debt Fast'),
       type: 'scatter',
       line: { color: CONFIG.colors.extra, width: 3 }
     },
     {
       x: p2X,
       y: p2Y,
-      name: 'Invest Surplus',
+      name: t('Invest Surplus'),
       type: 'scatter',
       line: { color: CONFIG.colors.investLine, width: 3, dash: 'dot' }
     }
@@ -870,7 +875,7 @@ const renderOpportunityCostChart = (
       tOpp.push({
         x: compX,
         y: compY,
-        name: `${compName} Net Worth`,
+        name: currentLanguage() === 'fr' ? `Valeur nette (${compName})` : `${compName} Net Worth`,
         type: 'scatter',
         line: { color: '#a855f7', width: 2.5, dash: 'dash' }
       });
@@ -888,7 +893,7 @@ const renderOpportunityCostChart = (
     tOpp.push({
       x: [null],
       y: [null],
-      name: 'Debt Free Year',
+      name: t('Debt Free Year'),
       type: 'scatter',
       mode: 'lines',
       line: { color: CONFIG.colors.interest || '#ef4444', width: 2, dash: 'dot' },
@@ -911,7 +916,7 @@ const renderInterestComparisonChart = (
     'chart9',
     [
       {
-        x: ['Baseline', 'Actual'],
+        x: [t('Baseline'), t('Actual')],
         y: [tcBase, tcExt],
         type: 'bar',
         text: [formatCurrency(tcBase), formatCurrency(tcExt)],
@@ -937,10 +942,13 @@ const renderPayoffTimeComparisonChart = (
     'chart12',
     [
       {
-        x: ['Baseline', 'Actual'],
+        x: [t('Baseline'), t('Actual')],
         y: [yBase, yExt],
         type: 'bar',
-        text: [yBase + ' Years', yExt + ' Years'],
+        text: [
+          yBase + ' ' + (currentLanguage() === 'fr' ? 'ans' : 'Years'),
+          yExt + ' ' + (currentLanguage() === 'fr' ? 'ans' : 'Years')
+        ],
         textposition: 'auto',
         marker: { color: [CONFIG.colors.principal, CONFIG.colors.extra] }
       }

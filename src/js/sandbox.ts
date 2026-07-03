@@ -1,6 +1,7 @@
 import { AppState, Inputs } from './types.js';
 import { saveSettingsToStorage, sanitizeProfile, generateProfileId } from './storage.js';
 import { showConfirmModal, showAlertModal, trapFocus, escapeHtml } from './ui.js';
+import { t } from './i18n.js';
 
 export const renderSandboxList = (
   state: AppState,
@@ -32,15 +33,27 @@ export const renderSandboxList = (
       }
     });
 
-    const modeLabel = p.currentMode === 'cc' ? 'Credit Card' : 'Mortgage';
-    const tagComp = p.complexity === 'advanced' ? 'Advanced' : 'Simple';
+    const isFr = state.language === 'fr';
+    const modeLabel =
+      p.currentMode === 'cc'
+        ? isFr
+          ? 'Carte de crédit'
+          : 'Credit Card'
+        : isFr
+          ? 'Hypothèque'
+          : 'Mortgage';
+    const tagComp =
+      p.complexity === 'advanced' ? (isFr ? 'Avancé' : 'Advanced') : isFr ? 'Simple' : 'Simple';
+    const cloneTitle = isFr ? 'Cloner le scénario' : 'Clone Scenario';
+    const deleteTitle = isFr ? 'Supprimer le scénario' : 'Delete Scenario';
+    const compareLabel = isFr ? 'COMPARER' : 'COMPARE';
 
     card.innerHTML = `
       <div class="profile-card-header">
         <h4 class="profile-card-title" id="title-text-${escId}"></h4>
         <div class="profile-card-actions">
-          <button type="button" class="profile-btn clone-btn" title="Clone Scenario" data-id="${escId}" aria-label="Clone Scenario ${escName}">📋</button>
-          <button type="button" class="profile-btn delete-btn" title="Delete Scenario" data-id="${escId}" style="${Object.keys(state.profiles).length <= 1 ? 'display:none' : ''}" aria-label="Delete Scenario ${escName}">🗑️</button>
+          <button type="button" class="profile-btn clone-btn" title="${cloneTitle}" data-id="${escId}" aria-label="${cloneTitle} ${escName}">📋</button>
+          <button type="button" class="profile-btn delete-btn" title="${deleteTitle}" data-id="${escId}" style="${Object.keys(state.profiles).length <= 1 ? 'display:none' : ''}" aria-label="${deleteTitle} ${escName}">🗑️</button>
         </div>
       </div>
       <div class="profile-card-body">
@@ -50,7 +63,7 @@ export const renderSandboxList = (
         </div>
         <label class="compare-toggle-label" data-id="${escId}">
           <input type="checkbox" role="switch" aria-checked="${isCompare ? 'true' : 'false'}" class="compare-checkbox" data-id="${escId}" ${isCompare ? 'checked' : ''} ${isSelected ? 'disabled style="opacity:0.5"' : ''}>
-          <span>COMPARE</span>
+          <span>${compareLabel}</span>
         </label>
       </div>
     `;
@@ -73,6 +86,7 @@ export const renderSandboxList = (
         const input = document.createElement('input');
         input.type = 'text';
         input.value = p.name;
+        input.placeholder = isFr ? 'Nom du scénario...' : 'New Scenario Name...';
         input.addEventListener('blur', () => {
           const newName = input.value.trim() || p.name;
           p.name = newName;
@@ -108,15 +122,15 @@ export const renderSandboxList = (
       e.stopPropagation();
       if (Object.keys(state.profiles).length >= 20) {
         showAlertModal(
-          'Scenario Limit Reached',
-          'You can have a maximum of 20 scenarios. Please delete an existing scenario first.'
+          t('Scenario Limit Reached'),
+          t('You can have a maximum of 20 scenarios. Please delete an existing scenario first.')
         );
         return;
       }
       const newId = generateProfileId();
       state.profiles[newId] = JSON.parse(JSON.stringify(p));
       state.profiles[newId].id = newId;
-      state.profiles[newId].name = `${p.name} (Copy)`;
+      state.profiles[newId].name = isFr ? `${p.name} (Copie)` : `${p.name} (Copy)`;
 
       saveSettingsToStorage(state, inputsMap, defaultInputs, false);
       onRecalculate();
@@ -131,8 +145,10 @@ export const renderSandboxList = (
         if (Object.keys(state.profiles).length <= 1) return;
 
         const confirmDel = await showConfirmModal(
-          'Delete Scenario',
-          `Are you sure you want to delete scenario "${p.name}"?`
+          t('Delete Scenario'),
+          isFr
+            ? `Êtes-vous sûr de vouloir supprimer le scénario « ${p.name} » ?`
+            : `Are you sure you want to delete scenario "${p.name}"?`
         );
         if (confirmDel) {
           if (state.comparisonProfileId === p.id) {
@@ -240,15 +256,20 @@ export const setupScenarioSandbox = (
   });
 
   createBtn.addEventListener('click', () => {
+    const isFr = state.language === 'fr';
     if (Object.keys(state.profiles).length >= 20) {
       showAlertModal(
-        'Scenario Limit Reached',
-        'You can have a maximum of 20 scenarios. Please delete an existing scenario first.'
+        t('Scenario Limit Reached'),
+        t('You can have a maximum of 20 scenarios. Please delete an existing scenario first.')
       );
       return;
     }
     saveSettingsToStorage(state, inputsMap, defaultInputs, false);
-    const name = newNameInput.value.trim() || `Scenario ${Object.keys(state.profiles).length + 1}`;
+    const name =
+      newNameInput.value.trim() ||
+      (isFr
+        ? `Scénario ${Object.keys(state.profiles).length + 1}`
+        : `Scenario ${Object.keys(state.profiles).length + 1}`);
     const newId = generateProfileId();
 
     const sanitized = sanitizeProfile(
@@ -278,7 +299,9 @@ export const setupScenarioSandbox = (
     // Auto show user confirmation feedback (Milestone UX Polish)
     const feedback = document.getElementById('dropzoneFeedback');
     if (feedback) {
-      feedback.textContent = `Scenario "${name}" Created Successfully! 🎉`;
+      feedback.textContent = isFr
+        ? `Le scénario « ${name} » a été créé avec succès ! 🎉`
+        : `Scenario "${name}" Created Successfully! 🎉`;
       feedback.style.display = 'block';
       feedback.style.color = '#10b981';
       setTimeout(() => {

@@ -18,6 +18,7 @@ const loadHtml2Pdf = async () => {
   return html2pdfInstance;
 };
 import { formatCurrency, formatDecimal, getCurrencySymbol } from './charts.js';
+import { t, currentLanguage } from './i18n.js';
 
 // HTML escaping helper to prevent script injection in exports (Security Fix)
 export const escapeHtml = (str: string): string => {
@@ -439,7 +440,8 @@ export const generateReportHtml = (
   actualData: ScheduleResult,
   baseData: ScheduleResult
 ): string => {
-  const reportDate = new Date().toLocaleString();
+  const isFr = currentLanguage() === 'fr';
+  const reportDate = new Date().toLocaleString(isFr ? 'fr-CA' : undefined);
 
   const startingPrincipal = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
   const balanceVal = formatCurrency(startingPrincipal);
@@ -448,8 +450,27 @@ export const generateReportHtml = (
     actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear
   );
   const rem_paid = actualData.summary.periodsToPayoff % actualData.summary.periodsPerYear;
-  const frequencyLabel = isMortgage && inputs.frequency !== 'monthly' ? 'Periods' : 'Months';
-  const payoffVal = `${yrs_paid} Years, ${rem_paid} ${frequencyLabel}`;
+
+  const yrsLabel = isFr ? (yrs_paid > 1 ? 'ans' : 'an') : yrs_paid > 1 ? 'Years' : 'Year';
+  let frequencyLabel: string;
+  if (isFr) {
+    frequencyLabel =
+      isMortgage && inputs.frequency !== 'monthly'
+        ? rem_paid > 1
+          ? 'périodes'
+          : 'période'
+        : 'mois';
+  } else {
+    frequencyLabel =
+      isMortgage && inputs.frequency !== 'monthly'
+        ? rem_paid > 1
+          ? 'Periods'
+          : 'Period'
+        : rem_paid > 1
+          ? 'Months'
+          : 'Month';
+  }
+  const payoffVal = `${yrs_paid} ${yrsLabel}, ${rem_paid} ${frequencyLabel}`;
 
   const savedVal = formatCurrency(
     baseData.summary.totalInterest - actualData.summary.totalInterest
@@ -479,26 +500,26 @@ export const generateReportHtml = (
 
   let strategyParams = `
     <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-      <span>Interest Rate:</span><strong>${rate}</strong>
+      <span>${t('Interest Rate:')}</span><strong>${rate}</strong>
     </div>
   `;
 
   if (isMortgage) {
     strategyParams += `
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Home Price:</span><strong>${escapeHtml(formatCurrency(inputs.homePrice))}</strong>
+        <span>${t('Home Price:')}</span><strong>${escapeHtml(formatCurrency(inputs.homePrice))}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Down Payment:</span><strong>${escapeHtml(formatCurrency(inputs.downPayment))}</strong>
+        <span>${t('Down Payment:')}</span><strong>${escapeHtml(formatCurrency(inputs.downPayment))}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Amortization Period:</span><strong>${escapeHtml(String(inputs.amortizationYears))} Yrs</strong>
+        <span>${t('Amortization Period:')}</span><strong>${escapeHtml(String(inputs.amortizationYears))} ${isFr ? 'ans' : 'Yrs'}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Payment Frequency:</span><strong>${escapeHtml(inputs.frequency)}</strong>
+        <span>${t('Payment Frequency:')}</span><strong>${escapeHtml(t(inputs.frequency))}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Extra Payment:</span><strong>${escapeHtml(formatCurrency(inputs.extraPayment))}/pd</strong>
+        <span>${t('Extra Payment:')}</span><strong>${escapeHtml(formatCurrency(inputs.extraPayment))}/${isFr ? 'pér' : 'pd'}</strong>
       </div>
     `;
     if (inputs.rateShockEnabled && inputs.termRates) {
@@ -513,33 +534,38 @@ export const generateReportHtml = (
           .map((y) => {
             const rateVal =
               inputs.termRates[y] !== undefined ? inputs.termRates[y] : inputs.annualRate;
-            return `Yr ${y}: ${rateVal.toFixed(2)}%`;
+            return isFr ? `An ${y} : ${rateVal.toFixed(2)}%` : `Yr ${y}: ${rateVal.toFixed(2)}%`;
           })
           .join(', ');
 
         strategyParams += `
           <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-            <span>Refinance Shock Rates:</span><strong style="max-width: 60%; text-align: right; word-wrap: break-word;">${escapeHtml(shockRatesList)}</strong>
+            <span>${t('Refinance Shock Rates:')}</span><strong style="max-width: 60%; text-align: right; word-wrap: break-word;">${escapeHtml(shockRatesList)}</strong>
           </div>
         `;
       }
     }
   } else {
+    let minRuleText: string;
+    if (inputs.province === 'QC') {
+      minRuleText = isFr ? 'Québec préréglé (5 %)' : 'Quebec Preset (5%)';
+    } else if (inputs.province === 'CUSTOM') {
+      minRuleText = isFr
+        ? `Personnalisé (${inputs.ccMinPercent} % / Int + ${inputs.ccMinPrincipalPct} % / ${inputs.ccMinFlat} $)`
+        : `Custom (${inputs.ccMinPercent}% / Int + ${inputs.ccMinPrincipalPct}% / $${inputs.ccMinFlat})`;
+    } else {
+      minRuleText = isFr ? 'Ontario préréglé (3 %)' : 'Ontario Preset (3%)';
+    }
+
     strategyParams += `
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Starting Balance:</span><strong>${escapeHtml(formatCurrency(inputs.ccBalance))}</strong>
+        <span>${t('Starting Balance:')}</span><strong>${escapeHtml(formatCurrency(inputs.ccBalance))}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Min. Payment Rule:</span><strong>${
-          inputs.province === 'QC'
-            ? 'Quebec Preset (5%)'
-            : inputs.province === 'CUSTOM'
-              ? `Custom (${inputs.ccMinPercent}% / Int + ${inputs.ccMinPrincipalPct}% / $${inputs.ccMinFlat})`
-              : 'Ontario Preset (3%)'
-        }</strong>
+        <span>${t('Min. Payment Rule:')}</span><strong>${escapeHtml(minRuleText)}</strong>
       </div>
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-        <span>Monthly Surplus Payment:</span><strong>${escapeHtml(formatCurrency(inputs.extraPayment))}/Month</strong>
+        <span>${t('Monthly Surplus Payment:')}</span><strong>${escapeHtml(formatCurrency(inputs.extraPayment))}/${isFr ? 'Mois' : 'Month'}</strong>
       </div>
     `;
   }
@@ -583,85 +609,85 @@ export const generateReportHtml = (
       </style>
       <div style="border-bottom: 3px solid #2563eb; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
         <div>
-          <h1 style="color: #1e293b; font-size: 24px; font-weight: 800; margin: 0;">DEBT ELIMINATION REPORT</h1>
-          <p style="color: #64748b; font-size: 11px; margin: 5px 0 0 0;">Generated by Debt Elimination Engine • ${escapeHtml(reportDate)}</p>
+          <h1 style="color: #1e293b; font-size: 24px; font-weight: 800; margin: 0;">${t('DEBT ELIMINATION REPORT')}</h1>
+          <p style="color: #64748b; font-size: 11px; margin: 5px 0 0 0;">${t('Generated by Debt Elimination Engine • ')}${escapeHtml(reportDate)}</p>
         </div>
         <div style="text-align: right;">
           <span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 5px 12px; border-radius: 12px; font-weight: 700; font-size: 12px; text-transform: uppercase;">
-            ${isMortgage ? 'Mortgage Plan' : 'Credit Card Plan'}
+            ${t(isMortgage ? 'Mortgage Plan' : 'Credit Card Plan')}
           </span>
         </div>
       </div>
 
       <div style="display: flex; gap: 15px; margin-bottom: 15px;">
         <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px;">
-          <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Starting Debt Volume</div>
+          <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">${t('Starting Debt Volume')}</div>
           <div style="font-size: 20px; font-weight: 800; color: #1e293b;">${balance}</div>
         </div>
         <div style="flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 15px;">
-          <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">Actual Payoff Timeline</div>
+          <div style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px;">${t('Actual Payoff Timeline')}</div>
           <div style="font-size: 20px; font-weight: 800; color: #2563eb;">${payoff}</div>
         </div>
       </div>
       <div style="display: flex; gap: 15px; margin-bottom: 25px;">
         <div style="flex: 1; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 16px; padding: 15px;">
-          <div style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; margin-bottom: 5px;">Interest Capital Saved</div>
+          <div style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase; margin-bottom: 5px;">${t('Interest Capital Saved')}</div>
           <div style="font-size: 20px; font-weight: 800; color: #059669;">${saved}</div>
         </div>
         <div style="flex: 1; background: #fef2f2; border: 1px solid #fecaca; border-radius: 16px; padding: 15px;">
-          <div style="font-size: 10px; font-weight: 700; color: #dc2626; text-transform: uppercase; margin-bottom: 5px;">Total Lifetime Cost</div>
+          <div style="font-size: 10px; font-weight: 700; color: #dc2626; text-transform: uppercase; margin-bottom: 5px;">${t('Total Lifetime Cost')}</div>
           <div style="font-size: 20px; font-weight: 800; color: #dc2626;">${actualLifetime}</div>
         </div>
       </div>
 
       <div style="display: flex; gap: 20px; margin-bottom: 25px;">
         <div style="flex: 1; min-width: 0;">
-          <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">PLAN PARAMETERS</h3>
+          <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">${t('PLAN PARAMETERS')}</h3>
           <div style="font-size: 11px; color: #475569;">
             ${strategyParams}
           </div>
         </div>
         <div style="flex: 1; min-width: 0;">
-          <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">METRIC SUMMARY</h3>
+          <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">${t('METRIC SUMMARY')}</h3>
           <div style="font-size: 11px; color: #475569;">
             ${
               isMortgage
                 ? `
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span>Refinancing Term Balance:</span><strong>${termBalance}</strong>
+                <span>${t('Refinancing Term Balance:')}</span><strong>${termBalance}</strong>
               </div>
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span>Compounding Style:</span><strong>${inputs.compounding === 'semi' ? 'Canadian Semi-Annual' : 'US Monthly'}</strong>
+                <span>${t('Compounding Style:')}</span><strong>${t(inputs.compounding === 'semi' ? 'Canadian Semi-Annual' : 'US Monthly')}</strong>
               </div>
             `
                 : `
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                <span>Daily Fee to the Bank:</span><strong>${dailyVampire}</strong>
+                <span>${t('Daily Fee to the Bank:')}</span><strong>${dailyVampire}</strong>
               </div>
             `
             }
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span>Opportunity Cost Plan:</span><strong>${inputs.useOppCost ? `Enabled (${inputs.investRate}%)` : 'Disabled'}</strong>
+              <span>${t('Opportunity Cost Plan:')}</span><strong>${t(inputs.useOppCost ? `Enabled` : 'Disabled')}${inputs.useOppCost ? ` (${inputs.investRate}%)` : ''}</strong>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span>Taxes & Escrow Plan:</span><strong>${inputs.usePiti ? 'Active' : 'Inactive'}</strong>
+              <span>${t('Taxes & Escrow Plan:')}</span><strong>${t(inputs.usePiti ? 'Active' : 'Inactive')}</strong>
             </div>
           </div>
         </div>
       </div>
 
       <div>
-        <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">AMORTIZATION LEDGER (FIRST 12 CYCLES)</h3>
+        <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">${t('AMORTIZATION LEDGER (FIRST 12 CYCLES)')}</h3>
         <table style="width: 100%; border-collapse: collapse; font-size: 9px; text-align: left;">
           <thead>
             <tr style="background: #f8fafc; border-bottom: 1px solid #cbd5e1;">
-              <th style="padding: 6px; font-weight: 700; color: #475569;">Period / Date</th>
-              <th style="padding: 6px; font-weight: 700; color: #475569;">Gross Payment</th>
-              <th style="padding: 6px; font-weight: 700; color: #475569;">Principal Part</th>
-              <th style="padding: 6px; font-weight: 700; color: #475569;">Interest Part</th>
-              ${inputs.usePiti && isMortgage ? '<th style="padding: 6px; font-weight: 700; color: #475569;">Escrow Part</th>' : ''}
-              <th style="padding: 6px; font-weight: 700; color: #475569;">Extra Part</th>
-              <th style="padding: 6px; font-weight: 700; color: #475569;">Outstanding Balance</th>
+              <th style="padding: 6px; font-weight: 700; color: #475569;">${t('Period / Date')}</th>
+              <th style="padding: 6px; font-weight: 700; color: #475569;">${t('Gross Payment')}</th>
+              <th style="padding: 6px; font-weight: 700; color: #475569;">${t('Principal Part')}</th>
+              <th style="padding: 6px; font-weight: 700; color: #475569;">${t('Interest Part')}</th>
+              ${inputs.usePiti && isMortgage ? `<th style="padding: 6px; font-weight: 700; color: #475569;">${t('Escrow Part')}</th>` : ''}
+              <th style="padding: 6px; font-weight: 700; color: #475569;">${t('Extra Part')}</th>
+              <th style="padding: 6px; font-weight: 700; color: #475569;">${t('Outstanding Balance')}</th>
             </tr>
           </thead>
           <tbody style="color: #475569;">
@@ -671,7 +697,7 @@ export const generateReportHtml = (
       </div>
 
       <div style="margin-top: 30px; border-top: 1px dashed #cbd5e1; padding-top: 15px; text-align: center; font-size: 9px; color: #94a3b8;">
-        This plan is an algorithmic projection and does not constitute formal financial advice. Secure your financial future through disciplined strategy.
+        ${t('This plan is an algorithmic projection and does not constitute formal financial advice. Secure your financial future through disciplined strategy.')}
       </div>
     </div>
   `;
@@ -863,7 +889,7 @@ export const setupShareFunctionality = (
     if (statusEl) {
       statusEl.style.display = 'block';
       statusEl.textContent =
-        action === 'save' ? 'Generating PDF... Please wait.' : 'Preparing file to share...';
+        action === 'save' ? t('Generating PDF... Please wait.') : t('Preparing file to share...');
     }
 
     const { actualData, baseData } = getLatestSchedules();
@@ -909,7 +935,15 @@ export const setupShareFunctionality = (
 
   const getReportSummaryText = (formatMarkdown: boolean): string => {
     const isMortgage = state.currentMode === 'mortgage';
-    const modeText = isMortgage ? 'Mortgage' : 'Credit Card';
+    const isFr = currentLanguage() === 'fr';
+
+    let modeText: string;
+    if (isFr) {
+      modeText = isMortgage ? 'Hypothèque' : 'Carte de crédit';
+    } else {
+      modeText = isMortgage ? 'Mortgage' : 'Credit Card';
+    }
+
     const sym = getCurrencySymbol();
     const balance = els.results.mortgageDisplay?.textContent || `${sym}0`;
     const payoff = els.results.paidOffIn?.textContent || '0';
@@ -918,23 +952,37 @@ export const setupShareFunctionality = (
 
     if (formatMarkdown) {
       return (
-        `*Debt Elimination Engine Report*\n\n` +
-        `*Type:* ${modeText}\n` +
-        `*Original Debt:* ${balance}\n` +
-        `*Actual Payoff Time:* ${payoff}\n` +
-        `*Interest Saved:* ${saved}\n` +
-        `*Total Lifetime Paid:* ${actualLifetime}\n\n` +
-        `Calculated using the Debt Elimination Engine. Optimize your strategy!`
+        (isFr
+          ? `*Rapport du Moteur d'élimination de la dette*\n\n`
+          : `*Debt Elimination Engine Report*\n\n`) +
+        (isFr ? `*Type :* ${modeText}\n` : `*Type:* ${modeText}\n`) +
+        (isFr ? `*Dette d'origine :* ${balance}\n` : `*Original Debt:* ${balance}\n`) +
+        (isFr
+          ? `*Délai de remboursement réel :* ${payoff}\n`
+          : `*Actual Payoff Time:* ${payoff}\n`) +
+        (isFr ? `*Intérêts économisés :* ${saved}\n` : `*Interest Saved:* ${saved}\n`) +
+        (isFr
+          ? `*Total payé :* ${actualLifetime}\n\n`
+          : `*Total Lifetime Paid:* ${actualLifetime}\n\n`) +
+        (isFr
+          ? `Calculé avec le Moteur d'élimination de la dette. Optimisez votre stratégie !`
+          : `Calculated using the Debt Elimination Engine. Optimize your strategy!`)
       );
     } else {
       return (
-        `Debt Elimination Engine Report\n\n` +
-        `Type: ${modeText}\n` +
-        `Original Debt: ${balance}\n` +
-        `Actual Payoff Time: ${payoff}\n` +
-        `Interest Saved: ${saved}\n` +
-        `Total Lifetime Paid: ${actualLifetime}\n\n` +
-        `Calculated using the Debt Elimination Engine.`
+        (isFr
+          ? `Rapport du Moteur d'élimination de la dette\n\n`
+          : `Debt Elimination Engine Report\n\n`) +
+        (isFr ? `Type : ${modeText}\n` : `Type: ${modeText}\n`) +
+        (isFr ? `Dette d'origine : ${balance}\n` : `Original Debt: ${balance}\n`) +
+        (isFr ? `Délai de remboursement réel : ${payoff}\n` : `Actual Payoff Time: ${payoff}\n`) +
+        (isFr ? `Intérêts économisés : ${saved}\n` : `Interest Saved: ${saved}\n`) +
+        (isFr
+          ? `Total payé : ${actualLifetime}\n\n`
+          : `Total Lifetime Paid: ${actualLifetime}\n\n`) +
+        (isFr
+          ? `Calculé avec le Moteur d'élimination de la dette.`
+          : `Calculated using the Debt Elimination Engine.`)
       );
     }
   };
@@ -945,7 +993,7 @@ export const setupShareFunctionality = (
       const statusEl = document.getElementById('shareStatus');
       generatePdfBlobOrSave(statusEl, 'save').then((res) => {
         if (res && statusEl) {
-          statusEl.textContent = 'PDF downloaded successfully!';
+          statusEl.textContent = t('PDF downloaded successfully!');
           setTimeout(() => {
             statusEl.style.display = 'none';
           }, 3000);
@@ -962,17 +1010,22 @@ export const setupShareFunctionality = (
         if (!res || !res.blob) return;
         const file = new File([res.blob], res.filename, { type: 'application/pdf' });
 
+        const isFr = currentLanguage() === 'fr';
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-          if (statusEl) statusEl.textContent = 'Opening share sheet...';
+          if (statusEl) statusEl.textContent = t('Opening share sheet...');
           navigator
             .share({
               files: [file],
-              title: `My ${res.modeName} Debt Elimination Report`,
-              text: `Check out my customized debt strategy report generated by Debt Elimination Engine.`
+              title: isFr
+                ? `Mon rapport d'élimination de la dette (${res.modeName})`
+                : `My ${res.modeName} Debt Elimination Report`,
+              text: t(
+                'Check out my customized debt strategy report generated by Debt Elimination Engine.'
+              )
             })
             .then(() => {
               if (statusEl) {
-                statusEl.textContent = 'Strategy shared successfully!';
+                statusEl.textContent = t('Strategy shared successfully!');
                 setTimeout(() => {
                   statusEl.style.display = 'none';
                 }, 3000);
@@ -981,14 +1034,15 @@ export const setupShareFunctionality = (
             .catch((err: unknown) => {
               console.log('Share failed:', err);
               if (statusEl) {
-                statusEl.textContent = 'Sharing canceled.';
+                statusEl.textContent = t('Sharing canceled.');
                 setTimeout(() => {
                   statusEl.style.display = 'none';
                 }, 2000);
               }
             });
         } else {
-          if (statusEl) statusEl.textContent = 'System share not supported. Downloading instead...';
+          if (statusEl)
+            statusEl.textContent = t('System share not supported. Downloading instead...');
           const url = URL.createObjectURL(res.blob);
           const a = document.createElement('a');
           a.href = url;
@@ -1028,7 +1082,7 @@ export const setupShareFunctionality = (
           .writeText(text)
           .then(() => {
             if (statusEl) {
-              statusEl.textContent = 'Summary text copied to clipboard!';
+              statusEl.textContent = t('Summary text copied to clipboard!');
               setTimeout(() => {
                 statusEl.style.display = 'none';
               }, 3000);
@@ -1036,7 +1090,7 @@ export const setupShareFunctionality = (
           })
           .catch((err: unknown) => {
             console.error(err);
-            if (statusEl) statusEl.textContent = 'Failed to copy text.';
+            if (statusEl) statusEl.textContent = t('Failed to copy text.');
           });
       } else {
         // Fallback for older browsers, webviews, and insecure contexts
@@ -1053,15 +1107,15 @@ export const setupShareFunctionality = (
           const successful = document.execCommand('copy');
           if (statusEl) {
             statusEl.textContent = successful
-              ? 'Summary text copied to clipboard!'
-              : 'Failed to copy text.';
+              ? t('Summary text copied to clipboard!')
+              : t('Failed to copy text.');
             setTimeout(() => {
               statusEl.style.display = 'none';
             }, 3000);
           }
         } catch (copyErr) {
           console.error(copyErr);
-          if (statusEl) statusEl.textContent = 'Failed to copy text.';
+          if (statusEl) statusEl.textContent = t('Failed to copy text.');
         }
         document.body.removeChild(textarea);
       }
@@ -1103,12 +1157,12 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'custom-modal-btn custom-modal-btn-cancel';
-    cancelBtn.textContent = 'Cancel';
+    cancelBtn.textContent = t('Cancel');
 
     const confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
     confirmBtn.className = 'custom-modal-btn custom-modal-btn-confirm';
-    confirmBtn.textContent = 'Confirm';
+    confirmBtn.textContent = t('Confirm');
 
     footer.appendChild(cancelBtn);
     footer.appendChild(confirmBtn);
@@ -1220,7 +1274,7 @@ export const showAlertModal = (title: string, message: string): Promise<void> =>
     const okBtn = document.createElement('button');
     okBtn.type = 'button';
     okBtn.className = 'custom-modal-btn custom-modal-btn-alert-ok';
-    okBtn.textContent = 'OK';
+    okBtn.textContent = t('OK');
 
     footer.appendChild(okBtn);
 
@@ -1364,7 +1418,18 @@ export const updateLabelCurrencySymbols = () => {
 
     const helpTip = extraLabel.querySelector('.help-tip');
     const helpTipHtml = helpTip ? helpTip.outerHTML : '';
-    extraLabel.innerHTML = `Extra ${freqWord} Surplus Payment (${sym}) ${helpTipHtml}`;
+    const isFr = currentLanguage() === 'fr';
+    let labelText: string;
+    if (isFr) {
+      let freqFr = 'mensuel';
+      if (freq === 'weekly') freqFr = 'hebdomadaire';
+      else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqFr = 'bihebdomadaire';
+      else if (freq === 'semi-monthly') freqFr = 'bimensuel';
+      labelText = `Versement excédentaire ${freqFr} supplémentaire (${sym}) ${helpTipHtml}`;
+    } else {
+      labelText = `Extra ${freqWord} Surplus Payment (${sym}) ${helpTipHtml}`;
+    }
+    extraLabel.innerHTML = labelText;
   }
 };
 
@@ -1465,7 +1530,7 @@ export const renderScheduledLumpSumRows = (
     amountInput.min = '0';
     amountInput.step = '100';
     amountInput.value = item.amount > 0 ? String(item.amount) : '';
-    amountInput.placeholder = '$ Amount';
+    amountInput.placeholder = t('$ Amount');
     amountInput.ariaLabel = `Scheduled Lump Sum Amount`;
     amountGroup.appendChild(amountInput);
 
@@ -1479,7 +1544,7 @@ export const renderScheduledLumpSumRows = (
     paymentInput.inputMode = 'numeric';
     paymentInput.min = '1';
     paymentInput.value = item.paymentNumber > 0 ? String(item.paymentNumber) : '';
-    paymentInput.placeholder = 'Pmt #';
+    paymentInput.placeholder = t('Pmt #');
     paymentInput.ariaLabel = `Scheduled Lump Sum Payment Number`;
     paymentGroup.appendChild(paymentInput);
 
@@ -1491,7 +1556,7 @@ export const renderScheduledLumpSumRows = (
     const updateDateBadge = () => {
       const pmtNum = parseInt(paymentInput.value, 10);
       if (isNaN(pmtNum) || pmtNum < 1) {
-        dateBadge.textContent = 'Invalid payment #';
+        dateBadge.textContent = t('Invalid payment #');
         dateBadge.style.color = '#ef4444';
       } else {
         const { dateLabel } = getRowDateLabel(parsedDate, pmtNum, frequency, periodsPerYear, 'P');
@@ -1506,8 +1571,8 @@ export const renderScheduledLumpSumRows = (
     deleteBtn.type = 'button';
     deleteBtn.className = 'lump-sum-delete-btn';
     deleteBtn.innerHTML = '🗑️';
-    deleteBtn.title = 'Delete scheduled payment';
-    deleteBtn.ariaLabel = 'Delete scheduled payment';
+    deleteBtn.title = t('Delete scheduled payment');
+    deleteBtn.ariaLabel = t('Delete scheduled payment');
 
     // Event listeners
     amountInput.addEventListener('change', () => {

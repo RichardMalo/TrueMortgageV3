@@ -9,6 +9,7 @@ export interface AppSettings {
   profiles: Record<string, Profile>;
   isDark: boolean;
   complexity: 'simple' | 'advanced';
+  language?: 'en' | 'fr';
   labelFormat: 'date' | 'period';
   bankWagesView: 'wages' | 'rent' | 'rent-tax-ins';
   chartsOrder?: (string | null)[];
@@ -239,6 +240,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     currentMode: p.currentMode === 'cc' ? 'cc' : 'mortgage',
     complexity: p.complexity === 'advanced' ? 'advanced' : 'simple',
     isDark: p.isDark === true,
+    language: p.language === 'fr' ? 'fr' : 'en',
     termRates: (() => {
       const rates: Record<number, number> = {};
       if (typeof p.termRates === 'object' && p.termRates) {
@@ -426,6 +428,7 @@ export const saveSettingsToStorage = (
         currentMode: state.currentMode,
         complexity: state.complexity,
         isDark: state.isDark,
+        language: state.language || 'en',
         termRates: JSON.parse(JSON.stringify(state.termRates || {})),
         customizedYears: JSON.parse(JSON.stringify(state.customizedYears || {})),
         bankWagesView: state.bankWagesView || 'wages',
@@ -438,6 +441,7 @@ export const saveSettingsToStorage = (
       activeProfile.currentMode = state.currentMode;
       activeProfile.complexity = state.complexity;
       activeProfile.isDark = state.isDark;
+      activeProfile.language = state.language || 'en';
       activeProfile.termRates = JSON.parse(JSON.stringify(state.termRates || {}));
       activeProfile.customizedYears = JSON.parse(JSON.stringify(state.customizedYears || {}));
       activeProfile.bankWagesView = state.bankWagesView || 'wages';
@@ -485,6 +489,7 @@ export const saveSettingsToStorage = (
       profiles: profilesClone,
       isDark: state.isDark,
       complexity: state.complexity,
+      language: state.language || 'en',
       labelFormat: state.labelFormat || 'date',
       bankWagesView: state.bankWagesView || 'wages',
       chartsOrder: state.chartsOrder,
@@ -526,6 +531,7 @@ export const loadSettingsFromStorage = (
         currentMode: 'mortgage',
         complexity: 'simple',
         isDark: getPrefersDark(),
+        language: 'en',
         termRates: {},
         customizedYears: {},
         bankWagesView: 'wages',
@@ -547,6 +553,7 @@ export const loadSettingsFromStorage = (
     state.isDark = getPrefersDark();
     state.complexity = 'simple';
     state.labelFormat = 'date';
+    state.language = 'en';
   };
 
   let settings: AppSettings | null = null;
@@ -608,6 +615,7 @@ export const loadSettingsFromStorage = (
           profiles: migratedProfiles,
           isDark: settings.isDark !== undefined ? settings.isDark : getPrefersDark(),
           complexity: settings.complexity || 'simple',
+          language: settings.language || 'en',
           labelFormat: settings.labelFormat || 'date',
           bankWagesView: settings.bankWagesView || 'wages',
           chartsOrder: settings.chartsOrder,
@@ -639,6 +647,7 @@ export const loadSettingsFromStorage = (
 
       state.isDark = settings.isDark === true;
       state.complexity = settings.complexity === 'advanced' ? 'advanced' : 'simple';
+      state.language = settings.language === 'fr' ? 'fr' : 'en';
       state.labelFormat = settings.labelFormat === 'period' ? 'period' : 'date';
       state.bankWagesView = ['rent', 'rent-tax-ins'].includes(settings.bankWagesView)
         ? settings.bankWagesView
@@ -674,6 +683,7 @@ export const loadSettingsFromStorage = (
           profiles: state.profiles,
           isDark: state.isDark,
           complexity: state.complexity,
+          language: state.language || 'en',
           labelFormat: state.labelFormat,
           bankWagesView: state.bankWagesView
         })

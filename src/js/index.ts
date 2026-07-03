@@ -43,6 +43,7 @@ import {
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
+import { applyTranslations, t } from './i18n.js';
 import { getCalculationsInputs, validateForm, profileToInputs } from './form.js';
 import { syncRateShockTimeline } from './rate-shock.js';
 import { renderBankWages, setupBankWagesToggle } from './wages-viz.js';
@@ -272,17 +273,30 @@ const calculate = (e?: Event) => {
   if (actData.summary.paidOff === false) {
     updateKineticText(
       els.results.paidOffIn,
-      isMortgage ? 'Never (Negative Amortization)' : 'Never (No Payoff)',
+      t(isMortgage ? 'Never (Negative Amortization)' : 'Never (No Payoff)'),
       false
     );
   } else {
     const yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
     const rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
-    updateKineticText(
-      els.results.paidOffIn,
-      `${yrs_paid} Years, ${rem_paid} ${isMortgage && inputs.frequency !== 'monthly' ? 'Periods' : 'Months'}`,
-      false
-    );
+    const isFr = state.language === 'fr';
+    let label: string;
+    if (isFr) {
+      const yrLabel = yrs_paid > 1 ? 'ans' : 'an';
+      let freqLabel = 'mois';
+      if (isMortgage && inputs.frequency !== 'monthly') {
+        freqLabel = rem_paid > 1 ? 'périodes' : 'période';
+      }
+      label = `${yrs_paid} ${yrLabel}, ${rem_paid} ${freqLabel}`;
+    } else {
+      const yrLabel = yrs_paid > 1 ? 'Years' : 'Year';
+      let freqLabel = 'Months';
+      if (isMortgage && inputs.frequency !== 'monthly') {
+        freqLabel = rem_paid > 1 ? 'Periods' : 'Period';
+      }
+      label = `${yrs_paid} ${yrLabel}, ${rem_paid} ${freqLabel}`;
+    }
+    updateKineticText(els.results.paidOffIn, label, false);
   }
 
   if (isMortgage) {
@@ -471,6 +485,8 @@ const handleProfileSwitch = (profileId: string) => {
 
   document.body.className = buildBodyClass(state);
   if (els.modeSwitch) els.modeSwitch.checked = state.isDark;
+  const langSwitch = document.getElementById('language-switch') as HTMLInputElement | null;
+  if (langSwitch) langSwitch.checked = state.language === 'fr';
 
   els.masterBtns.forEach((btn) => {
     const isActive = btn.getAttribute('data-mode') === state.currentMode;
@@ -487,7 +503,7 @@ const handleProfileSwitch = (profileId: string) => {
 
   const innerLabel = document.getElementById('inner-circle-label');
   if (innerLabel) {
-    innerLabel.textContent = state.currentMode === 'cc' ? 'CC Balance' : 'Principal';
+    innerLabel.textContent = t(state.currentMode === 'cc' ? 'CC Balance' : 'Principal');
   }
 
   if (els.containers.pitiSection) {
@@ -779,7 +795,11 @@ const setupLimitsToggle = () => {
 
 const bootApp = () => {
   loadSettingsFromStorage(state, DEFAULT_INPUTS);
+  applyTranslations(state.language || 'en');
   applyStateCardOrderToDOM(state);
+
+  const langSwitch = document.getElementById('language-switch') as HTMLInputElement | null;
+  if (langSwitch) langSwitch.checked = state.language === 'fr';
 
   // Prefill initial start date if empty
   if (els.inputs.date && !els.inputs.date.value) {
@@ -804,14 +824,14 @@ const bootApp = () => {
         if (els.inputs.rate) els.inputs.rate.value = savedRate !== undefined ? savedRate : '19.99';
         if (els.inputs.extra) els.inputs.extra.value = savedExtra !== undefined ? savedExtra : '0';
         const innerLabel = document.getElementById('inner-circle-label');
-        if (innerLabel) innerLabel.textContent = 'CC Balance';
+        if (innerLabel) innerLabel.textContent = t('CC Balance');
       } else {
         const savedRate = activeProfile?.inputs?.mortgageRate;
         const savedExtra = activeProfile?.inputs?.mortgageExtra;
         if (els.inputs.rate) els.inputs.rate.value = savedRate !== undefined ? savedRate : '4.39';
         if (els.inputs.extra) els.inputs.extra.value = savedExtra !== undefined ? savedExtra : '0';
         const innerLabel = document.getElementById('inner-circle-label');
-        if (innerLabel) innerLabel.textContent = 'Principal';
+        if (innerLabel) innerLabel.textContent = t('Principal');
       }
 
       document.body.className = buildBodyClass(state);
@@ -833,6 +853,17 @@ const bootApp = () => {
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
     calculate();
+  });
+
+  // Language switch checkbox
+  const langSwitchEl = document.getElementById('language-switch') as HTMLInputElement | null;
+  langSwitchEl?.addEventListener('change', (e) => {
+    state.language = (e.target as HTMLInputElement).checked ? 'fr' : 'en';
+    applyTranslations(state.language);
+    syncCheckboxARIALabels();
+    clearVisibleChartsCache();
+    calculate();
+    saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
   });
 
   // Toggles bindings

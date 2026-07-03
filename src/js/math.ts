@@ -1,5 +1,6 @@
 import { Inputs, ScheduleResult, ScheduleRow, Milestone } from './types.js';
 import { PMI_LTV_THRESHOLD, MAX_CC_PAYOFF_MONTHS, MIN_CC_PAYMENT } from './constants.js';
+import { currentLanguage } from './i18n.js';
 
 /**
  * Calculates the periodic installment payment (principal + interest)
@@ -385,6 +386,8 @@ export const calculateMilestones = (
     ? safeHomePrice - safeDownPayment
     : Math.max(0, inputs.ccBalance || 0);
   const periodsPerYear = actData.summary.periodsPerYear;
+  const isFr = currentLanguage() === 'fr';
+  const moLabel = isFr ? 'Mois' : 'Month';
 
   if (!actSched || actSched.length === 0) return [];
 
@@ -413,8 +416,8 @@ export const calculateMilestones = (
     const actIdx = findIndex(actSched, 'PMI');
     const baseIdx = findIndex(baseSched, 'PMI');
 
-    let targetDate = 'At Start';
-    let targetPeriod = 'Month 0';
+    let targetDate = isFr ? 'Au départ' : 'At Start';
+    let targetPeriod = isFr ? 'Au départ' : 'At Start';
     let soWhat = '';
     let badgeText = '';
     let isAchieved = false;
@@ -422,35 +425,46 @@ export const calculateMilestones = (
     const startingLtv = safeHomePrice > 0 ? (startingPrincipal / safeHomePrice) * 100 : 0;
 
     if (startingLtv <= PMI_LTV_THRESHOLD * 100) {
-      targetDate = 'Day 1';
-      targetPeriod = 'At Start';
-      soWhat =
-        'You started with 20% or more home equity! Standard PMI is not required, keeping your payments efficient from day one.';
+      targetDate = isFr ? 'Jour 1' : 'Day 1';
+      targetPeriod = isFr ? 'Au départ' : 'At Start';
+      soWhat = isFr
+        ? "Vous avez commencé avec 20 % ou plus d'équité ! L'assurance PMI standard n'est pas requise, ce qui optimise vos versements dès le premier jour."
+        : 'You started with 20% or more home equity! Standard PMI is not required, keeping your payments efficient from day one.';
       isAchieved = true;
     } else if (actIdx !== -1) {
       const row = actSched[actIdx];
       targetDate = row.dateLabel;
-      targetPeriod = `Month ${row.period}`;
+      targetPeriod = `${moLabel} ${row.period}`;
       const pmiAmt = (startingPrincipal * (inputs.pmiRate / 100)) / periodsPerYear;
-      const savingsStr =
-        inputs.usePiti && inputs.pmiRate > 0 ? ` saves you $${Math.round(pmiAmt)}/Month` : '';
-      soWhat = `Your Loan-to-Value (LTV) ratio drops to ${PMI_LTV_THRESHOLD * 100}%, allowing you to cancel PMI. You shed the mandatory lender insurance tax and keep more cash flow${savingsStr}!`;
+      let savingsStr = '';
+      if (inputs.usePiti && inputs.pmiRate > 0) {
+        savingsStr = isFr
+          ? ` vous fait économiser ${Math.round(pmiAmt)} $/mois`
+          : ` saves you $${Math.round(pmiAmt)}/Month`;
+      }
+      soWhat = isFr
+        ? `Votre ratio prêt-valeur (LTV) baisse à ${PMI_LTV_THRESHOLD * 100} %, vous permettant d'annuler le PMI. Vous vous libérez de cette assurance obligatoire et améliorez vos liquidités${savingsStr} !`
+        : `Your Loan-to-Value (LTV) ratio drops to ${PMI_LTV_THRESHOLD * 100}%, allowing you to cancel PMI. You shed the mandatory lender insurance tax and keep more cash flow${savingsStr}!`;
       isAchieved = true;
 
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
         const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
-        if (deltaStr) badgeText = `Hit ${deltaStr} Sooner!`;
+        if (deltaStr) {
+          badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
+        }
       }
     }
 
     if (isAchieved) {
       milestones.push({
         id: 'pmi-freedom',
-        title: 'PMI Freedom (20% Equity)',
+        title: isFr ? "Libération du PMI (20 % d'équité)" : 'PMI Freedom (20% Equity)',
         date: targetDate,
         period: targetPeriod,
-        desc: 'Threshold where compulsory lender insurance falls away.',
+        desc: isFr
+          ? "Seuil à partir duquel l'assurance prêteur obligatoire prend fin."
+          : 'Threshold where compulsory lender insurance falls away.',
         sowhat: soWhat,
         badge: badgeText,
         isBaseline: !badgeText
@@ -469,17 +483,22 @@ export const calculateMilestones = (
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
         const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
-        if (deltaStr) badgeText = `Hit ${deltaStr} Sooner!`;
+        if (deltaStr) {
+          badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
+        }
       }
 
       milestones.push({
         id: 'equity-mastery',
-        title: 'Equity Mastery (Tipping Point)',
+        title: isFr ? "Maîtrise de l'équité (point de bascule)" : 'Equity Mastery (Tipping Point)',
         date: row.dateLabel,
-        period: `Month ${row.period}`,
-        desc: 'The exact cycle where principal contribution exceeds interest paid.',
-        sowhat:
-          "From this month forward, more than 50% of your monthly payment goes directly to building your own net worth rather than the bank's fee income. You are officially building wealth faster than paying fees!",
+        period: `${moLabel} ${row.period}`,
+        desc: isFr
+          ? 'Le cycle exact où la contribution au principal dépasse les intérêts payés.'
+          : 'The exact cycle where principal contribution exceeds interest paid.',
+        sowhat: isFr
+          ? "À partir de ce mois, plus de 50 % de votre versement mensuel va directement à l'accumulation de votre valeur nette plutôt qu'aux revenus d'intérêts de la banque. Vous bâtissez officiellement votre richesse plus vite que vous ne payez de frais !"
+          : "From this month forward, more than 50% of your monthly payment goes directly to building your own net worth rather than the bank's fee income. You are officially building wealth faster than paying fees!",
         badge: badgeText,
         isBaseline: !badgeText
       });
@@ -497,17 +516,24 @@ export const calculateMilestones = (
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
         const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
-        if (deltaStr) badgeText = `Hit ${deltaStr} Sooner!`;
+        if (deltaStr) {
+          badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
+        }
       }
 
       milestones.push({
         id: 'interest-break-even',
-        title: 'Interest Break-Even (Leverage Flip)',
+        title: isFr
+          ? 'Seuil de rentabilité des intérêts (inversion du levier)'
+          : 'Interest Break-Even (Leverage Flip)',
         date: row.dateLabel,
-        period: `Month ${row.period}`,
-        desc: 'Moment where total principal paid exceeds cumulative interest.',
-        sowhat:
-          'The momentum permanently flips in your favor! You have contributed more total money to your own principal than all cumulative interest you will ever pay the bank.',
+        period: `${moLabel} ${row.period}`,
+        desc: isFr
+          ? 'Le moment où le total du principal payé dépasse les intérêts cumulés.'
+          : 'Moment where total principal paid exceeds cumulative interest.',
+        sowhat: isFr
+          ? "L'effet de levier bascule définitivement en votre faveur ! Vous avez versé plus d'argent au total pour votre propre principal que l'ensemble des intérêts cumulés que vous paierez jamais à la banque."
+          : 'The momentum permanently flips in your favor! You have contributed more total money to your own principal than all cumulative interest you will ever pay the bank.',
         badge: badgeText,
         isBaseline: !badgeText
       });
@@ -525,17 +551,22 @@ export const calculateMilestones = (
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
         const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
-        if (deltaStr) badgeText = `Hit ${deltaStr} Sooner!`;
+        if (deltaStr) {
+          badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
+        }
       }
 
       milestones.push({
         id: 'halfway-mark',
-        title: 'Halfway Mark (Debt Halved)',
+        title: isFr ? 'Mi-chemin (dette réduite de moitié)' : 'Halfway Mark (Debt Halved)',
         date: row.dateLabel,
-        period: `Month ${row.period}`,
-        desc: 'The milestone cycle where the outstanding balance is cut exactly in half.',
-        sowhat:
-          'A massive psychological victory! You have officially sliced your original starting debt in half. The remaining payoff curve is entirely downhill.',
+        period: `${moLabel} ${row.period}`,
+        desc: isFr
+          ? 'Le cycle clé où le solde restant est réduit de moitié.'
+          : 'The milestone cycle where the outstanding balance is cut exactly in half.',
+        sowhat: isFr
+          ? 'Une immense victoire psychologique ! Vous avez officiellement réduit de moitié votre dette de départ. La suite du remboursement est une descente facile.'
+          : 'A massive psychological victory! You have officially sliced your original starting debt in half. The remaining payoff curve is entirely downhill.',
         badge: badgeText,
         isBaseline: !badgeText
       });
@@ -553,17 +584,22 @@ export const calculateMilestones = (
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
         const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
-        if (deltaStr) badgeText = `Hit ${deltaStr} Sooner!`;
+        if (deltaStr) {
+          badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
+        }
       }
 
       milestones.push({
         id: 'financial-freedom',
-        title: 'Financial Freedom (Payoff!)',
+        title: isFr ? 'Liberté financière (remboursé !)' : 'Financial Freedom (Payoff!)',
         date: row.dateLabel,
-        period: `Month ${row.period}`,
-        desc: 'Complete debt eradication and full liability liberation.',
-        sowhat:
-          'Zero payments due. You have completely bought back your lifetime monthly cash flow, acquiring years of pure financial freedom, life peace, and independence!',
+        period: `${moLabel} ${row.period}`,
+        desc: isFr
+          ? 'Éradication complète de la dette et libération totale de vos obligations financières.'
+          : 'Complete debt eradication and full liability liberation.',
+        sowhat: isFr
+          ? "Zéro versement requis. Vous avez entièrement récupéré votre flux de trésorerie mensuel à vie, gagnant ainsi des années de pure liberté financière, de tranquillité d'esprit et d'indépendance !"
+          : 'Zero payments due. You have completely bought back your lifetime monthly cash flow, acquiring years of pure financial freedom, life peace, and independence!',
         badge: badgeText,
         isBaseline: !badgeText
       });

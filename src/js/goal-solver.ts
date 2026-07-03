@@ -1,6 +1,7 @@
 import { AppState, Inputs, ScheduleResult, AppElements } from './types.js';
 import { generateMortgageSchedule, generateCCSchedule } from './math.js';
 import { formatCurrency } from './charts.js';
+import { t, currentLanguage } from './i18n.js';
 
 /**
  * Solves for the required monthly extra payment using a binary search.
@@ -150,30 +151,31 @@ export const renderGoalSolver = (
   if (!slider || !readout || !minLabel || !maxLabel || !monthlyValEl || !lumpSumValEl || !errorEl)
     return;
 
+  const isFr = currentLanguage() === 'fr';
   const freq = isMortgage ? inputs.frequency : 'monthly';
-  let freqLabel = 'Required Monthly Extra';
-  let freqUnit = '/mo';
-  let btnText = 'Apply to Monthly';
+  let freqLabel = t('Required Monthly Extra');
+  let freqUnit = isFr ? '/mois' : '/mo';
+  let btnText = t('Apply to Monthly');
 
   if (freq === 'weekly') {
-    freqLabel = 'Required Weekly Extra';
-    freqUnit = '/wk';
-    btnText = 'Apply to Weekly';
+    freqLabel = t('Required Weekly Extra');
+    freqUnit = isFr ? '/sem' : '/wk';
+    btnText = t('Apply to Weekly');
   } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
-    freqLabel = 'Required Bi-Weekly Extra';
-    freqUnit = '/bi-wk';
-    btnText = 'Apply to Bi-Weekly';
+    freqLabel = t('Required Bi-Weekly Extra');
+    freqUnit = isFr ? '/bi-sem' : '/bi-wk';
+    btnText = t('Apply to Bi-Weekly');
   } else if (freq === 'semi-monthly') {
-    freqLabel = 'Required Semi-Monthly Extra';
-    freqUnit = '/semi-mo';
-    btnText = 'Apply to Semi-Monthly';
+    freqLabel = t('Required Semi-Monthly Extra');
+    freqUnit = isFr ? '/bimens' : '/semi-mo';
+    btnText = t('Apply to Semi-Monthly');
   }
 
   // Update slider range attributes dynamically
   slider.min = '1';
   slider.max = String(baselineYears);
-  minLabel.textContent = '1 Year';
-  maxLabel.textContent = `${baselineYears} Years`;
+  minLabel.textContent = isFr ? '1 an' : '1 Year';
+  maxLabel.textContent = isFr ? `${baselineYears} ans` : `${baselineYears} Years`;
 
   state.currentTargetYears = state.currentTargetYears || 15;
 
@@ -192,7 +194,9 @@ export const renderGoalSolver = (
   const runSolver = () => {
     const targetYears = parseInt(slider.value, 10);
     state.currentTargetYears = targetYears;
-    readout.textContent = `${targetYears} ${targetYears === 1 ? 'Year' : 'Years'}`;
+    readout.textContent = isFr
+      ? `${targetYears} ${targetYears === 1 ? 'an' : 'ans'}`
+      : `${targetYears} ${targetYears === 1 ? 'Year' : 'Years'}`;
 
     const targetPeriods = targetYears * periodsPerYear;
 

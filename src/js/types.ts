@@ -110,6 +110,7 @@ export interface Profile {
   currentMode: 'mortgage' | 'cc';
   complexity: 'simple' | 'advanced';
   isDark: boolean;
+  language?: 'en' | 'fr';
   termRates: Record<number, number>;
   customizedYears: Record<number, boolean>;
   bankWagesView: 'wages' | 'rent' | 'rent-tax-ins';
@@ -120,6 +121,7 @@ export interface AppState {
   isDark: boolean;
   currentMode: 'mortgage' | 'cc';
   complexity: 'simple' | 'advanced';
+  language?: 'en' | 'fr';
   termRates: Record<number, number>;
   customizedYears: Record<number, boolean>;
   labelFormat: 'date' | 'period';
