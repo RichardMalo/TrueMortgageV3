@@ -621,6 +621,20 @@ export const calculateMilestones = (
  * @returns Destructured date labeling metadata.
  */
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTHS_FR = [
+  'janv.',
+  'févr.',
+  'mars',
+  'avr.',
+  'mai',
+  'juin',
+  'juil.',
+  'août',
+  'sept.',
+  'oct.',
+  'nov.',
+  'déc.'
+];
 
 export const getRowDateLabel = (
   startDate: Date | null,
@@ -664,10 +678,18 @@ export const getRowDateLabel = (
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);
     }
-    const monthStr = MONTHS[d.getMonth()];
+    const isFr = currentLanguage() === 'fr';
+    const monthStr = isFr ? MONTHS_FR[d.getMonth()] : MONTHS[d.getMonth()];
     const dayStr = d.getDate();
     const yearStr = d.getFullYear();
-    dateLabel = `${monthStr} ${dayStr}, ${yearStr}`;
+
+    if (isFr) {
+      const isFirst = dayStr === 1;
+      const dayLabel = isFirst ? '1er' : String(dayStr);
+      dateLabel = `${dayLabel} ${monthStr} ${yearStr}`;
+    } else {
+      dateLabel = `${monthStr} ${dayStr}, ${yearStr}`;
+    }
     yearVal = yearStr + d.getMonth() / 12 + dayStr / 365;
     calendarYear = yearStr;
   }
