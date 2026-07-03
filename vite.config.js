@@ -41,6 +41,8 @@ export default defineConfig({
         'src/js/blueprint.ts',
         'src/js/card-order.ts',
         'src/js/settings.ts',
+        'src/js/i18n.ts',
+        'src/js/form.ts',
         'eslint.config.js',
         'vite.config.js'
       ],
