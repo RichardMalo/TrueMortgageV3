@@ -423,7 +423,7 @@ const renderDebtBalanceChart = (
     const compName =
       (state.profiles[state.comparisonProfileId as string] &&
         state.profiles[state.comparisonProfileId as string].name) ||
-      'Comparison';
+      (currentLanguage() === 'fr' ? 'Comparaison' : 'Comparison');
     t3.push({
       x: compData.schedule.map((d) => d[xKey]),
       y: compData.schedule.map((d) => d.balance),
@@ -847,7 +847,7 @@ const renderOpportunityCostChart = (
     const compName =
       (state.profiles[state.comparisonProfileId as string] &&
         state.profiles[state.comparisonProfileId as string].name) ||
-      'Comparison';
+      (currentLanguage() === 'fr' ? 'Comparaison' : 'Comparison');
     const compX: number[] = [];
     const compY: number[] = [];
     let compInv = 0;

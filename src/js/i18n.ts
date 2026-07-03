@@ -264,7 +264,64 @@ export const dictionary: Record<string, string> = {
     'Un grand livre détaillé cartographiant le remboursement du principal et la courbe de décroissance des intérêts. Note : Des écarts mineurs peuvent se produire.',
 
   // Miscellanea
-  'Ontario (3 %) / Quebec (5 %)': 'Ontario (3 %) / Québec (5 %)'
+  'Ontario (3 %) / Quebec (5 %)': 'Ontario (3 %) / Québec (5 %)',
+
+  // Chart Titles & Axes
+  'Debt Balance Over Time': 'Solde de la dette au fil du temps',
+  'Equity Build-Up': "Accumulation d'équité",
+  'Cumulative Outflow': 'Sorties de fonds cumulées',
+  'Annual Cash Flow': 'Flux de trésorerie annuels',
+  'Payment Composition': 'Composition des versements',
+  'Lifetime Breakdown': 'Répartition sur la durée de vie',
+  'LTV (Loan To Value) & PMI (Private Mortgage Insurance) Drop':
+    'Ratio prêt-valeur (LTV) et fin du PMI',
+  'Projection: Pay Debt vs Invest': 'Projection : Rembourser la dette vs Investir',
+  'Total Interest Cost': 'Coût total en intérêts',
+  'Time to Pay Off': 'Temps pour rembourser',
+  'LTV (%)': 'LTV (%)',
+  'Net Worth ($)': 'Valeur nette ($)',
+
+  // Trace Series Legends
+  Baseline: 'Référence',
+  Actual: 'Réel',
+  'Term End': 'Fin du terme',
+  'Debt Free': 'Libre de dette',
+  Interest: 'Intérêts',
+  Principal: 'Principal',
+  Escrow: 'Frais séquestres',
+  Extra: 'Supplément',
+  'Pay Debt Fast': 'Rembourser rapidement',
+  'Invest Surplus': 'Investir les excédents',
+  'Debt Free Year': 'Année de libération',
+
+  // Table Headers
+  'Date / #': 'Date / N°',
+  'Total Payment': 'Versement total',
+  'Escrow (Tax/Ins)': 'Frais séquestres (Taxe/Assur)',
+
+  // Frequencies
+  Monthly: 'Mensuel',
+  Weekly: 'Hebdomadaire',
+  'Bi-Weekly': 'Bihebdomadaire',
+  'Semi-Monthly': 'Bimensuel',
+  'Accelerated Bi-Weekly': 'Bihebdomadaire accéléré',
+
+  // Heatmap UI Details
+  'Hover over or tap any cell in the heatmap grid to view strategy details':
+    'Survolez ou appuyez sur une case de la grille pour afficher les détails.',
+  'Selected Plan Details': 'Détails de la stratégie sélectionnée',
+  'Plan Details Preview': 'Aperçu de la stratégie',
+  'Monthly Extra': 'Supplément mensuel',
+  'One-Time Lump Sum': 'Versement forfaitaire unique',
+  'Timeline Saved': 'Temps économisé',
+  'Apply Strategy': 'Appliquer la stratégie',
+  'No Lump Sum': 'Sans versement',
+  'No Extra': 'Sans supplément',
+
+  // Nested Label text nodes
+  'Interest Saved ': 'Intérêts économisés ',
+  '(vs Minimums)': '(vs minimums)',
+  'Interest Saved': 'Intérêts économisés'
 };
 
 export const t = (key: string): string => {

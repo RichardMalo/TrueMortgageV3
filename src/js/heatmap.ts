@@ -1,6 +1,7 @@
 import { AppState, ScheduleResult, AppElements, Inputs } from './types.js';
 import { generateMortgageSchedule, generateCCSchedule } from './math.js';
 import { formatCurrency } from './charts.js';
+import { t, currentLanguage } from './i18n.js';
 
 /**
  * Determines row (monthly extra) and column (lump sum) values dynamically.
@@ -120,38 +121,55 @@ export const renderHeatmap = (
     if (selectedCell) break;
   }
 
+  const isFr = currentLanguage() === 'fr';
+
   // Render details panel contents
   const showDetails = (cell: GridCell | null, isLocked: boolean) => {
     if (!cell) {
       detailsPanel.className = 'heatmap-details-panel empty';
-      detailsPanel.innerHTML =
-        'Hover over or tap any cell in the heatmap grid to view strategy details';
+      detailsPanel.innerHTML = t(
+        'Hover over or tap any cell in the heatmap grid to view strategy details'
+      );
       return;
     }
 
     detailsPanel.className = 'heatmap-details-panel';
+    const headerText = isLocked ? t('Selected Plan Details') : t('Plan Details Preview');
+    const monthlyLabel = t('Monthly Extra');
+    const lumpSumLabel = t('One-Time Lump Sum');
+    const timelineLabel = t('Timeline Saved');
+    const interestLabel = t('Interest Saved');
+    const applyText = t('Apply Strategy');
+
+    const timelineVal =
+      cell.yearsSaved === 0
+        ? t('Baseline')
+        : isFr
+          ? `−${cell.yearsSaved.toFixed(1)} ans`
+          : `−${cell.yearsSaved.toFixed(1)} years`;
+
     detailsPanel.innerHTML = `
-      <div class="heatmap-details-header">${isLocked ? 'Selected Plan Details' : 'Plan Details Preview'}</div>
+      <div class="heatmap-details-header">${headerText}</div>
       <div class="heatmap-details-grid">
         <div class="heatmap-details-item">
-          <span>Monthly Extra</span>
+          <span>${monthlyLabel}</span>
           <strong>${cell.monthly === 0 ? '$0' : formatCurrency(cell.monthly)}</strong>
         </div>
         <div class="heatmap-details-item">
-          <span>One-Time Lump Sum</span>
+          <span>${lumpSumLabel}</span>
           <strong>${cell.lumpSum === 0 ? '$0' : formatCurrency(cell.lumpSum)}</strong>
         </div>
         <div class="heatmap-details-item text-accent">
-          <span>Timeline Saved</span>
-          <strong>${cell.yearsSaved === 0 ? 'Baseline' : `−${cell.yearsSaved.toFixed(1)} years`}${cell.pctSaved > 0 ? ` (-${cell.pctSaved.toFixed(0)}%)` : ''}</strong>
+          <span>${timelineLabel}</span>
+          <strong>${timelineVal}${cell.pctSaved > 0 ? ` (-${cell.pctSaved.toFixed(0)}%)` : ''}</strong>
         </div>
         <div class="heatmap-details-item text-highlight">
-          <span>Interest Saved</span>
+          <span>${interestLabel}</span>
           <strong>${formatCurrency(cell.interestSaved)}</strong>
         </div>
       </div>
       <div class="heatmap-details-action" style="display: flex; visibility: ${isLocked ? 'visible' : 'hidden'}">
-        <button type="button" class="heatmap-apply-btn" id="heatmap-apply-strategy-btn">Apply Strategy</button>
+        <button type="button" class="heatmap-apply-btn" id="heatmap-apply-strategy-btn">${applyText}</button>
       </div>
     `;
 
@@ -178,13 +196,13 @@ export const renderHeatmap = (
 
   // Empty corner cell
   const cornerTh = document.createElement('th');
-  cornerTh.innerHTML = `<div class="corner-axis-labels"><span class="y-label">Monthly</span><span class="x-label">Lump Sum</span></div>`;
+  cornerTh.innerHTML = `<div class="corner-axis-labels"><span class="y-label">${t('Monthly')}</span><span class="x-label">${t('Lump Sum')}</span></div>`;
   cornerTh.className = 'heatmap-corner-cell';
   headerRow.appendChild(cornerTh);
 
   axes.lumpSum.forEach((val) => {
     const th = document.createElement('th');
-    th.textContent = val === 0 ? 'No Lump Sum' : formatCurrency(val);
+    th.textContent = val === 0 ? t('No Lump Sum') : formatCurrency(val);
     headerRow.appendChild(th);
   });
   thead.appendChild(headerRow);
@@ -201,7 +219,9 @@ export const renderHeatmap = (
     const rowHeaderTd = document.createElement('td');
     rowHeaderTd.className = 'heatmap-row-header';
     rowHeaderTd.textContent =
-      row[0].monthly === 0 ? 'No Extra' : `+${formatCurrency(row[0].monthly)}/mo`;
+      row[0].monthly === 0
+        ? t('No Extra')
+        : `+${formatCurrency(row[0].monthly)}${isFr ? '/mois' : '/mo'}`;
     tr.appendChild(rowHeaderTd);
 
     row.forEach((cell) => {
@@ -226,9 +246,9 @@ export const renderHeatmap = (
 
       // Display payoff year reduction
       if (cell.yearsSaved === 0) {
-        td.textContent = 'Baseline';
+        td.textContent = t('Baseline');
       } else {
-        td.innerHTML = `<strong>−${cell.yearsSaved.toFixed(1)}</strong><span class="unit-yrs"> yrs</span>`;
+        td.innerHTML = `<strong>−${cell.yearsSaved.toFixed(1)}</strong><span class="unit-yrs">${isFr ? ' ans' : ' yrs'}</span>`;
       }
 
       // Highlight if selected
