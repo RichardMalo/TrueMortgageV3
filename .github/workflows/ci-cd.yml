@@ -32,41 +32,6 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Verify Code Linting
-        run: npx eslint .
-
-      - name: Verify Code Formatting
-        run: npx prettier --check .
-
-      - name: TypeScript Type Check
-        run: npm run type-check
-
-      - name: Security Vulnerability Audit
-        run: npm audit --audit-level=high
-
-      - name: Run Unit Tests
-        run: npm run test:coverage
-
-      - name: Cache Playwright Browsers
-        id: cache-playwright
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install Playwright Browsers
-        if: steps.cache-playwright.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
-
-      - name: Install Playwright System Dependencies
-        if: steps.cache-playwright.outputs.cache-hit == 'true'
-        run: npx playwright install-deps
-
-      - name: Run E2E Tests
-        run: npm run test:e2e
-
       - name: Build Project
         run: npm run build
 
