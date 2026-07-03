@@ -22,6 +22,7 @@ The entire application runs **locally in your browser**—meaning all calculatio
 - **Customizable Bento Dashboard:** Drag-and-drop dashboard grid allows you to customize the order of Plotly.js charts and analysis cards, customize card visibility, and expand card sizes to full-width.
 - **Secure Sync & Portability:** Export scenario profiles as plain text JSON blueprints, or encrypt them locally using AES-GCM 256-bit cryptography with PBKDF2 passcode stretching hardened to **600,000 iterations** (with backward compatibility) and corrupted local storage auto-backup recovery.
 - **Shareable Strategy Reports:** Generate clean, formatted PDF reports locally using a styled dynamic canvas exporter, copy quick text summaries, or share directly via WhatsApp.
+- **Multilingual Support (i18n):** Integrated Quebecois French translation engine that localizes all labels, dynamic outputs, Plotly chart legends, tooltips, scenario sandbox controls, and dynamic PDF reports on-the-fly, persisting language settings in local storage.
 
 ---
 
@@ -104,6 +105,7 @@ npm run lint
 │       ├── declarations.d.ts
 │       ├── form.ts       # Input validation logic and schema mapping
 │       ├── index.ts      # Main app entry point and state orchestration
+│       ├── i18n.ts       # Quebecois translation dictionary and DOM TreeWalker
 │       ├── math.ts       # Decoupled mortgage/CC compound math algorithms
 │       ├── milestones-ui.ts # Milestone nodes layout updates
 │       ├── rate-shock.ts # Term renewal rate timeline updates
