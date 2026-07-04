@@ -1,4 +1,4 @@
-import { AppState, Inputs, ScheduleResult } from './types.js';
+import { AppState, Inputs, ScheduleResult, ScheduleRow } from './types.js';
 import { MOBILE_BREAKPOINT } from './constants.js';
 import { t, currentLanguage } from './i18n.js';
 
@@ -747,6 +747,128 @@ const renderLtvChart = (
   queueChartRender('chartLTV', tLTV, lLTV, PLOT_CONFIG);
 };
 
+export const calculateOpportunityCostData = (
+  state: { currentMode: 'mortgage' | 'cc'; comparisonProfileId: string | null },
+  baseData: ScheduleResult,
+  actualData: ScheduleResult,
+  compData: ScheduleResult | null,
+  inputs: Inputs
+): {
+  p1X: number[];
+  p1Y: number[];
+  p2X: number[];
+  p2Y: number[];
+  compX: number[];
+  compY: number[];
+} => {
+  const ir = inputs.investRate / 100;
+  const hp = state.currentMode === 'mortgage' ? inputs.homePrice : inputs.ccBalance;
+
+  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const initialBalance =
+    state.currentMode === 'mortgage' ? safeHomePrice - safeDownPayment : inputs.ccBalance || 0;
+
+  const lastBaseYear = baseData.schedule[baseData.schedule.length - 1].year;
+  const maxYear = Math.max(
+    lastBaseYear,
+    actualData.schedule[actualData.schedule.length - 1]?.year ?? 0,
+    compData?.schedule[compData.schedule.length - 1]?.year ?? 0
+  );
+  const extraYears = Math.max(0, maxYear - lastBaseYear);
+  const extraMonths = Math.ceil(extraYears * 12);
+  const maxMonths = baseData.schedule.length + extraMonths;
+
+  const p1X: number[] = [];
+  const p1Y: number[] = [];
+  const p2X: number[] = [];
+  const p2Y: number[] = [];
+  const compX: number[] = [];
+  const compY: number[] = [];
+
+  let actInv = 0;
+  let baseInv = 0;
+  let compInv = 0;
+
+  const monthlyRate = Math.pow(1 + ir, 1 / 12) - 1;
+
+  const getMonthInterval = (m: number) => {
+    const len = baseData.schedule.length;
+    if (m < len) {
+      const T_end = baseData.schedule[m].year;
+      const T_start = m === 0 ? T_end - 1 / 12 : baseData.schedule[m - 1].year;
+      return { T_start, T_end };
+    } else {
+      const lastYear = baseData.schedule[len - 1].year;
+      const T_start = lastYear + (m - len) / 12;
+      const T_end = T_start + 1 / 12;
+      return { T_start, T_end };
+    }
+  };
+
+  const getCashPaidInInterval = (schedule: ScheduleRow[], T_start: number, T_end: number) => {
+    let sum = 0;
+    for (const row of schedule) {
+      if (row.year > T_start + 1e-7 && row.year <= T_end + 1e-7) {
+        sum += row.principal + row.interest + (row.extra || 0);
+      }
+    }
+    return sum;
+  };
+
+  const getRemainingBalanceAt = (schedule: ScheduleRow[], T_end: number, initBal: number) => {
+    for (let i = schedule.length - 1; i >= 0; i--) {
+      if (schedule[i].year <= T_end + 1e-7) {
+        return schedule[i].balance;
+      }
+    }
+    return initBal;
+  };
+
+  for (let m = 0; m < maxMonths; m++) {
+    const { T_start, T_end } = getMonthInterval(m);
+
+    const actCash = getCashPaidInInterval(actualData.schedule, T_start, T_end);
+    const baseCash = getCashPaidInInterval(baseData.schedule, T_start, T_end);
+    const compCash = compData ? getCashPaidInInterval(compData.schedule, T_start, T_end) : 0;
+
+    const refPay = Math.max(actCash, baseCash, compCash);
+
+    const actSurplus = refPay - actCash;
+    const baseSurplus = refPay - baseCash;
+    const compSurplus = compData ? refPay - compCash : 0;
+
+    actInv = (actInv + actSurplus) * (1 + monthlyRate);
+    baseInv = (baseInv + baseSurplus) * (1 + monthlyRate);
+    if (compData) {
+      compInv = (compInv + compSurplus) * (1 + monthlyRate);
+    }
+
+    const actBalance = getRemainingBalanceAt(actualData.schedule, T_end, initialBalance);
+    const baseBalance = getRemainingBalanceAt(baseData.schedule, T_end, initialBalance);
+    const compBalance = compData
+      ? getRemainingBalanceAt(compData.schedule, T_end, initialBalance)
+      : 0;
+
+    const actNetWorth = hp - actBalance + actInv;
+    const baseNetWorth = hp - baseBalance + baseInv;
+
+    p1X.push(T_end);
+    p1Y.push(actNetWorth);
+
+    p2X.push(T_end);
+    p2Y.push(baseNetWorth);
+
+    if (compData) {
+      const compNetWorth = hp - compBalance + compInv;
+      compX.push(T_end);
+      compY.push(compNetWorth);
+    }
+  }
+
+  return { p1X, p1Y, p2X, p2Y, compX, compY };
+};
+
 const renderOpportunityCostChart = (
   state: AppState,
   baseData: ScheduleResult,
@@ -759,72 +881,14 @@ const renderOpportunityCostChart = (
 ) => {
   const chartOppCostEl = document.getElementById('chartOppCost');
   if (!chartOppCostEl) return;
-  const ir = inputs.investRate / 100;
-  const hp = state.currentMode === 'mortgage' ? inputs.homePrice : inputs.ccBalance;
-  const p1X: number[] = [];
-  const p1Y: number[] = [];
-  let p1Inv = 0;
-  const p1PY = actualData.summary.periodsPerYear;
-  const p1Rate = Math.pow(1 + ir, 1 / p1PY) - 1;
 
-  actualData.schedule.forEach((d) => {
-    p1X.push(d[xKey]);
-    p1Y.push(hp - d.balance);
-  });
-
-  let cY = p1X[p1X.length - 1];
-  const mY = baseData.schedule[baseData.schedule.length - 1].year;
-
-  // Use the first row's standard periodic payment as post-payoff investment capacity.
-  // The last row is almost always a tiny partial payment (balance remnant) that would
-  // drastically underestimate the freed-up cash flow redirected into investments.
-  const firstActRow = actualData.schedule[0];
-  const actualCapacityPerPeriod = firstActRow
-    ? firstActRow.principal + firstActRow.interest + firstActRow.extra
-    : 0;
-
-  while (cY < mY) {
-    cY += 1 / p1PY;
-    p1Inv = (p1Inv + actualCapacityPerPeriod) * (1 + p1Rate);
-    p1X.push(cY);
-    p1Y.push(hp + p1Inv);
-  }
-
-  const p2X: number[] = [];
-  const p2Y: number[] = [];
-  let p2Inv = 0;
-  const p2PY = baseData.summary.periodsPerYear;
-  const p2Rate = Math.pow(1 + ir, 1 / p2PY) - 1;
-
-  baseData.schedule.forEach((d) => {
-    // Find matching actual row at or just after d.year
-    const yearVal = d.year;
-    const actRow =
-      actualData.schedule.find((r) => r.year >= yearVal) ||
-      actualData.schedule[actualData.schedule.length - 1];
-
-    let actualDebtServiceAnn = 0;
-    if (actRow) {
-      actualDebtServiceAnn =
-        (actRow.principal + actRow.interest + actRow.extra) * actualData.summary.periodsPerYear;
-    } else if (firstActRow) {
-      actualDebtServiceAnn =
-        (firstActRow.principal + firstActRow.interest + firstActRow.extra) *
-        actualData.summary.periodsPerYear;
-    }
-
-    // Baseline annual debt service rate in this period
-    const baseDebtServiceAnn = (d.principal + d.interest) * p2PY;
-
-    // Annual surplus
-    const annSurplus = Math.max(0, actualDebtServiceAnn - baseDebtServiceAnn);
-    // Monthly surplus (divided by 12, since baseline is monthly)
-    const monthlySurplus = annSurplus / 12;
-
-    p2Inv = (p2Inv + monthlySurplus) * (1 + p2Rate);
-    p2X.push(d[xKey]);
-    p2Y.push(hp - d.balance + p2Inv);
-  });
+  const { p1X, p1Y, p2X, p2Y, compX, compY } = calculateOpportunityCostData(
+    state,
+    baseData,
+    actualData,
+    compData,
+    inputs
+  );
 
   const tOpp: unknown[] = [
     {
@@ -843,43 +907,19 @@ const renderOpportunityCostChart = (
     }
   ];
 
-  if (compData && compData.schedule) {
+  if (compData && compData.schedule && compData.schedule.length > 0) {
     const compName =
       (state.profiles[state.comparisonProfileId as string] &&
         state.profiles[state.comparisonProfileId as string].name) ||
       (currentLanguage() === 'fr' ? 'Comparaison' : 'Comparison');
-    const compX: number[] = [];
-    const compY: number[] = [];
-    let compInv = 0;
-    const cSched = compData.schedule;
-    if (cSched.length > 0) {
-      const cPY = compData.summary.periodsPerYear;
-      const cRate = Math.pow(1 + ir, 1 / cPY) - 1;
-      cSched.forEach((d) => {
-        compX.push(d[xKey]);
-        compY.push(hp - d.balance);
-      });
-      let ccY = compX[compX.length - 1];
-      const firstCompRow = cSched[0];
-      const compCapacityPerPeriod = firstCompRow
-        ? firstCompRow.principal + firstCompRow.interest + firstCompRow.extra
-        : 0;
 
-      while (ccY < mY) {
-        ccY += 1 / cPY;
-        compInv = (compInv + compCapacityPerPeriod) * (1 + cRate);
-        compX.push(ccY);
-        compY.push(hp + compInv);
-      }
-
-      tOpp.push({
-        x: compX,
-        y: compY,
-        name: currentLanguage() === 'fr' ? `Valeur nette (${compName})` : `${compName} Net Worth`,
-        type: 'scatter',
-        line: { color: '#a855f7', width: 2.5, dash: 'dash' }
-      });
-    }
+    tOpp.push({
+      x: compX,
+      y: compY,
+      name: currentLanguage() === 'fr' ? `Valeur nette (${compName})` : `${compName} Net Worth`,
+      type: 'scatter',
+      line: { color: '#a855f7', width: 2.5, dash: 'dash' }
+    });
   }
 
   const lOpp: Record<string, unknown> = getBaseLayout(

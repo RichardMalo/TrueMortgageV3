@@ -6,6 +6,7 @@ import {
   getMonthlyPayment
 } from '../src/js/math.js';
 import { Inputs, Milestone } from '../src/js/types.js';
+import { calculateOpportunityCostData } from '../src/js/charts.js';
 
 describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
   it('should calculate standard US mortgage payments correctly', () => {
@@ -597,5 +598,133 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateMortgageSchedule(inputs, false);
     expect(result.summary.paidOff).toBe(false);
+  });
+
+  describe('Opportunity Cost Chart Calculations', () => {
+    it('should calculate opportunity cost correctly for identical monthly frequencies', () => {
+      const inputs: Inputs = {
+        homePrice: 500000,
+        downPayment: 100000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 5.0,
+        amortizationYears: 25,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'monthly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: true,
+        investRate: 6.0,
+        extraPayment: 200,
+        startDate: '2026-07-01',
+        rateShockEnabled: false,
+        termRates: {}
+      };
+
+      const baseData = generateMortgageSchedule(inputs, true);
+      const actualData = generateMortgageSchedule(inputs, false);
+
+      const state = {
+        currentMode: 'mortgage' as const,
+        comparisonProfileId: null
+      };
+
+      const results = calculateOpportunityCostData(state, baseData, actualData, null, inputs);
+
+      expect(results.p1X.length).toBe(baseData.schedule.length);
+      expect(results.p2X.length).toBe(baseData.schedule.length);
+
+      // Last element of actual strategy investment should grow
+      const lastActNetWorth = results.p1Y[results.p1Y.length - 1];
+      const lastBaseNetWorth = results.p2Y[results.p2Y.length - 1];
+
+      // Pay Debt Fast should finish with higher or different net worth depending on return rates
+      expect(lastActNetWorth).toBeGreaterThan(0);
+      expect(lastBaseNetWorth).toBeGreaterThan(0);
+    });
+
+    it('should correctly handle different payment frequencies (actual bi-weekly vs baseline monthly)', () => {
+      const inputs: Inputs = {
+        homePrice: 500000,
+        downPayment: 100000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 5.0,
+        amortizationYears: 25,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'bi-weekly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: true,
+        investRate: 6.0,
+        extraPayment: 200,
+        startDate: '2026-07-01',
+        rateShockEnabled: false,
+        termRates: {}
+      };
+
+      const baseData = generateMortgageSchedule(inputs, true); // monthly
+      const actualData = generateMortgageSchedule(inputs, false); // bi-weekly
+
+      const state = {
+        currentMode: 'mortgage' as const,
+        comparisonProfileId: null
+      };
+
+      const results = calculateOpportunityCostData(state, baseData, actualData, null, inputs);
+
+      expect(results.p1X.length).toBe(baseData.schedule.length);
+      expect(results.p2X.length).toBe(baseData.schedule.length);
+    });
+
+    it('should correctly handle lump sums in actual schedule', () => {
+      const inputs: Inputs = {
+        homePrice: 500000,
+        downPayment: 100000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 5.0,
+        amortizationYears: 25,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'monthly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: true,
+        investRate: 2.0, // lower than mortgage rate (5.0%) so debt payoff out-projections investments
+        extraPayment: 0,
+        lumpSum: 10000, // $10,000 lump sum at first period
+        startDate: '2026-07-01',
+        rateShockEnabled: false,
+        termRates: {}
+      };
+
+      const baseData = generateMortgageSchedule(inputs, true);
+      const actualData = generateMortgageSchedule(inputs, false);
+
+      const state = {
+        currentMode: 'mortgage' as const,
+        comparisonProfileId: null
+      };
+
+      const results = calculateOpportunityCostData(state, baseData, actualData, null, inputs);
+
+      expect(results.p1X.length).toBe(baseData.schedule.length);
+      // Long term net worth for actual should be greater because mortgage rate (5%) > investment rate (2%)
+      expect(results.p1Y[results.p1Y.length - 1]).toBeGreaterThan(
+        results.p2Y[results.p2Y.length - 1]
+      );
+    });
   });
 });
