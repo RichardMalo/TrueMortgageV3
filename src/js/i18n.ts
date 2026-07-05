@@ -87,6 +87,7 @@ export const dictionary: Record<string, string> = {
 
   // Solver
   'Target Payoff Goal Solver': "Solveur d'objectif de remboursement",
+  'Enable Goal Solver': "Activer le solveur d'objectif",
   'Solve for the exact monthly or lump-sum payment needed to meet a target payoff year.':
     'Calculez le versement mensuel ou forfaitaire exact requis pour atteindre une année cible de remboursement.',
   'Target Payoff Timeline:': 'Délai de remboursement cible :',

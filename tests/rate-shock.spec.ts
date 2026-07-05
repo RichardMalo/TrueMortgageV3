@@ -81,6 +81,7 @@ const makeRig = (
       extra: null,
       date: null,
       rateShockToggle: null,
+      goalSolverToggle: null,
       lumpSum: null
     },
     containers: { rateShockTimeline: timeline } as unknown as AppElements['containers'],

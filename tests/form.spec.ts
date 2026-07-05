@@ -22,6 +22,7 @@ describe('Form Validation & Parsing (form.ts)', () => {
       pitiToggle: document.createElement('input'),
       oppCostToggle: document.createElement('input'),
       rateShockToggle: document.createElement('input'),
+      goalSolverToggle: document.createElement('input'),
       tax: document.createElement('input'),
       ins: document.createElement('input'),
       hoa: document.createElement('input'),
@@ -33,6 +34,7 @@ describe('Form Validation & Parsing (form.ts)', () => {
     (inputs.pitiToggle as HTMLInputElement).type = 'checkbox';
     (inputs.oppCostToggle as HTMLInputElement).type = 'checkbox';
     (inputs.rateShockToggle as HTMLInputElement).type = 'checkbox';
+    (inputs.goalSolverToggle as HTMLInputElement).type = 'checkbox';
   });
 
   describe('validateForm - Mortgage Mode', () => {
@@ -234,6 +236,7 @@ describe('Form Validation & Parsing (form.ts)', () => {
       inputs.investRate!.value = '8.0';
 
       (inputs.rateShockToggle as HTMLInputElement).checked = false;
+      (inputs.goalSolverToggle as HTMLInputElement).checked = true;
 
       const parsed = getCalculationsInputs('mortgage', inputs, { 5: 6.0 });
       expect(parsed.homePrice).toBe(500000);
@@ -247,6 +250,8 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(parsed.pmiRate).toBe(0.5);
       expect(parsed.useOppCost).toBe(true);
       expect(parsed.investRate).toBe(8.0);
+      expect(parsed.rateShockEnabled).toBe(false);
+      expect(parsed.goalSolverEnabled).toBe(true);
       expect(parsed.termRates).toEqual({ 5: 6.0 });
     });
   });

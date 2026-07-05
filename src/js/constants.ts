@@ -44,6 +44,7 @@ export const DEFAULT_INPUTS: Inputs = Object.freeze({
   extraPayment: 0,
   startDate: PREFILLED_DATE,
   rateShockEnabled: false,
+  goalSolverEnabled: false,
   termRates: {},
   ccCompounding: 'simple',
   lumpSum: 0,

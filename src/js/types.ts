@@ -30,6 +30,7 @@ export interface Inputs {
   extraPayment: number;
   startDate: string;
   rateShockEnabled: boolean;
+  goalSolverEnabled?: boolean;
   termRates: Record<number, number>;
   ccCompounding?: 'simple' | 'daily';
   lumpSum?: number;
@@ -96,6 +97,7 @@ export interface ProfileInputs {
   extra: string;
   date: string;
   rateShockToggle: boolean;
+  goalSolverToggle?: boolean;
   mortgageRate: string;
   mortgageExtra: string;
   ccRate: string;
@@ -177,6 +179,7 @@ export interface AppElements {
     extra: HTMLInputElement | null;
     date: HTMLInputElement | null;
     rateShockToggle: HTMLInputElement | null;
+    goalSolverToggle: HTMLInputElement | null;
     lumpSum: HTMLInputElement | null;
   };
   results: {
@@ -204,6 +207,7 @@ export interface AppElements {
     ltv: HTMLElement | null;
     rateShockSection: HTMLElement | null;
     rateShockTimeline: HTMLElement | null;
+    goalSolverSection: HTMLElement | null;
     milestoneCard: HTMLElement | null;
     milestoneTimeline: HTMLElement | null;
     lumpSumsContainer?: HTMLElement | null;

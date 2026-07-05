@@ -346,6 +346,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     extraPayment: 'extra',
     startDate: 'date',
     rateShockEnabled: 'rateShockToggle',
+    goalSolverEnabled: 'goalSolverToggle',
     termRates: 'termRates',
     ccMinPercent: 'ccMinPercent',
     ccMinPrincipalPct: 'ccMinPrincipalPct',

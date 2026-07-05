@@ -107,6 +107,7 @@ const els = {
     extra: document.getElementById('extraPayment') as HTMLInputElement | null,
     date: document.getElementById('firstPaymentDate') as HTMLInputElement | null,
     rateShockToggle: document.getElementById('rateShockToggle') as HTMLInputElement | null,
+    goalSolverToggle: document.getElementById('goalSolverToggle') as HTMLInputElement | null,
     lumpSum: document.getElementById('lumpSumPayment') as HTMLInputElement | null
   },
   results: {
@@ -136,6 +137,7 @@ const els = {
     ltv: document.getElementById('ltv-container'),
     rateShockSection: document.getElementById('rateShockSection'),
     rateShockTimeline: document.getElementById('rateShockTimeline'),
+    goalSolverSection: document.getElementById('goalSolverSection'),
     milestoneCard: document.getElementById('milestoneRoadmapCard'),
     milestoneTimeline: document.getElementById('milestoneTimelineContainer'),
     lumpSumsContainer: document.getElementById('scheduledLumpSumsContainer')
@@ -196,6 +198,10 @@ const calculate = (e?: Event) => {
     syncRateShockTimeline(state, els, calculate);
   } else if (els.containers.rateShockSection) {
     els.containers.rateShockSection.style.display = 'none';
+  }
+
+  if (els.containers.goalSolverSection) {
+    els.containers.goalSolverSection.style.display = inputs.goalSolverEnabled ? 'block' : 'none';
   }
 
   const principalBorrowAmount = isMortgage
@@ -593,6 +599,10 @@ const handleProfileSwitch = (profileId: string) => {
     els.containers.rateShockSection.style.display =
       els.inputs.rateShockToggle && els.inputs.rateShockToggle.checked ? 'block' : 'none';
   }
+  if (els.containers.goalSolverSection) {
+    els.containers.goalSolverSection.style.display =
+      els.inputs.goalSolverToggle && els.inputs.goalSolverToggle.checked ? 'block' : 'none';
+  }
 
   const wageToggleBtns = document.querySelectorAll('.wage-toggle-btn');
   wageToggleBtns.forEach((btn) => {
@@ -961,6 +971,12 @@ const bootApp = () => {
     calculate();
   });
 
+  els.inputs.goalSolverToggle?.addEventListener('change', () => {
+    syncCheckboxARIALabels();
+    calculate();
+    saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+  });
+
   // Region and Compounding bidirectional synchronization
   els.inputs.countrySelect?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
@@ -1019,7 +1035,12 @@ const bootApp = () => {
   // rather than on every keystroke (prevents main-thread blocking).
   let saveTimer: ReturnType<typeof setTimeout> | undefined;
   Object.values(els.inputs).forEach((inp) => {
-    if (inp && !['oppCostToggle', 'includePitiToggle', 'rateShockToggle'].includes(inp.id)) {
+    if (
+      inp &&
+      !['oppCostToggle', 'includePitiToggle', 'rateShockToggle', 'goalSolverToggle'].includes(
+        inp.id
+      )
+    ) {
       inp.addEventListener('blur', () => calculate());
       inp.addEventListener('input', () => {
         clearTimeout(saveTimer);
