@@ -121,7 +121,8 @@ const els = {
     outPrincipalVal: document.getElementById('out-principal-val'),
     outMarkupVal: document.getElementById('out-markup-val'),
     actualLifetimePaidValue: document.getElementById('actualLifetimePaidValue'),
-    concentricStack: document.querySelector('.concentric-visualization-card')
+    concentricStack: document.querySelector('.concentric-visualization-card'),
+    lumpSumSavings: document.getElementById('lumpSumSavingsBox')
   },
   containers: {
     pitiSection: document.getElementById('pitiSection'),
@@ -226,6 +227,19 @@ const calculate = (e?: Event) => {
     ? generateMortgageSchedule(inputs, false)
     : generateCCSchedule(inputs, false);
 
+  // Calculate savings specifically from the one-time lump sum payment
+  const inputsWithoutLumpSum = {
+    ...inputs,
+    lumpSum: 0
+  };
+  const lumpSumFreeData = isMortgage
+    ? generateMortgageSchedule(inputsWithoutLumpSum, false)
+    : generateCCSchedule(inputsWithoutLumpSum, false);
+  const lumpSumSavings = Math.max(
+    0,
+    lumpSumFreeData.summary.totalInterest - actData.summary.totalInterest
+  );
+
   let compData: ScheduleResult | null = null;
   if (
     state.compareModeActive &&
@@ -312,6 +326,10 @@ const calculate = (e?: Event) => {
     els.results.saved,
     baseData.summary.totalInterest - actData.summary.totalInterest
   );
+
+  if (els.results.lumpSumSavings) {
+    updateKineticText(els.results.lumpSumSavings, lumpSumSavings);
+  }
 
   renderCharts(state, baseData, actData, inputs, hasStrat, compData);
   updateTable(

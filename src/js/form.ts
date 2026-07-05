@@ -116,7 +116,7 @@ export const validateForm = (
       return false;
     }
     if (isNaN(extra) || extra < 0) {
-      showError('Monthly Surplus must be a valid non-negative number.');
+      showError('Monthly Surplus Payment must be a valid non-negative number.');
       return false;
     }
 

@@ -158,7 +158,7 @@ describe('Form Validation & Parsing (form.ts)', () => {
       const isValid = validateForm('cc', inputs, errorContainer);
       expect(isValid).toBe(false);
       expect(errorContainer.textContent).toBe(
-        'Monthly Surplus must be a valid non-negative number.'
+        'Monthly Surplus Payment must be a valid non-negative number.'
       );
     });
   });
