@@ -56,6 +56,8 @@ export const dictionary: Record<string, string> = {
   'Aggressive Strategy': 'Stratégie agressive',
   'Payment Frequency': 'Fréquence des versements',
   'Extra Payment Surplus ($)': 'Versement excédentaire supplémentaire ($)',
+  'Estimated Amount Saved Until Payoff Date':
+    "Montant estimé économisé jusqu'à la date de remboursement",
   'Monthly Surplus Payment ($)': "Paiement d'excédent mensuel ($)",
   'Monthly Surplus Payment:': "Paiement d'excédent mensuel :",
   'One-Time Lump Sum Payment ($)': 'Versement forfaitaire unique ($)',

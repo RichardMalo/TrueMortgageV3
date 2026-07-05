@@ -1436,6 +1436,14 @@ export const updateLabelCurrencySymbols = () => {
   }
 
   const savingsLabelEl = document.getElementById('extraPaymentSavingsLabel');
+  const isFr = currentLanguage() === 'fr';
+  const tooltipText = isFr
+    ? "Montant estimé économisé jusqu'à la date de remboursement"
+    : 'Estimated Amount Saved Until Payoff Date';
+  const helpTipHtml = `
+    <span class="help-tip">?<span class="tooltip-text">${tooltipText}</span></span>
+  `.trim();
+
   if (savingsLabelEl) {
     const isCC = document.body.classList.contains('mode-cc');
     let freqWord = 'Monthly';
@@ -1446,7 +1454,12 @@ export const updateLabelCurrencySymbols = () => {
       else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
     }
     const key = `This ${freqWord} Payment Saves You:`;
-    savingsLabelEl.textContent = t(key);
+    savingsLabelEl.innerHTML = `${t(key)} ${helpTipHtml}`;
+  }
+
+  const lumpSumSavingsLabelEl = document.getElementById('lumpSumSavingsLabel');
+  if (lumpSumSavingsLabelEl) {
+    lumpSumSavingsLabelEl.innerHTML = `${t('This Payment Saves You:')} ${helpTipHtml}`;
   }
 };
 
