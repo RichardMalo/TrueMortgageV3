@@ -31,6 +31,7 @@ export interface Inputs {
   startDate: string;
   rateShockEnabled: boolean;
   termRates: Record<number, number>;
+  ccCompounding?: 'simple' | 'daily';
   lumpSum?: number;
   lumpSums?: LumpSumItem[];
 }
@@ -99,6 +100,7 @@ export interface ProfileInputs {
   mortgageExtra: string;
   ccRate: string;
   ccExtra: string;
+  ccCompounding?: string;
   lumpSum?: string;
   lumpSums?: LumpSumItem[];
   [key: string]: string | boolean | LumpSumItem[] | undefined;
@@ -162,6 +164,7 @@ export interface AppElements {
     amortization: HTMLInputElement | null;
     term: HTMLInputElement | null;
     compounding: HTMLSelectElement | null;
+    ccCompounding?: HTMLSelectElement | null;
     countrySelect: HTMLSelectElement | null;
     frequency: HTMLSelectElement | null;
     pitiToggle: HTMLInputElement | null;

@@ -349,7 +349,8 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     termRates: 'termRates',
     ccMinPercent: 'ccMinPercent',
     ccMinPrincipalPct: 'ccMinPrincipalPct',
-    ccMinFlat: 'ccMinFlat'
+    ccMinFlat: 'ccMinFlat',
+    ccCompounding: 'ccCompounding'
   };
 
   Object.keys(defaultInputs).forEach((key) => {

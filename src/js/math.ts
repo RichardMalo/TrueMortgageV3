@@ -216,7 +216,11 @@ export const generateCCSchedule = (
 ): ScheduleResult => {
   const principal = Math.max(0, inputs.ccBalance || 0);
   const safeRate = Math.min(200, Math.max(0, inputs.annualRate || 0));
-  const monthlyRate = safeRate / 100 / 12; // Simple interest daily rate posted monthly (Standard credit card calculation: APR / 12)
+  const ccCompounding = inputs.ccCompounding || 'simple';
+  const monthlyRate =
+    ccCompounding === 'daily'
+      ? Math.pow(1 + safeRate / 100 / 365, 365 / 12) - 1
+      : safeRate / 100 / 12; // Simple interest daily rate posted monthly (Standard credit card calculation: APR / 12)
 
   // Regional minimum payment laws / Custom presets
   let provPct = 0.03;

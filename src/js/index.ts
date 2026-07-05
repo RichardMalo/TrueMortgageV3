@@ -93,6 +93,7 @@ const els = {
     amortization: document.getElementById('amortization') as HTMLInputElement | null,
     term: document.getElementById('term') as HTMLInputElement | null,
     compounding: document.getElementById('compounding') as HTMLSelectElement | null,
+    ccCompounding: document.getElementById('ccCompounding') as HTMLSelectElement | null,
     countrySelect: document.getElementById('country-select') as HTMLSelectElement | null,
     frequency: document.getElementById('paymentFrequency') as HTMLSelectElement | null,
     pitiToggle: document.getElementById('includePitiToggle') as HTMLInputElement | null,

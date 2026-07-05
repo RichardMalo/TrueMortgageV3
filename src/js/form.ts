@@ -208,6 +208,7 @@ export const getCalculationsInputs = (
     startDate: inputs.date?.value || '',
     rateShockEnabled: isMortgage && !!(inputs.rateShockToggle as HTMLInputElement | null)?.checked,
     termRates: termRates,
+    ccCompounding: (inputs.ccCompounding?.value || 'simple') as 'simple' | 'daily',
     lumpSum: parseFloat(inputs.lumpSum?.value || '0'),
     lumpSums
   };
@@ -261,6 +262,7 @@ export const profileToInputs = (
     startDate: String(profileInputs.date || ''),
     rateShockEnabled: isMortgage && profileInputs.rateShockToggle === true,
     termRates,
+    ccCompounding: (profileInputs.ccCompounding || 'simple') as 'simple' | 'daily',
     lumpSum: parseFloat(String(profileInputs.lumpSum || '0')),
     lumpSums: Array.isArray(profileInputs.lumpSums) ? (profileInputs.lumpSums as LumpSumItem[]) : []
   };

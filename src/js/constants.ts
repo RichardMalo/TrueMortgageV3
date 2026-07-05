@@ -45,6 +45,7 @@ export const DEFAULT_INPUTS: Inputs = Object.freeze({
   startDate: PREFILLED_DATE,
   rateShockEnabled: false,
   termRates: {},
+  ccCompounding: 'simple',
   lumpSum: 0,
   lumpSums: []
 });

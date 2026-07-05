@@ -664,6 +664,9 @@ export const generateReportHtml = (
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span>${t('Daily Fee to the Bank:')}</span><strong>${dailyVampire}</strong>
               </div>
+              <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                <span>${t('Compounding Method:')}</span><strong>${t(inputs.ccCompounding === 'daily' ? 'Daily Compounding' : 'Simple Interest')}</strong>
+              </div>
             `
             }
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">

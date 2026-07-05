@@ -47,6 +47,12 @@ export const dictionary: Record<string, string> = {
   'Flat Minimum ($)': 'Minimum fixe ($)',
   'Term Length (Years)': 'Durée du terme (années)',
   Compounding: 'Capitalisation',
+  'Compounding Method': 'Méthode de capitalisation',
+  'Compounding Method:': 'Méthode de capitalisation :',
+  'Simple Interest': 'Intérêt simple',
+  'Daily Compounding': 'Capitalisation quotidienne',
+  'Select between Simple interest calculation (APR divided by 12) or Daily compounding (interest calculated daily and added to the balance).':
+    'Choisissez entre le calcul des intérêts simples (TAP divisé par 12) ou la capitalisation quotidienne (intérêts calculés quotidiennement et ajoutés au solde).',
   'Aggressive Strategy': 'Stratégie agressive',
   'Payment Frequency': 'Fréquence des versements',
   'Extra Payment Surplus ($)': 'Versement excédentaire supplémentaire ($)',

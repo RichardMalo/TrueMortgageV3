@@ -104,6 +104,46 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(firstRow.principal).toBeCloseTo(200.1, 1);
   });
 
+  it('should support simple and daily compounding methods for credit cards', () => {
+    const baseInputs: Inputs = {
+      homePrice: 0,
+      downPayment: 0,
+      ccBalance: 15000,
+      province: 'ON',
+      annualRate: 19.99,
+      amortizationYears: 0,
+      termYears: 0,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const simpleResult = generateCCSchedule({ ...baseInputs, ccCompounding: 'simple' }, false);
+    const dailyResult = generateCCSchedule({ ...baseInputs, ccCompounding: 'daily' }, false);
+
+    const firstSimple = simpleResult.schedule[0];
+    const firstDaily = dailyResult.schedule[0];
+
+    // Simple compounding monthly rate is: 19.99 / 100 / 12 = 0.0166583
+    // Interest portion: 15000 * 0.0166583 = 249.875 -> ~249.9
+    expect(firstSimple.interest).toBeCloseTo(249.875, 3);
+
+    // Daily compounding monthly rate is: (1 + 0.1999 / 365) ^ (365 / 12) - 1 = 0.0167932
+    // Interest portion: 15000 * 0.0167932 = 251.898
+    expect(firstDaily.interest).toBeCloseTo(251.898, 3);
+    expect(firstDaily.interest).toBeGreaterThan(firstSimple.interest);
+  });
+
   it('should calculate milestones correctly', () => {
     const inputs: Inputs = {
       homePrice: 800000,
