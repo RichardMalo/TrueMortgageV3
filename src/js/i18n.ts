@@ -57,6 +57,7 @@ export const dictionary: Record<string, string> = {
   'Payment Frequency': 'Fréquence des versements',
   'Extra Payment Surplus ($)': 'Versement excédentaire supplémentaire ($)',
   'Monthly Surplus Payment ($)': "Paiement d'excédent mensuel ($)",
+  'Monthly Surplus Payment:': "Paiement d'excédent mensuel :",
   'One-Time Lump Sum Payment ($)': 'Versement forfaitaire unique ($)',
   'This Payment Saves You:': "Ce paiement vous permet d'économiser :",
   'Scheduled Future Lump Sums': 'Versements forfaitaires programmés',
