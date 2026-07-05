@@ -1434,6 +1434,20 @@ export const updateLabelCurrencySymbols = () => {
     }
     extraLabel.innerHTML = labelText;
   }
+
+  const savingsLabelEl = document.getElementById('extraPaymentSavingsLabel');
+  if (savingsLabelEl) {
+    const isCC = document.body.classList.contains('mode-cc');
+    let freqWord = 'Monthly';
+    if (!isCC && freqEl) {
+      const freq = freqEl.value || 'monthly';
+      if (freq === 'weekly') freqWord = 'Weekly';
+      else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqWord = 'Bi-Weekly';
+      else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
+    }
+    const key = `This ${freqWord} Payment Saves You:`;
+    savingsLabelEl.textContent = t(key);
+  }
 };
 
 /**

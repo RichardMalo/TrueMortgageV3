@@ -122,7 +122,8 @@ const els = {
     outMarkupVal: document.getElementById('out-markup-val'),
     actualLifetimePaidValue: document.getElementById('actualLifetimePaidValue'),
     concentricStack: document.querySelector('.concentric-visualization-card'),
-    lumpSumSavings: document.getElementById('lumpSumSavingsBox')
+    lumpSumSavings: document.getElementById('lumpSumSavingsBox'),
+    extraPaymentSavings: document.getElementById('extraPaymentSavingsBox')
   },
   containers: {
     pitiSection: document.getElementById('pitiSection'),
@@ -240,6 +241,19 @@ const calculate = (e?: Event) => {
     lumpSumFreeData.summary.totalInterest - actData.summary.totalInterest
   );
 
+  // Calculate savings specifically from the extra payment
+  const inputsWithoutExtra = {
+    ...inputs,
+    extraPayment: 0
+  };
+  const extraFreeData = isMortgage
+    ? generateMortgageSchedule(inputsWithoutExtra, false)
+    : generateCCSchedule(inputsWithoutExtra, false);
+  const extraPaymentSavings = Math.max(
+    0,
+    extraFreeData.summary.totalInterest - actData.summary.totalInterest
+  );
+
   let compData: ScheduleResult | null = null;
   if (
     state.compareModeActive &&
@@ -329,6 +343,10 @@ const calculate = (e?: Event) => {
 
   if (els.results.lumpSumSavings) {
     updateKineticText(els.results.lumpSumSavings, lumpSumSavings);
+  }
+
+  if (els.results.extraPaymentSavings) {
+    updateKineticText(els.results.extraPaymentSavings, extraPaymentSavings);
   }
 
   renderCharts(state, baseData, actData, inputs, hasStrat, compData);
