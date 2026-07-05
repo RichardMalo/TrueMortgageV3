@@ -329,6 +329,7 @@ export const dictionary: Record<string, string> = {
   'Plan Details Preview': 'Aperçu de la stratégie',
   'Monthly Extra': 'Supplément mensuel',
   'One-Time Lump Sum': 'Versement forfaitaire unique',
+  'Lump Sum': 'Versement forfaitaire',
   'Timeline Saved': 'Temps économisé',
   'Apply Strategy': 'Appliquer la stratégie',
   'No Lump Sum': 'Sans versement',
