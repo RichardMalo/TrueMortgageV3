@@ -144,6 +144,52 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(firstDaily.interest).toBeGreaterThan(firstSimple.interest);
   });
 
+  it('should support negative amortization for custom CC minimum payments', () => {
+    const inputs: Inputs = {
+      homePrice: 0,
+      downPayment: 0,
+      ccBalance: 15000,
+      province: 'CUSTOM',
+      ccMinPercent: 0, // 0% of balance minimum
+      ccMinPrincipalPct: 0, // disables interest + principal rule, allowing negative amortization
+      ccMinFlat: 10, // flat minimum payment of $10
+      annualRate: 20.0, // 20% APR (interest portion is $250)
+      amortizationYears: 0,
+      termYears: 0,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {},
+      ccCompounding: 'simple'
+    };
+
+    const result = generateCCSchedule(inputs, false);
+
+    // First billing cycle:
+    // Starting balance = $15,000. Interest portion = 15,000 * 0.20 / 12 = $250.
+    // Minimum payment: flatMin = $10.
+    // Since minimum payment is $10 and interest is $250, regularPrincipal = 10 - 250 = -$240.
+    // The unpaid interest of $240 compounds and increases the balance: 15,000 - (-240) = $15,240.
+    const firstRow = result.schedule[0];
+    expect(firstRow.payment).toBe(10);
+    expect(firstRow.interest).toBe(250);
+    expect(firstRow.principal).toBe(-240);
+    expect(firstRow.balance).toBe(15240);
+
+    // Assert that it loops to max months and flags paidOff as false
+    expect(result.summary.paidOff).toBe(false);
+    expect(result.summary.periodsToPayoff).toBe(600);
+  });
+
   it('should calculate milestones correctly', () => {
     const inputs: Inputs = {
       homePrice: 800000,

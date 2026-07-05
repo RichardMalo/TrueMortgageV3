@@ -260,17 +260,16 @@ export const generateCCSchedule = (
 
     const interestPortion = balance * monthlyRate;
 
-    let calculatedMinimumPayment = Math.max(
-      flatMin,
-      balance * provPct,
-      interestPortion + balance * principalPct
-    );
+    let calculatedMinimumPayment =
+      inputs.province === 'CUSTOM' && inputs.ccMinPrincipalPct === 0
+        ? Math.max(flatMin, balance * provPct)
+        : Math.max(flatMin, balance * provPct, interestPortion + balance * principalPct);
+
     if (calculatedMinimumPayment > balance + interestPortion) {
       calculatedMinimumPayment = balance + interestPortion;
     }
 
     let regularPrincipal = calculatedMinimumPayment - interestPortion;
-    if (regularPrincipal < 0) regularPrincipal = 0;
 
     let currentExtraPayment = userExtra;
     if (i === 1 && !isBaseline) {

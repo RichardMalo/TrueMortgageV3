@@ -94,6 +94,8 @@ export const dictionary: Record<string, string> = {
   'Apply to Lump Sum': 'Appliquer au versement forfaitaire',
   'Target is unreachable with extra payments.':
     "L'objectif est inatteignable avec ces versements supplémentaires.",
+  'Never (Negative Amortization)': 'Jamais (amortissement négatif)',
+  'Never (No Payoff)': 'Jamais (aucun remboursement)',
 
   // Concentric / Gravity
   'The Gravity of the Debt': 'La gravité de la dette',
