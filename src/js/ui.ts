@@ -1547,11 +1547,22 @@ export const renderScheduledLumpSumRows = (
     const row = document.createElement('div');
     row.className = 'lump-sum-row';
     row.setAttribute('data-id', item.id);
+    row.style.gap = '16px';
+
+    // Left Column: Inputs & Delete Button
+    const inputsCol = document.createElement('div');
+    inputsCol.className = 'lump-sum-inputs-col';
+    inputsCol.style.display = 'flex';
+    inputsCol.style.flex = '1';
+    inputsCol.style.gap = '8px';
+    inputsCol.style.alignItems = 'flex-start';
+    inputsCol.style.minWidth = '0';
 
     // Amount input container
     const amountGroup = document.createElement('div');
     amountGroup.style.display = 'flex';
     amountGroup.style.flexDirection = 'column';
+    amountGroup.style.width = '110px';
 
     const amountInput = document.createElement('input');
     amountInput.type = 'number';
@@ -1631,9 +1642,36 @@ export const renderScheduledLumpSumRows = (
       onDelete(item.id);
     });
 
-    row.appendChild(amountGroup);
-    row.appendChild(paymentGroup);
-    row.appendChild(deleteBtn);
+    inputsCol.appendChild(amountGroup);
+    inputsCol.appendChild(paymentGroup);
+    inputsCol.appendChild(deleteBtn);
+
+    // Right Column: Savings box
+    const savingsCol = document.createElement('div');
+    savingsCol.className = 'lump-sum-savings-col';
+    savingsCol.style.display = 'flex';
+    savingsCol.style.flex = '1';
+    savingsCol.style.flexDirection = 'column';
+    savingsCol.style.minWidth = '0';
+
+    const savingsBox = document.createElement('div');
+    savingsBox.className = 'lump-sum-savings-box kinetic-text highlight-text';
+    savingsBox.style.display = 'flex';
+    savingsBox.style.alignItems = 'center';
+    savingsBox.style.height = '36px';
+    savingsBox.style.background = 'rgba(16, 185, 129, 0.08)';
+    savingsBox.style.border = '2px dashed rgba(16, 185, 129, 0.25)';
+    savingsBox.style.borderRadius = '8px';
+    savingsBox.style.padding = '0 10px';
+    savingsBox.style.fontWeight = '800';
+    savingsBox.style.fontSize = '0.95rem';
+    savingsBox.style.marginTop = '0';
+    savingsBox.textContent = '$0.00';
+
+    savingsCol.appendChild(savingsBox);
+
+    row.appendChild(inputsCol);
+    row.appendChild(savingsCol);
     container.appendChild(row);
   });
 };

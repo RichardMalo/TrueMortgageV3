@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { AppState, ScheduleResult } from './types.js';
+import { AppState, ScheduleResult, Inputs } from './types.js';
 import {
   DEFAULT_INPUTS,
   PREFILLED_DATE,
@@ -17,7 +17,8 @@ import {
   renderCharts,
   clearVisibleChartsCache,
   resizeChart,
-  cancelPendingChartRenders
+  cancelPendingChartRenders,
+  formatCurrency
 } from './charts.js';
 import {
   saveSettingsToStorage,
@@ -405,6 +406,7 @@ const calculate = (e?: Event) => {
 
   syncStateCardOrderFromDOM(state);
   saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+  updateScheduledLumpSumSavingsInPlace(inputs, actData);
 };
 
 const triggerLumpSumsRepaint = () => {
@@ -468,6 +470,34 @@ const updateScheduledLumpSumDatesInPlace = () => {
         dateBadge.style.color = 'var(--primary-color)';
       }
     }
+  });
+};
+
+const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleResult) => {
+  const container = els.containers.lumpSumsContainer;
+  if (!container) return;
+
+  const isMortgage = state.currentMode === 'mortgage';
+  const rows = container.querySelectorAll('.lump-sum-row');
+  rows.forEach((row) => {
+    const currentId = row.getAttribute('data-id');
+    if (!currentId) return;
+
+    const savingsBox = row.querySelector('.lump-sum-savings-box') as HTMLElement | null;
+    if (!savingsBox) return;
+
+    const listWithoutThisItem = (inputs.lumpSums || []).filter((item) => item.id !== currentId);
+    const inputsWithoutThisItem = {
+      ...inputs,
+      lumpSums: listWithoutThisItem
+    };
+
+    const freeData = isMortgage
+      ? generateMortgageSchedule(inputsWithoutThisItem, false)
+      : generateCCSchedule(inputsWithoutThisItem, false);
+
+    const savings = Math.max(0, freeData.summary.totalInterest - actData.summary.totalInterest);
+    updateKineticText(savingsBox, savings);
   });
 };
 
