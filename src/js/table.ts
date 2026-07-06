@@ -19,7 +19,11 @@ export const updateTable = (
   if (!tbody) return;
 
   if (escrowTh) {
-    escrowTh.style.display = usePiti ? '' : 'none';
+    if (usePiti) {
+      escrowTh.classList.remove('hidden');
+    } else {
+      escrowTh.classList.add('hidden');
+    }
   }
   tbody.innerHTML = '';
 
