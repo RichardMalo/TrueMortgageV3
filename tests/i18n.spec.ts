@@ -107,12 +107,26 @@ describe('i18n Translation Engine', () => {
     expect(t('Year')).toBe('Year');
     expect(t('Years')).toBe('Years');
     expect(t('Total Cost')).toBe('Total Cost');
+    expect(t('Principal')).toBe('Principal');
+    expect(t('Interest')).toBe('Interest');
+    expect(t('Taxes')).toBe('Taxes');
+    expect(t('Insurance')).toBe('Insurance');
+    expect(t('HOA')).toBe('HOA');
+    expect(t('PMI')).toBe('PMI');
+    expect(t('Extra')).toBe('Extra');
 
     // French
     applyTranslations('fr');
     expect(t('Year')).toBe('Année');
     expect(t('Years')).toBe('Années');
     expect(t('Total Cost')).toBe('Coût total');
+    expect(t('Principal')).toBe('Capital');
+    expect(t('Interest')).toBe('Intérêts');
+    expect(t('Taxes')).toBe('Taxes');
+    expect(t('Insurance')).toBe('Assurance');
+    expect(t('HOA')).toBe('Condo/HOA');
+    expect(t('PMI')).toBe('PMI');
+    expect(t('Extra')).toBe('Supplément');
 
     // Restore to English
     applyTranslations('en');

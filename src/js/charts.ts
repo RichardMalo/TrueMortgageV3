@@ -367,7 +367,7 @@ const renderPaymentBreakdownCircle = (p1: { principal: number; interest: number 
     [
       {
         values: [p1.principal, p1.interest],
-        labels: ['Principal', 'Interest'],
+        labels: [t('Principal'), t('Interest')],
         type: 'pie',
         hole: 0.6,
         marker: { colors: [CONFIG.colors.principal, CONFIG.colors.interest] },
