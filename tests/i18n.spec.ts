@@ -114,6 +114,11 @@ describe('i18n Translation Engine', () => {
     expect(t('HOA')).toBe('HOA');
     expect(t('PMI')).toBe('PMI');
     expect(t('Extra')).toBe('Extra');
+    expect(
+      t(
+        'Annual interest payments visualized as wages paid to the bank. Circles shrink over time as you build equity.'
+      )
+    ).toContain('Annual interest payments visualized as wages');
 
     // French
     applyTranslations('fr');
@@ -127,6 +132,11 @@ describe('i18n Translation Engine', () => {
     expect(t('HOA')).toBe('Condo/HOA');
     expect(t('PMI')).toBe('PMI');
     expect(t('Extra')).toBe('Supplément');
+    expect(
+      t(
+        'Annual interest payments visualized as wages paid to the bank. Circles shrink over time as you build equity.'
+      )
+    ).toContain('Paiements');
 
     // Restore to English
     applyTranslations('en');

@@ -142,6 +142,12 @@ export const dictionary: Record<string, string> = {
     'Combien payez-vous pour couvrir le salaire de la banque par année',
   "How much interest you pay towards the bank's wages per year":
     "Combien d'intérêts vous payez pour couvrir le salaire de la banque par année",
+  'Annual interest payments plus property tax and home insurance averaged into a monthly rent equivalent. For estimation purposes only.':
+    "Paiements d'intérêts annuels plus taxe foncière et assurance habitation convertis en un équivalent de loyer mensuel. À titre d'estimation uniquement.",
+  'Annual interest payments averaged into a monthly rent equivalent: (Annual Interest / 12), rounded up. For estimation purposes only.':
+    "Paiements d'intérêts annuels convertis en un équivalent de loyer mensuel : (Intérêt annuel / 12), arrondi à l'unité supérieure. À titre d'estimation uniquement.",
+  'Annual interest payments visualized as wages paid to the bank. Circles shrink over time as you build equity.':
+    "Paiements d'intérêts annuels visualisés sous forme de salaires versés à la banque. Les cercles rétrécissent avec le temps à mesure que vous accumulez du capital.",
   'Bank Wages': 'Salaires de la banque',
   'Rent Equivalent': 'Équivalent loyer',
   'Rent + Tax & Insurance': 'Loyer + Taxe et assurance',
