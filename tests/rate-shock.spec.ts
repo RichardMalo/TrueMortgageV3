@@ -274,4 +274,34 @@ describe('syncRateShockTimeline (rate-shock.ts)', () => {
     inp.dispatchEvent(new Event('blur'));
     expect(parseFloat(inp.value)).toBeCloseTo(4.39, 1);
   });
+
+  it('rebuilds timeline and translates labels when language changes', () => {
+    const { state, els, timeline } = makeRig({ termVal: '5', amortVal: '10', rateVal: '4.39' });
+
+    // 1. Initial render in English
+    state.language = 'en';
+    syncRateShockTimeline(state, els, calculate);
+
+    expect(timeline.querySelector('.rate-shock-box')!.textContent).toContain('Year 5 Refinance');
+    expect(timeline.querySelector('.remaining-label')!.textContent).toContain('5 Yrs remaining');
+    expect(timeline.getAttribute('data-rendered-lang')).toBe('en');
+
+    // 2. Change language to French and verify rebuild and translations
+    state.language = 'fr';
+    syncRateShockTimeline(state, els, calculate);
+
+    expect(timeline.querySelector('.rate-shock-box')!.textContent).toContain(
+      "Refinancement de l'année 5"
+    );
+    expect(timeline.querySelector('.remaining-label')!.textContent).toContain('5 ans restants');
+    expect(timeline.getAttribute('data-rendered-lang')).toBe('fr');
+
+    // 3. Change back to English
+    state.language = 'en';
+    syncRateShockTimeline(state, els, calculate);
+
+    expect(timeline.querySelector('.rate-shock-box')!.textContent).toContain('Year 5 Refinance');
+    expect(timeline.querySelector('.remaining-label')!.textContent).toContain('5 Yrs remaining');
+    expect(timeline.getAttribute('data-rendered-lang')).toBe('en');
+  });
 });

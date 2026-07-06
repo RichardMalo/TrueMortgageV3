@@ -10,18 +10,26 @@ describe('i18n Translation Engine', () => {
         Algorithmic optimization engine engineered to eliminate interest friction and
         accelerate your path to zero debt.
       </p>
+      <p id="rates-desc">
+        Adjust the interest rates for each term renewal. Payments stay constant, and the
+        remaining amortization will automatically expand or shrink.
+      </p>
       <h2 id="title">Property & Loan</h2>
       <h2 id="cc">Revolving Debt</h2>
     `;
     document.body.appendChild(container);
 
     const descEl = document.getElementById('desc')!;
+    const ratesDescEl = document.getElementById('rates-desc')!;
     const titleEl = document.getElementById('title')!;
     const ccEl = document.getElementById('cc')!;
 
     // Verify initial English text (ignoring whitespace differences for ease)
     expect(descEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
       'Algorithmic optimization engine engineered to eliminate interest friction and accelerate your path to zero debt.'
+    );
+    expect(ratesDescEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'Adjust the interest rates for each term renewal. Payments stay constant, and the remaining amortization will automatically expand or shrink.'
     );
     expect(titleEl.textContent?.trim()).toBe('Property & Loan');
     expect(ccEl.textContent?.trim()).toBe('Revolving Debt');
@@ -32,6 +40,9 @@ describe('i18n Translation Engine', () => {
     expect(descEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
       "Moteur d'optimisation algorithmique conçu pour éliminer la friction des intérêts et accélérer votre parcours vers le désendettement total."
     );
+    expect(ratesDescEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      "Ajustez les taux d'intérêt pour chaque renouvellement de terme. Les versements restent constants et l'amortissement restant s'allonge ou se raccourcit automatiquement."
+    );
     expect(titleEl.textContent?.trim()).toBe('Propriété & prêt');
     expect(ccEl.textContent?.trim()).toBe('Dette renouvelable');
 
@@ -40,6 +51,9 @@ describe('i18n Translation Engine', () => {
 
     expect(descEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
       'Algorithmic optimization engine engineered to eliminate interest friction and accelerate your path to zero debt.'
+    );
+    expect(ratesDescEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'Adjust the interest rates for each term renewal. Payments stay constant, and the remaining amortization will automatically expand or shrink.'
     );
     expect(titleEl.textContent?.trim()).toBe('Property & Loan');
     expect(ccEl.textContent?.trim()).toBe('Revolving Debt');

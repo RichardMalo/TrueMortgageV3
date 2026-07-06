@@ -24,9 +24,12 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
   }
 
   const numPeriods = Math.floor((amortYrs - 0.00001) / termYrs);
+  const isFr = state.language === 'fr';
   if (numPeriods > 50) {
-    els.containers.rateShockTimeline.innerHTML =
-      '<div style="padding: 15px; font-size: 0.85rem; opacity: 0.8; text-align: center; width: 100%; font-weight: 600;">Timeline is too dense to display (maximum 50 periods). Please enter a larger Term Length.</div>';
+    const errorMsg = isFr
+      ? 'La chronologie est trop dense pour être affichée (maximum 50 périodes). Veuillez saisir une durée de terme plus longue.'
+      : 'Timeline is too dense to display (maximum 50 periods). Please enter a larger Term Length.';
+    els.containers.rateShockTimeline.innerHTML = `<div style="padding: 15px; font-size: 0.85rem; opacity: 0.8; text-align: center; width: 100%; font-weight: 600;">${errorMsg}</div>`;
     return;
   }
 
@@ -50,18 +53,28 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
     })
     .filter((y) => y !== null) as number[];
 
+  const currentLang = state.language || 'en';
+  const renderedLang = els.containers.rateShockTimeline.getAttribute('data-rendered-lang');
+
   const needsRebuild =
-    existingYears.length !== years.length || !years.every((val, idx) => val === existingYears[idx]);
+    existingYears.length !== years.length ||
+    !years.every((val, idx) => val === existingYears[idx]) ||
+    renderedLang !== currentLang;
 
   if (needsRebuild) {
     let html = '';
     years.forEach((y) => {
       const remaining = amortYrs - y;
+      const titleText = isFr ? `Refinancement de l'année ${y}` : `Year ${y} Refinance`;
+      const remainingText = isFr
+        ? `${remaining.toFixed(0)} ans restants`
+        : `${remaining.toFixed(0)} Yrs remaining`;
+
       html += `
         <div class="rate-shock-box">
           <div style="display: flex; flex-direction: column; gap: 4px;">
-            <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary-color);">Year ${y} Refinance</span>
-            <span style="font-size: 0.75rem; opacity: 0.7; font-weight: 500;" class="remaining-label">${remaining.toFixed(0)} Yrs remaining</span>
+            <span style="font-weight: 800; font-size: 0.9rem; color: var(--primary-color);">${titleText}</span>
+            <span style="font-size: 0.75rem; opacity: 0.7; font-weight: 500;" class="remaining-label">${remainingText}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <input type="number" class="term-rate-input" data-year="${y}" step="0.01" min="0" max="100" value="${(state.termRates[y] !== undefined ? state.termRates[y] : baseRate).toFixed(2)}">
@@ -71,6 +84,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
       `;
     });
     els.containers.rateShockTimeline.innerHTML = html;
+    els.containers.rateShockTimeline.setAttribute('data-rendered-lang', currentLang);
 
     const inputs = els.containers.rateShockTimeline.querySelectorAll('.term-rate-input');
     inputs.forEach((inpEl: Element) => {
