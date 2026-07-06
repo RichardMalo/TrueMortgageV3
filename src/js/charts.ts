@@ -229,7 +229,6 @@ export const clearVisibleChartsCache = () => {
 const getLocaleAndCurrency = () => {
   const el = document.getElementById('country-select') as HTMLSelectElement | null;
   const val = el ? el.value : 'semi';
-  console.log('getLocaleAndCurrency selected value:', val);
   switch (val) {
     case 'semi': // Canada
       return { locale: 'en-CA', currency: 'CAD' };

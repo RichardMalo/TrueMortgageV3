@@ -245,7 +245,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
       const rates: Record<number, number> = {};
       if (typeof p.termRates === 'object' && p.termRates) {
         Object.entries(p.termRates).forEach(([k, v]) => {
-          const yr = parseInt(k, 10);
+          const yr = parseFloat(k);
           const rateVal = parseFloat(String(v));
           if (!isNaN(yr) && !isNaN(rateVal)) {
             rates[yr] = Math.min(200, Math.max(0, rateVal));
@@ -258,7 +258,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
       const years: Record<number, boolean> = {};
       if (typeof p.customizedYears === 'object' && p.customizedYears) {
         Object.entries(p.customizedYears).forEach(([k, v]) => {
-          const yr = parseInt(k, 10);
+          const yr = parseFloat(k);
           if (!isNaN(yr)) {
             years[yr] = v === true || v === 'true';
           }

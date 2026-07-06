@@ -203,6 +203,29 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(sanitized!.inputs.downPayment).toBe(String(DEFAULT_INPUTS.downPayment));
       expect(sanitized!.inputs.rate).toBe(String(DEFAULT_INPUTS.annualRate));
     });
+
+    it('should preserve fractional termRates and customizedYears keys without truncating them to integers', () => {
+      const fractionalProfile = {
+        id: 'fractional-id',
+        name: 'Fractional Scenario',
+        termRates: {
+          '2.5': 5.25,
+          '5.0': 6.0
+        },
+        customizedYears: {
+          '2.5': true,
+          '5.0': true
+        },
+        inputs: {}
+      };
+
+      const sanitized = sanitizeProfile(fractionalProfile, DEFAULT_INPUTS);
+      expect(sanitized).not.toBeNull();
+      expect(sanitized!.termRates[2.5]).toBe(5.25);
+      expect(sanitized!.termRates[5.0]).toBe(6.0);
+      expect(sanitized!.customizedYears[2.5]).toBe(true);
+      expect(sanitized!.customizedYears[5.0]).toBe(true);
+    });
   });
 
   describe('Settings Persistence & Hydration (save/load)', () => {
