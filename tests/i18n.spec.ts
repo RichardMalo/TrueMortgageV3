@@ -137,6 +137,16 @@ describe('i18n Translation Engine', () => {
         'Annual interest payments visualized as wages paid to the bank. Circles shrink over time as you build equity.'
       )
     ).toContain('Paiements');
+    expect(
+      t(
+        'Annual interest payments averaged into a monthly rent equivalent: (Annual Interest / 12), rounded up. For estimation purposes only.'
+      )
+    ).toContain('Paiements');
+    expect(
+      t(
+        'Annual interest payments plus property tax and home insurance averaged into a monthly rent equivalent. For estimation purposes only.'
+      )
+    ).toContain('Paiements');
 
     // Restore to English
     applyTranslations('en');
