@@ -118,7 +118,7 @@ export const dictionary: Record<string, string> = {
   'Original Debt': "Dette d'origine",
   'Balance at Term End': 'Solde à la fin du terme',
   'Actual Payoff Time': 'Délai de remboursement réel',
-  'Interest Saved (vs Minimums)': 'Intérêts économisés (vs minimums)',
+  'Interest Saved (vs Minimums)': 'Intérêts économisés (vs les minimums)',
   'Periodic Payment Composition': 'Composition périodique du versement',
   'First Month: Principal vs. Interest': 'Premier mois : Principal vs Intérêt',
 
@@ -348,7 +348,7 @@ export const dictionary: Record<string, string> = {
 
   // Nested Label text nodes
   'Interest Saved ': 'Intérêts économisés ',
-  '(vs Minimums)': '(vs minimums)',
+  '(vs Minimums)': '(vs les minimums)',
   'Interest Saved': 'Intérêts économisés'
 };
 
