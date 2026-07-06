@@ -806,31 +806,46 @@ export const calculateOpportunityCostData = (
     }
   };
 
-  const getCashPaidInInterval = (schedule: ScheduleRow[], T_start: number, T_end: number) => {
-    let sum = 0;
-    for (const row of schedule) {
-      if (row.year > T_start + 1e-7 && row.year <= T_end + 1e-7) {
-        sum += row.principal + row.interest + (row.extra || 0);
-      }
-    }
-    return sum;
-  };
+  class ScheduleCursor {
+    private schedule: ScheduleRow[];
+    private idx: number = 0;
+    private initialBalance: number;
 
-  const getRemainingBalanceAt = (schedule: ScheduleRow[], T_end: number, initBal: number) => {
-    for (let i = schedule.length - 1; i >= 0; i--) {
-      if (schedule[i].year <= T_end + 1e-7) {
-        return schedule[i].balance;
-      }
+    constructor(schedule: ScheduleRow[], initialBalance: number) {
+      this.schedule = schedule;
+      this.initialBalance = initialBalance;
     }
-    return initBal;
-  };
+
+    getIntervalData(T_start: number, T_end: number): { cashPaid: number; balance: number } {
+      let cashPaid = 0;
+      while (this.idx < this.schedule.length && this.schedule[this.idx].year <= T_end + 1e-7) {
+        const row = this.schedule[this.idx];
+        if (row.year > T_start + 1e-7) {
+          cashPaid += row.principal + row.interest + (row.extra || 0) + (row.pmi || 0);
+        }
+        this.idx++;
+      }
+      const balance = this.idx > 0 ? this.schedule[this.idx - 1].balance : this.initialBalance;
+      return { cashPaid, balance };
+    }
+  }
+
+  const actCursor = new ScheduleCursor(actualData.schedule, initialBalance);
+  const baseCursor = new ScheduleCursor(baseData.schedule, initialBalance);
+  const compCursor = compData ? new ScheduleCursor(compData.schedule, initialBalance) : null;
 
   for (let m = 0; m < maxMonths; m++) {
     const { T_start, T_end } = getMonthInterval(m);
 
-    const actCash = getCashPaidInInterval(actualData.schedule, T_start, T_end);
-    const baseCash = getCashPaidInInterval(baseData.schedule, T_start, T_end);
-    const compCash = compData ? getCashPaidInInterval(compData.schedule, T_start, T_end) : 0;
+    const actDataVal = actCursor.getIntervalData(T_start, T_end);
+    const baseDataVal = baseCursor.getIntervalData(T_start, T_end);
+    const compDataVal = compCursor
+      ? compCursor.getIntervalData(T_start, T_end)
+      : { cashPaid: 0, balance: 0 };
+
+    const actCash = actDataVal.cashPaid;
+    const baseCash = baseDataVal.cashPaid;
+    const compCash = compDataVal.cashPaid;
 
     const refPay = Math.max(actCash, baseCash, compCash);
 
@@ -844,11 +859,9 @@ export const calculateOpportunityCostData = (
       compInv = (compInv + compSurplus) * (1 + monthlyRate);
     }
 
-    const actBalance = getRemainingBalanceAt(actualData.schedule, T_end, initialBalance);
-    const baseBalance = getRemainingBalanceAt(baseData.schedule, T_end, initialBalance);
-    const compBalance = compData
-      ? getRemainingBalanceAt(compData.schedule, T_end, initialBalance)
-      : 0;
+    const actBalance = actDataVal.balance;
+    const baseBalance = baseDataVal.balance;
+    const compBalance = compDataVal.balance;
 
     const actNetWorth = hp - actBalance + actInv;
     const baseNetWorth = hp - baseBalance + baseInv;

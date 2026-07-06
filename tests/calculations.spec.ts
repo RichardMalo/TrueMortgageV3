@@ -812,5 +812,47 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         results.p2Y[results.p2Y.length - 1]
       );
     });
+
+    it('should factor in PMI cancellation savings in opportunity cost net worth', () => {
+      const inputs: Inputs = {
+        homePrice: 500000,
+        downPayment: 50000, // LTV = 90% (PMI is active)
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 4.0,
+        amortizationYears: 25,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'monthly',
+        usePiti: true,
+        taxRate: 3000,
+        insRate: 1000,
+        hoaRate: 0,
+        pmiRate: 1.0, // Significant PMI rate to see clear difference
+        useOppCost: true,
+        investRate: 4.0, // Same return rate as mortgage rate
+        extraPayment: 1000, // Large extra payment to trigger early PMI cancellation
+        startDate: '2026-07-01',
+        rateShockEnabled: false,
+        termRates: {}
+      };
+
+      const baseData = generateMortgageSchedule(inputs, true);
+      const actualData = generateMortgageSchedule(inputs, false);
+
+      const state = {
+        currentMode: 'mortgage' as const,
+        comparisonProfileId: null
+      };
+
+      const results = calculateOpportunityCostData(state, baseData, actualData, null, inputs);
+
+      // Without PMI savings, since mortgage rate and invest rate are identical (4.0%),
+      // actual strategy net worth would be very close to baseline investment surplus net worth.
+      // But because actual cancels PMI much earlier, actual should end up with a significantly higher net worth.
+      expect(results.p1Y[results.p1Y.length - 1]).toBeGreaterThan(
+        results.p2Y[results.p2Y.length - 1]
+      );
+    });
   });
 });
