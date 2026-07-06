@@ -1373,24 +1373,29 @@ export const updateLabelCurrencySymbols = () => {
   if (form) {
     const labels = form.querySelectorAll('label');
     labels.forEach((label) => {
-      let html = label.innerHTML;
-      if (
-        html.includes('($)') ||
-        html.includes('(£)') ||
-        html.includes('($/Year)') ||
-        html.includes('(£/Year)') ||
-        html.includes('($/Month)') ||
-        html.includes('(£/Month)')
-      ) {
-        html = html
-          .replace(/\(\$\)/g, `(${sym})`)
-          .replace(/\(£\)/g, `(${sym})`)
-          .replace(/\(\$\/Year\)/g, `(${sym}/Year)`)
-          .replace(/\(£\/Year\)/g, `(${sym}/Year)`)
-          .replace(/\(\$\/Month\)/g, `(${sym}/Month)`)
-          .replace(/\(£\/Month\)/g, `(${sym}/Month)`);
-        label.innerHTML = html;
-      }
+      // Avoid replacing label.innerHTML, which destroys help-tip tooltips and their listeners.
+      // Instead, we only modify the child text nodes of the label.
+      label.childNodes.forEach((node) => {
+        if (node.nodeType === Node.TEXT_NODE) {
+          const val = node.nodeValue || '';
+          if (
+            val.includes('($)') ||
+            val.includes('(£)') ||
+            val.includes('($/Year)') ||
+            val.includes('(£/Year)') ||
+            val.includes('($/Month)') ||
+            val.includes('(£/Month)')
+          ) {
+            node.nodeValue = val
+              .replace(/\(\$\)/g, `(${sym})`)
+              .replace(/\(£\)/g, `(${sym})`)
+              .replace(/\(\$\/Year\)/g, `(${sym}/Year)`)
+              .replace(/\(£\/Year\)/g, `(${sym}/Year)`)
+              .replace(/\(\$\/Month\)/g, `(${sym}/Month)`)
+              .replace(/\(£\/Month\)/g, `(${sym}/Month)`);
+          }
+        }
+      });
     });
   }
 
@@ -1414,13 +1419,6 @@ export const updateLabelCurrencySymbols = () => {
   ) as HTMLElement | null;
   if (extraLabel && freqEl) {
     const freq = freqEl.value || 'monthly';
-    let freqWord = 'Monthly';
-    if (freq === 'weekly') freqWord = 'Weekly';
-    else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqWord = 'Bi-Weekly';
-    else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
-
-    const helpTip = extraLabel.querySelector('.help-tip');
-    const helpTipHtml = helpTip ? helpTip.outerHTML : '';
     const isFr = currentLanguage() === 'fr';
     let labelText: string;
     if (isFr) {
@@ -1428,22 +1426,23 @@ export const updateLabelCurrencySymbols = () => {
       if (freq === 'weekly') freqFr = 'hebdomadaire';
       else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqFr = 'bihebdomadaire';
       else if (freq === 'semi-monthly') freqFr = 'bimensuel';
-      labelText = `Versement excédentaire ${freqFr} supplémentaire (${sym}) ${helpTipHtml}`;
+      labelText = `Versement excédentaire ${freqFr} supplémentaire (${sym}) `;
     } else {
-      labelText = `Extra ${freqWord} Surplus Payment (${sym}) ${helpTipHtml}`;
+      let freqWord = 'Monthly';
+      if (freq === 'weekly') freqWord = 'Weekly';
+      else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqWord = 'Bi-Weekly';
+      else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
+      labelText = `Extra ${freqWord} Surplus Payment (${sym}) `;
     }
-    extraLabel.innerHTML = labelText;
+    // Update only the text nodes of extraLabel to preserve the help-tip element and its event listeners.
+    extraLabel.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        node.nodeValue = labelText;
+      }
+    });
   }
 
   const savingsLabelEl = document.getElementById('extraPaymentSavingsLabel');
-  const isFr = currentLanguage() === 'fr';
-  const tooltipText = isFr
-    ? "Montant estimé économisé jusqu'à la date de remboursement"
-    : 'Estimated Amount Saved Until Payoff Date';
-  const helpTipHtml = `
-    <span class="help-tip">?<span class="tooltip-text">${tooltipText}</span></span>
-  `.trim();
-
   if (savingsLabelEl) {
     const isCC = document.body.classList.contains('mode-cc');
     let freqWord = 'Monthly';
@@ -1454,12 +1453,24 @@ export const updateLabelCurrencySymbols = () => {
       else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
     }
     const key = `This ${freqWord} Payment Saves You:`;
-    savingsLabelEl.innerHTML = `${t(key)} ${helpTipHtml}`;
+    const translatedText = `${t(key)} `;
+    // Update only the text nodes to preserve the help-tip element and its event listeners.
+    savingsLabelEl.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        node.nodeValue = translatedText;
+      }
+    });
   }
 
   const lumpSumSavingsLabelEl = document.getElementById('lumpSumSavingsLabel');
   if (lumpSumSavingsLabelEl) {
-    lumpSumSavingsLabelEl.innerHTML = `${t('This Payment Saves You:')} ${helpTipHtml}`;
+    const translatedText = `${t('This Payment Saves You:')} `;
+    // Update only the text nodes to preserve the help-tip element and its event listeners.
+    lumpSumSavingsLabelEl.childNodes.forEach((node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        node.nodeValue = translatedText;
+      }
+    });
   }
 };
 

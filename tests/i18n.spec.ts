@@ -14,6 +14,22 @@ describe('i18n Translation Engine', () => {
         Adjust the interest rates for each term renewal. Payments stay constant, and the
         remaining amortization will automatically expand or shrink.
       </p>
+      <div id="goal-subtitle">
+        Solve for the exact monthly or lump-sum payment needed to meet a target payoff
+        year.
+      </div>
+      <label for="homePrice">
+        Home Price ($)
+        <span class="help-tip">
+          ?
+          <span class="tooltip-text" id="tooltip">
+            The gross transactional purchase price of the real estate asset before
+            deducting any down payment, adjustments, or transaction fees. Note: Banks
+            may apply local valuation models which can alter exact loan
+            calculations.
+          </span>
+        </span>
+      </label>
       <h2 id="title">Property & Loan</h2>
       <h2 id="cc">Revolving Debt</h2>
     `;
@@ -21,6 +37,8 @@ describe('i18n Translation Engine', () => {
 
     const descEl = document.getElementById('desc')!;
     const ratesDescEl = document.getElementById('rates-desc')!;
+    const goalSubtitleEl = document.getElementById('goal-subtitle')!;
+    const tooltipEl = document.getElementById('tooltip')!;
     const titleEl = document.getElementById('title')!;
     const ccEl = document.getElementById('cc')!;
 
@@ -30,6 +48,12 @@ describe('i18n Translation Engine', () => {
     );
     expect(ratesDescEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
       'Adjust the interest rates for each term renewal. Payments stay constant, and the remaining amortization will automatically expand or shrink.'
+    );
+    expect(goalSubtitleEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'Solve for the exact monthly or lump-sum payment needed to meet a target payoff year.'
+    );
+    expect(tooltipEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'The gross transactional purchase price of the real estate asset before deducting any down payment, adjustments, or transaction fees. Note: Banks may apply local valuation models which can alter exact loan calculations.'
     );
     expect(titleEl.textContent?.trim()).toBe('Property & Loan');
     expect(ccEl.textContent?.trim()).toBe('Revolving Debt');
@@ -43,6 +67,12 @@ describe('i18n Translation Engine', () => {
     expect(ratesDescEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
       "Ajustez les taux d'intérêt pour chaque renouvellement de terme. Les versements restent constants et l'amortissement restant s'allonge ou se raccourcit automatiquement."
     );
+    expect(goalSubtitleEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'Calculez le versement mensuel ou forfaitaire exact requis pour atteindre une année cible de remboursement.'
+    );
+    expect(tooltipEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      "Le prix d'achat brut de la propriété avant déduction de la mise de fonds, des ajustements ou des frais de transaction. Note : Les banques peuvent appliquer des modèles d'évaluation locaux qui modifient les calculs exacts du prêt."
+    );
     expect(titleEl.textContent?.trim()).toBe('Propriété & prêt');
     expect(ccEl.textContent?.trim()).toBe('Dette renouvelable');
 
@@ -54,6 +84,15 @@ describe('i18n Translation Engine', () => {
     );
     expect(ratesDescEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
       'Adjust the interest rates for each term renewal. Payments stay constant, and the remaining amortization will automatically expand or shrink.'
+    );
+    expect(goalSubtitleEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'Solve for the exact monthly or lump-sum payment needed to meet a target payoff year.'
+    );
+    expect(tooltipEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'The gross transactional purchase price of the real estate asset before deducting any down payment, adjustments, or transaction fees. Note: Banks may apply local valuation models which can alter exact loan calculations.'
+    );
+    expect(goalSubtitleEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
+      'Solve for the exact monthly or lump-sum payment needed to meet a target payoff year.'
     );
     expect(titleEl.textContent?.trim()).toBe('Property & Loan');
     expect(ccEl.textContent?.trim()).toBe('Revolving Debt');
