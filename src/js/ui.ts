@@ -138,9 +138,10 @@ export const setupTouchAndKeyboardTooltips = () => {
     //   - aria-describedby → points to the tooltip content element
     // The tooltip CONTENT element (not the trigger) gets role="tooltip".
     const tooltipText = tip.querySelector('.tooltip-text') as HTMLElement | null;
-    const tooltipId = `help-tooltip-text-${index}`;
     if (tooltipText) {
-      tooltipText.id = tooltipId;
+      if (!tooltipText.id) {
+        tooltipText.id = `help-tooltip-text-${index}`;
+      }
       tooltipText.setAttribute('role', 'tooltip');
     }
 
@@ -148,7 +149,7 @@ export const setupTouchAndKeyboardTooltips = () => {
     tip.setAttribute('role', 'button');
     tip.setAttribute('aria-expanded', 'false');
     if (tooltipText) {
-      tip.setAttribute('aria-describedby', tooltipId);
+      tip.setAttribute('aria-describedby', tooltipText.id);
     }
 
     const setExpanded = (open: boolean) => tip.setAttribute('aria-expanded', String(open));

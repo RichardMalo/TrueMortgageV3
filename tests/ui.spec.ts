@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { escapeHtml, setupTableExpandButton, updateLabelCurrencySymbols } from '../src/js/ui.js';
+import {
+  escapeHtml,
+  setupTableExpandButton,
+  updateLabelCurrencySymbols,
+  setupTouchAndKeyboardTooltips
+} from '../src/js/ui.js';
 
 describe('UI Helper Functions (ui.ts)', () => {
   describe('escapeHtml', () => {
@@ -106,6 +111,31 @@ describe('UI Helper Functions (ui.ts)', () => {
 
       // 5. Cleanup
       document.body.removeChild(form);
+    });
+  });
+
+  describe('setupTouchAndKeyboardTooltips', () => {
+    it('should preserve pre-existing IDs on tooltip-text elements', () => {
+      const container = document.createElement('div');
+      container.innerHTML = `
+        <span class="help-tip">
+          ?
+          <span class="tooltip-text" id="existingId">Tooltip Content</span>
+        </span>
+        <span class="help-tip">
+          ?
+          <span class="tooltip-text">Tooltip 2</span>
+        </span>
+      `;
+      document.body.appendChild(container);
+
+      setupTouchAndKeyboardTooltips();
+
+      const tooltips = container.querySelectorAll('.tooltip-text');
+      expect(tooltips[0].id).toBe('existingId');
+      expect(tooltips[1].id).toBe('help-tooltip-text-1');
+
+      document.body.removeChild(container);
     });
   });
 });
