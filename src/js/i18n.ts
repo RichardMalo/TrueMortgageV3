@@ -13,6 +13,8 @@ export const dictionary: Record<string, string> = {
     "Moteur d'optimisation algorithmique conçu pour éliminer la friction des intérêts et accélérer votre parcours vers le désendettement total.",
   Mortgage: 'Hypothèque',
   'Credit Card': 'Carte de crédit',
+  'Property & Loan': 'Propriété & prêt',
+  'Revolving Debt': 'Dette renouvelable',
   'Engine Tools & Settings': 'Outils du moteur et paramètres',
   'Open Engine Tools and Settings Menu': 'Ouvrir le menu des outils et des paramètres du moteur',
 
@@ -297,6 +299,9 @@ export const dictionary: Record<string, string> = {
   'Time to Pay Off': 'Temps pour rembourser',
   'LTV (%)': 'LTV (%)',
   'Net Worth ($)': 'Valeur nette ($)',
+  Year: 'Année',
+  Years: 'Années',
+  'Total Cost': 'Coût total',
 
   // Trace Series Legends
   Baseline: 'Référence',
@@ -395,7 +400,8 @@ export const applyTranslations = (lang: 'en' | 'fr') => {
     // Translate all text nodes
     walkTextNodes(document.body, (node) => {
       const trimmed = node.nodeValue?.trim() || '';
-      const translation = dictionary[trimmed];
+      const normalizedKey = trimmed.replace(/\s+/g, ' ');
+      const translation = dictionary[normalizedKey];
       if (translation) {
         const nodeRecord = node as unknown as Record<string, string>;
         if (nodeRecord.originalText === undefined) {
