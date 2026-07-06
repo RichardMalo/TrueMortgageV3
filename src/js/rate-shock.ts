@@ -117,8 +117,11 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
       if (input) {
         const y = parseInt(input.getAttribute('data-year') || '0');
         const remaining = amortYrs - y;
+        const remainingText = isFr
+          ? `${remaining.toFixed(0)} ans restants`
+          : `${remaining.toFixed(0)} Yrs remaining`;
         if (remainingLabel) {
-          remainingLabel.textContent = `${remaining.toFixed(0)} Yrs remaining`;
+          remainingLabel.textContent = remainingText;
         }
         if (document.activeElement !== input) {
           input.value = (state.termRates[y] !== undefined ? state.termRates[y] : baseRate).toFixed(

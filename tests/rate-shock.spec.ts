@@ -304,4 +304,20 @@ describe('syncRateShockTimeline (rate-shock.ts)', () => {
     expect(timeline.querySelector('.remaining-label')!.textContent).toContain('5 Yrs remaining');
     expect(timeline.getAttribute('data-rendered-lang')).toBe('en');
   });
+
+  it('preserves French translation of remaining label in no-rebuild path when amortization changes', () => {
+    const { state, els, timeline } = makeRig({ termVal: '5', amortVal: '25' });
+    state.language = 'fr';
+    syncRateShockTimeline(state, els, calculate);
+
+    expect(timeline.querySelector('.remaining-label')!.textContent).toContain('20 ans restants');
+
+    // Change amortization without changing the term or years (so no rebuild is triggered)
+    // amortVal changes from 25 to 27
+    els.inputs.amortization!.value = '27';
+    syncRateShockTimeline(state, els, calculate);
+
+    // Remaining should update to 27 - 5 = 22, and must be in French
+    expect(timeline.querySelector('.remaining-label')!.textContent).toContain('22 ans restants');
+  });
 });
