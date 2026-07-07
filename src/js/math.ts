@@ -153,7 +153,7 @@ export const generateMortgageSchedule = (
     if (balance < 0.01) balance = 0;
 
     totalInterest += interestPortion;
-    totalPrincipal += principalPortion;
+    totalPrincipal += principalPortion + currentExtraPayment;
     totalExtraPaid += currentExtraPayment;
     totalEscrow += periodicEscrow;
 

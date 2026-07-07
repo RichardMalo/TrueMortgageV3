@@ -625,6 +625,49 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(sumOfPrincipalPortions).toBeCloseTo(1000, 1);
   });
 
+  it('should correctly calculate totalPrincipal and totalExtra for mortgages when extra payment is non-zero', () => {
+    const inputs: Inputs = {
+      homePrice: 500000,
+      downPayment: 100000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.5,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'semi',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 500, // Non-zero extra payment
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    expect(result.schedule.length).toBeGreaterThan(0);
+    const lastRow = result.schedule[result.schedule.length - 1];
+
+    // Total principal paid must equal the starting loan principal of 400000
+    expect(lastRow.totalPrincipal).toBeCloseTo(400000, 1);
+    expect(lastRow.balance).toBe(0);
+
+    // Let's verify that totalExtra is tracked and is greater than 0
+    expect(lastRow.totalExtra).toBeGreaterThan(0);
+
+    // And make sure that sum of all principal portions + extras in the schedule matches lastRow.totalPrincipal
+    const sumOfPrincipalPortions = result.schedule.reduce(
+      (sum, row) => sum + row.principal + row.extra,
+      0
+    );
+    expect(sumOfPrincipalPortions).toBeCloseTo(400000, 1);
+  });
+
   it('should handle semi-monthly date labeling correctly without accumulation drift', () => {
     const inputs: Inputs = {
       homePrice: 800000,

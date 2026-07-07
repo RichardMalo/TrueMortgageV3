@@ -476,8 +476,9 @@ const renderEquityBuildUpChart = (
 ) => {
   const chart4El = document.getElementById('chart4');
   if (!chart4El) return;
-  const pAmt = actualData.schedule.length
-    ? actualData.schedule[0].balance + actualData.schedule[0].principal
+  const activeSched = actualData.schedule.length ? actualData.schedule : baseData.schedule;
+  const pAmt = activeSched.length
+    ? activeSched[0].balance + activeSched[0].principal + (activeSched[0].extra || 0)
     : 0;
   const t4: unknown[] = [
     {
