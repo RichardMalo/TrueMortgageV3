@@ -3011,3 +3011,47 @@ body.dark-mode .goal-result-box:hover {
     font-size: 0.8rem;
   }
 }
+
+/* Mobile portrait optimizations for Heatmap & Amortization Table */
+@media (max-width: 768px) and (orientation: portrait) {
+  /* Extra Payment Impact Heatmap upright optimizations */
+  .heatmap-table {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 0.65rem !important;
+  }
+  .heatmap-table th,
+  .heatmap-table td {
+    padding: 6px 3px !important;
+  }
+  .heatmap-corner-cell,
+  .heatmap-row-header {
+    min-width: 60px !important;
+  }
+  .corner-axis-labels {
+    font-size: 0.52rem !important;
+  }
+  .unit-yrs {
+    font-size: 0.52rem !important;
+  }
+  .heatmap-cell:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Amortization Table upright optimizations */
+  #amortization-table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+  #amortization-table th,
+  #amortization-table td {
+    padding: 6px 4px !important;
+    font-size: 0.62rem !important;
+    white-space: nowrap;
+  }
+  .delta-badge {
+    font-size: 0.55rem !important;
+    margin-top: 2px !important;
+  }
+}
