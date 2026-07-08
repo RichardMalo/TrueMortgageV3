@@ -329,7 +329,7 @@ export const dictionary: Record<string, string> = {
 
   // Table Headers
   'Date / #': 'Date / N°',
-  'Total Payment': 'Versement total',
+  Payment: 'Versement',
   'Escrow (Tax/Ins)': 'Frais séquestres (Taxe/Assur)',
 
   // Frequencies
