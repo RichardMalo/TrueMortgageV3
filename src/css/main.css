@@ -2897,8 +2897,21 @@ body.dark-mode .goal-result-box:hover {
   }
 }
 
+.lump-sum-amount-container {
+  display: flex;
+  flex-direction: column;
+  width: 110px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .lump-sum-amount-container {
+    width: 75px;
+  }
+}
+
 .lump-sum-amount {
-  width: 110px !important;
+  width: 100% !important;
   padding: 8px 10px !important;
   font-size: 0.85rem !important;
   border-radius: 8px !important;
@@ -2908,7 +2921,14 @@ body.dark-mode .goal-result-box:hover {
 .lump-sum-payment-number-container {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  width: 90px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .lump-sum-payment-number-container {
+    width: 70px;
+  }
 }
 
 .lump-sum-payment-number {
@@ -2927,6 +2947,14 @@ body.dark-mode .goal-result-box:hover {
   margin-top: 3px;
   padding-left: 2px;
   min-height: 12px;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+}
+
+@media (max-width: 768px) {
+  .lump-sum-date-badge {
+    font-size: 0.65rem;
+  }
 }
 
 .lump-sum-delete-btn {
@@ -2944,6 +2972,7 @@ body.dark-mode .goal-result-box:hover {
   transition: all 0.15s ease;
   user-select: none;
   margin-top: 0;
+  flex-shrink: 0;
 }
 
 .lump-sum-delete-btn:hover {
@@ -2955,4 +2984,30 @@ body.dark-mode .goal-result-box:hover {
 
 .lump-sum-delete-btn:active {
   transform: translateY(0);
+}
+
+.lump-sum-savings-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 2px dashed rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 0 10px;
+  font-weight: 800;
+  font-size: 0.95rem;
+  margin-top: 0;
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 768px) {
+  .lump-sum-savings-box {
+    padding: 0 6px;
+    font-size: 0.8rem;
+  }
 }
