@@ -17,8 +17,7 @@ import {
   renderCharts,
   clearVisibleChartsCache,
   resizeChart,
-  cancelPendingChartRenders,
-  formatCurrency
+  cancelPendingChartRenders
 } from './charts.js';
 import {
   saveSettingsToStorage,

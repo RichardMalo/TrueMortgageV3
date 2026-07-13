@@ -598,6 +598,22 @@ input:focus-visible,
     transform: translateY(-2px);
   }
 }
+.btn-dashed-outline {
+  background: rgba(var(--primary-rgb), 0.1);
+  border: 1px dashed var(--primary-color);
+  border-radius: 6px;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-dashed-outline:hover {
+  background: rgba(var(--primary-rgb), 0.18);
+  transform: translateY(-1px);
+}
+.btn-dashed-outline:active {
+  transform: translateY(0);
+}
 
 .stats-grid {
   display: grid;
@@ -643,6 +659,18 @@ input:focus-visible,
 }
 .highlight-text {
   color: var(--accent-color);
+}
+.savings-badge {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  background: rgba(16, 185, 129, 0.08);
+  border: 2px dashed rgba(16, 185, 129, 0.25);
+  border-radius: 14px;
+  padding: 0 16px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  margin-top: 0;
 }
 
 .danger-box {

@@ -12,7 +12,7 @@
       document.body.classList.add('light-mode');
       document.body.classList.remove('dark-mode');
     }
-  } catch (e) {
+  } catch {
     // Silent catch
   }
 })();

@@ -626,19 +626,7 @@
                   >
                   <div
                     id="extraPaymentSavingsBox"
-                    class="kinetic-text highlight-text"
-                    style="
-                      display: flex;
-                      align-items: center;
-                      height: 48px;
-                      background: rgba(16, 185, 129, 0.08);
-                      border: 2px dashed rgba(16, 185, 129, 0.25);
-                      border-radius: 14px;
-                      padding: 0 16px;
-                      font-weight: 800;
-                      font-size: 1.1rem;
-                      margin-top: 0;
-                    "
+                    class="kinetic-text highlight-text savings-badge"
                   >
                     $0.00
                   </div>
@@ -675,56 +663,25 @@
                       ></span
                     ></label
                   >
-                  <div
-                    id="lumpSumSavingsBox"
-                    class="kinetic-text highlight-text"
-                    style="
-                      display: flex;
-                      align-items: center;
-                      height: 48px;
-                      background: rgba(16, 185, 129, 0.08);
-                      border: 2px dashed rgba(16, 185, 129, 0.25);
-                      border-radius: 14px;
-                      padding: 0 16px;
-                      font-weight: 800;
-                      font-size: 1.1rem;
-                      margin-top: 0;
-                    "
-                  >
+                  <div id="lumpSumSavingsBox" class="kinetic-text highlight-text savings-badge">
                     $0.00
                   </div>
                 </div>
               </div>
 
               <!-- Scheduled Future Lump Sums Section -->
-              <div
-                class="input-group-row advanced-only flex-col"
-                style="gap: 12px; margin-bottom: 8px"
-              >
-                <div class="flex items-center justify-between" style="width: 100%">
-                  <span class="text-xs font-bold opacity-80" style="color: var(--text-color)"
-                    >Scheduled Future Lump Sums</span
-                  >
+              <div class="input-group-row advanced-only flex-col gap-12 mb-8">
+                <div class="flex items-center justify-between w-full">
+                  <span class="text-xs font-bold opacity-80">Scheduled Future Lump Sums</span>
                   <button
                     type="button"
                     id="addLumpSumBtn"
-                    class="btn text-xs py-4 px-8 flex items-center gap-4"
-                    style="
-                      background: rgba(var(--primary-rgb), 0.1);
-                      border: 1px dashed var(--primary-color);
-                      border-radius: 6px;
-                      color: var(--primary-color);
-                      cursor: pointer;
-                      font-weight: 600;
-                    "
+                    class="btn-dashed-outline text-xs py-4 px-8 flex items-center gap-4"
                   >
                     <span>+</span> Add Scheduled Row
                   </button>
                 </div>
-                <div
-                  id="scheduledLumpSumsContainer"
-                  style="display: flex; flex-direction: column; gap: 8px; width: 100%"
-                >
+                <div id="scheduledLumpSumsContainer" class="flex-col gap-8 w-full">
                   <!-- Dynamic rows go here -->
                 </div>
               </div>
@@ -1537,9 +1494,9 @@
 
     <!-- Share Modal -->
     <div id="shareModal" class="modal-overlay">
-      <div class="modal-card">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
         <div class="modal-header">
-          <h3>Share Your Strategy</h3>
+          <h3 id="shareModalTitle">Share Your Strategy</h3>
           <button id="closeModalBtn" class="close-btn" aria-label="Close Share Modal">
             &times;
           </button>
@@ -1580,9 +1537,14 @@
 
     <!-- Secure Sync & Portability Modal -->
     <div id="syncModal" class="modal-overlay">
-      <div class="modal-card max-w-450">
+      <div
+        class="modal-card max-w-450"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="syncModalTitle"
+      >
         <div class="modal-header">
-          <h3 class="m-0 flex items-center text-md">
+          <h3 id="syncModalTitle" class="m-0 flex items-center text-md">
             <span class="mr-8">🔑</span> Secure Sync & Portability
           </h3>
           <button id="closeSyncModalBtn" class="close-btn" aria-label="Close Sync Modal">
@@ -1703,9 +1665,14 @@
 
     <!-- Engine Constraints & Limits Modal -->
     <div id="limitsModal" class="modal-overlay">
-      <div class="modal-card max-w-450">
+      <div
+        class="modal-card max-w-450"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="limitsModalTitle"
+      >
         <div class="modal-header">
-          <h3 class="m-0 flex items-center text-md">
+          <h3 id="limitsModalTitle" class="m-0 flex items-center text-md">
             <span class="mr-8">⚙️</span> Constraints & Limits
           </h3>
           <button id="closeLimitsModalBtn" class="close-btn" aria-label="Close Constraints Modal">
@@ -1764,9 +1731,14 @@
 
     <!-- Dashboard Layout Customizer Modal -->
     <div id="layoutModal" class="modal-overlay">
-      <div class="modal-card max-w-500">
+      <div
+        class="modal-card max-w-500"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="layoutModalTitle"
+      >
         <div class="modal-header">
-          <h3 class="m-0 flex items-center text-md">
+          <h3 id="layoutModalTitle" class="m-0 flex items-center text-md">
             <span class="mr-8">📊</span> Dashboard Widgets
           </h3>
           <button id="closeLayoutModalBtn" class="close-btn" aria-label="Close Layout Modal">
