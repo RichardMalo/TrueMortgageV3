@@ -44,6 +44,67 @@ const visibleChartsMap: Record<string, boolean> = {};
 const renderQueue = new Map<string, { data: unknown[]; layout: unknown; config: unknown }>();
 let renderFrameId: number | null = null;
 
+interface CachedChartConfig {
+  data: unknown[];
+  layout: unknown;
+  config: unknown;
+  _version?: number;
+}
+
+const latestChartConfigs = new Map<string, CachedChartConfig>();
+const observedElements = new Set<string>();
+const intersectingElements = new Set<string>();
+const renderedVersions = new Map<string, number>();
+let configVersionCounter = 0;
+
+const scheduleFlush = () => {
+  if (renderFrameId === null) {
+    renderFrameId = requestAnimationFrame(() => {
+      flushRenderQueue().catch((err) => {
+        console.error('Error flushing chart render queue:', err);
+      });
+    });
+  }
+};
+
+const chartObserver =
+  typeof IntersectionObserver !== 'undefined'
+    ? new IntersectionObserver(
+        (entries) => {
+          let needsFlush = false;
+          entries.forEach((entry) => {
+            const id = entry.target.id;
+            if (entry.isIntersecting) {
+              intersectingElements.add(id);
+              const config = latestChartConfigs.get(id);
+              if (config) {
+                const lastRendered = renderedVersions.get(id);
+                const currentVersion = config._version || 0;
+                if (lastRendered === undefined || lastRendered < currentVersion) {
+                  renderQueue.set(id, {
+                    data: config.data,
+                    layout: config.layout,
+                    config: config.config
+                  });
+                  needsFlush = true;
+                }
+              }
+            } else {
+              intersectingElements.delete(id);
+            }
+          });
+          if (needsFlush) {
+            scheduleFlush();
+          }
+        },
+        {
+          root: null,
+          rootMargin: '100px',
+          threshold: 0
+        }
+      )
+    : null;
+
 export const queueChartRender = (
   elementId: string,
   data: unknown[],
@@ -71,14 +132,21 @@ export const queueChartRender = (
     });
   }
 
-  renderQueue.set(elementId, { data, layout, config });
+  // Update latest configs with a new version counter
+  configVersionCounter++;
+  latestChartConfigs.set(elementId, { data, layout, config, _version: configVersionCounter });
 
-  if (renderFrameId === null) {
-    renderFrameId = requestAnimationFrame(() => {
-      flushRenderQueue().catch((err) => {
-        console.error('Error flushing chart render queue:', err);
-      });
-    });
+  // Observe the element if not already observed
+  const el = document.getElementById(elementId);
+  if (el && chartObserver && !observedElements.has(elementId)) {
+    chartObserver.observe(el);
+    observedElements.add(elementId);
+  }
+
+  // If currently intersecting (or if observer is not supported), schedule immediate render
+  if (!chartObserver || intersectingElements.has(elementId)) {
+    renderQueue.set(elementId, { data, layout, config });
+    scheduleFlush();
   }
 };
 
@@ -142,6 +210,10 @@ const flushRenderQueue = async () => {
       try {
         Plotly.react(el, data, layout, config);
         visibleChartsMap[elementId] = true;
+        const latest = latestChartConfigs.get(elementId);
+        if (latest) {
+          renderedVersions.set(elementId, latest._version || 0);
+        }
       } catch (e) {
         console.warn(`Plotly render failed for #${elementId}:`, e);
       }
@@ -211,6 +283,8 @@ const getBaseLayout = (title: string, xTitle: string, yTitle: string, isDark: bo
 };
 
 export const clearVisibleChartsCache = () => {
+  renderedVersions.clear();
+  latestChartConfigs.clear();
   Object.keys(visibleChartsMap).forEach((key) => {
     visibleChartsMap[key] = false;
     if (plotlyInstance) {

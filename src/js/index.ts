@@ -414,6 +414,15 @@ const calculate = (e?: Event) => {
   updateScheduledLumpSumSavingsInPlace(inputs, actData);
 };
 
+let calcTimer: ReturnType<typeof setTimeout> | undefined;
+
+const debouncedCalculate = () => {
+  clearTimeout(calcTimer);
+  calcTimer = setTimeout(() => {
+    calculate();
+  }, 150);
+};
+
 const triggerLumpSumsRepaint = () => {
   const activeProfile = state.profiles[state.activeProfileId as string];
   if (!activeProfile || !els.containers.lumpSumsContainer) return;
@@ -1040,8 +1049,12 @@ const bootApp = () => {
         inp.id
       )
     ) {
-      inp.addEventListener('blur', () => calculate());
+      inp.addEventListener('blur', () => {
+        if (calcTimer) clearTimeout(calcTimer);
+        calculate();
+      });
       inp.addEventListener('input', () => {
+        debouncedCalculate();
         clearTimeout(saveTimer);
         saveTimer = setTimeout(
           () => saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false),

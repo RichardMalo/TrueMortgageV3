@@ -239,12 +239,15 @@ describe('syncRateShockTimeline (rate-shock.ts)', () => {
   // ── Input event wiring ────────────────────────────────────────────────────
 
   it('calls calculate() when a rate input fires an "input" event with a valid number', () => {
+    vi.useFakeTimers();
     const { state, els, timeline } = makeRig({ termVal: '5', amortVal: '10' });
     syncRateShockTimeline(state, els, calculate);
     const inp = timeline.querySelector<HTMLInputElement>('.term-rate-input')!;
     inp.value = '5.5';
     inp.dispatchEvent(new Event('input'));
+    vi.advanceTimersByTime(150);
     expect(calculate).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 
   it('updates state.termRates and marks customizedYears when rate input fires', () => {

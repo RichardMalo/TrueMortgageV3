@@ -87,6 +87,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
     els.containers.rateShockTimeline.setAttribute('data-rendered-lang', currentLang);
 
     const inputs = els.containers.rateShockTimeline.querySelectorAll('.term-rate-input');
+    let rateShockTimer: ReturnType<typeof setTimeout> | undefined;
     inputs.forEach((inpEl: Element) => {
       const inp = inpEl as HTMLInputElement;
       inp.addEventListener('input', () => {
@@ -95,7 +96,8 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
         if (!isNaN(val)) {
           state.customizedYears[y] = true;
           state.termRates[y] = val;
-          calculate();
+          clearTimeout(rateShockTimer);
+          rateShockTimer = setTimeout(() => calculate(), 150);
         }
       });
       inp.addEventListener('blur', () => {
@@ -107,6 +109,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
         }
         state.customizedYears[y] = true;
         state.termRates[y] = val;
+        clearTimeout(rateShockTimer);
         calculate();
       });
     });
