@@ -879,6 +879,29 @@ const setupLimitsToggle = () => {
 };
 
 const bootApp = () => {
+  // Client-side error telemetry — captures unhandled exceptions and
+  // promise rejections for production debugging visibility (Audit Fix 10.1)
+  window.addEventListener('error', (event) => {
+    const payload = {
+      type: 'unhandled-error',
+      message: event.message,
+      source: event.filename,
+      line: event.lineno,
+      col: event.colno,
+      stack: event.error?.stack
+    };
+    console.warn('[Telemetry] Captured exception:', payload);
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const payload = {
+      type: 'unhandled-rejection',
+      reason: event.reason instanceof Error ? event.reason.message : String(event.reason),
+      stack: event.reason instanceof Error ? event.reason.stack : undefined
+    };
+    console.warn('[Telemetry] Captured unhandled promise rejection:', payload);
+  });
+
   loadSettingsFromStorage(state, DEFAULT_INPUTS);
   applyTranslations(state.language || 'en');
   applyStateCardOrderToDOM(state);
