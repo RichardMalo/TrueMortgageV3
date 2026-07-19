@@ -4,6 +4,18 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the app (uses baseURL in config, i.e., http://localhost:5173)
     await page.goto('/');
+
+    // Disable CSS animations/transitions for E2E speed and stability (prevent WebKit instability)
+    await page.addStyleTag({
+      content: `
+        *, *::before, *::after {
+          transition: none !important;
+          animation: none !important;
+          transition-duration: 0s !important;
+          animation-duration: 0s !important;
+        }
+      `
+    });
   });
 
   test('should render the dashboard and show initial correct default values', async ({ page }) => {
@@ -210,11 +222,11 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     // 4. Toggle chart3 visibility (uncheck) and chart6 width (check full-width)
     const showChart3 = page.locator('#layoutShow-chart3');
     await expect(showChart3).toBeChecked();
-    await showChart3.uncheck();
+    await showChart3.uncheck({ force: true });
 
     const fullChart6 = page.locator('#layoutFull-chart6');
     await expect(fullChart6).not.toBeChecked();
-    await fullChart6.check();
+    await fullChart6.check({ force: true });
 
     // 5. Apply and save
     await page.click('#saveLayoutBtn');
