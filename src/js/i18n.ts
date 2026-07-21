@@ -373,6 +373,9 @@ const walkTextNodes = (root: Node, callback: (node: Text) => void) => {
       if (tagName === 'SCRIPT' || tagName === 'STYLE') {
         continue;
       }
+      if (parent.closest && parent.closest('#amortization-table')) {
+        continue;
+      }
     }
     callback(node as Text);
   }

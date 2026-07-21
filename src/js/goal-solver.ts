@@ -12,7 +12,7 @@ export const solveRequiredMonthly = (
   isMortgage: boolean,
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.periodsToPayoff <= targetPeriods + 1) {
+  if (baseData.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
@@ -21,7 +21,7 @@ export const solveRequiredMonthly = (
   const resZero = isMortgage
     ? generateMortgageSchedule(testZero, false, true)
     : generateCCSchedule(testZero, false, true);
-  if (resZero.summary.periodsToPayoff <= targetPeriods + 1) {
+  if (resZero.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
@@ -29,7 +29,9 @@ export const solveRequiredMonthly = (
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
   const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
   const principal = safeHomePrice - safeDownPayment;
-  let max = isMortgage ? principal : inputs.ccBalance;
+  const safeCcBalance = Math.max(0, inputs.ccBalance || 0);
+  let max = isMortgage ? principal : safeCcBalance;
+  if (max <= 0) return 0;
 
   let result = max;
   for (let i = 0; i < 24; i++) {
@@ -58,7 +60,7 @@ export const solveRequiredLumpSum = (
   isMortgage: boolean,
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.periodsToPayoff <= targetPeriods + 1) {
+  if (baseData.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
@@ -67,7 +69,7 @@ export const solveRequiredLumpSum = (
   const resZero = isMortgage
     ? generateMortgageSchedule(testZero, false, true)
     : generateCCSchedule(testZero, false, true);
-  if (resZero.summary.periodsToPayoff <= targetPeriods + 1) {
+  if (resZero.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
@@ -75,7 +77,9 @@ export const solveRequiredLumpSum = (
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
   const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
   const principal = safeHomePrice - safeDownPayment;
-  let max = isMortgage ? principal : inputs.ccBalance;
+  const safeCcBalance = Math.max(0, inputs.ccBalance || 0);
+  let max = isMortgage ? principal : safeCcBalance;
+  if (max <= 0) return 0;
 
   let result = max;
   for (let i = 0; i < 24; i++) {

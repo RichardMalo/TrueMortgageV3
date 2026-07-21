@@ -2802,7 +2802,10 @@ body.dark-mode .heatmap-apply-btn:hover {
   color: var(--accent-color) !important;
 }
 .text-highlight {
-  color: #fbbf24 !important; /* Amber yellow */
+  color: #b45309 !important; /* High-contrast amber brown for WCAG AA >= 4.5:1 in light mode */
+}
+body.dark-mode .text-highlight {
+  color: #fbbf24 !important; /* Vibrant gold in dark mode */
 }
 
 /* Target Payoff Goal Solver Styles */

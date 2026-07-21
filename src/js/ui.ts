@@ -27,6 +27,7 @@ export const updateKineticText = (
   decimal = false
 ) => {
   if (!el) return;
+  gsap.killTweensOf(el);
   if (typeof val === 'string' && !isCurr) {
     el.textContent = val;
     gsap.fromTo(

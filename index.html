@@ -1242,15 +1242,31 @@
                     ></span
                   ></label
                 >
-                <div class="kinetic-text" id="balanceAtTerm" data-val="0">$0.00</div>
+                <div
+                  class="kinetic-text"
+                  id="balanceAtTerm"
+                  data-val="0"
+                  role="status"
+                  aria-live="polite"
+                >
+                  $0.00
+                </div>
               </div>
               <div class="stat-box squishy-interactive">
                 <label>Actual Payoff Time</label>
-                <div class="kinetic-text" id="paidOffIn">0 Years</div>
+                <div class="kinetic-text" id="paidOffIn" role="status" aria-live="polite">
+                  0 Years
+                </div>
               </div>
               <div class="stat-box highlight-box squishy-interactive">
                 <label>Interest Saved <span class="inline-tooltip-text">(vs Minimums)</span></label>
-                <div class="kinetic-text highlight-text" id="extraSavedTotal" data-val="0">
+                <div
+                  class="kinetic-text highlight-text"
+                  id="extraSavedTotal"
+                  data-val="0"
+                  role="status"
+                  aria-live="polite"
+                >
                   $0.00
                 </div>
               </div>
@@ -1397,7 +1413,7 @@
           <div class="bento-card mb-24" id="bank-wages-card">
             <div class="bank-wages-section">
               <div class="wage-toggle-container">
-                <h4 class="sub-section-title m-0 text-primary text-md font-bold flex items-center">
+                <h3 class="sub-section-title m-0 text-primary text-md font-bold flex items-center">
                   <span id="bankWagesTitleText"
                     >How much do you pay towards the banks wages per year</span
                   >
@@ -1409,7 +1425,7 @@
                       conventions.</span
                     ></span
                   >
-                </h4>
+                </h3>
                 <div
                   class="wage-toggle-selector"
                   id="bankWagesToggle"

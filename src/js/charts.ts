@@ -161,6 +161,10 @@ export const cancelPendingChartRenders = () => {
 let lastRenderedCurrency = '';
 
 const flushRenderQueue = async () => {
+  const queueSnapshot = new Map(renderQueue);
+  renderQueue.clear();
+  renderFrameId = null;
+
   try {
     const Plotly = await loadPlotly();
     const currentCurrency = getCurrencySymbol();
@@ -176,7 +180,7 @@ const flushRenderQueue = async () => {
     }> = [];
 
     // Read geometries first (forces a single batch layout reflow)
-    renderQueue.forEach(({ data, layout, config }, elementId) => {
+    queueSnapshot.forEach(({ data, layout, config }, elementId) => {
       const el = document.getElementById(elementId);
       if (
         el &&
@@ -220,9 +224,8 @@ const flushRenderQueue = async () => {
       // Yield execution to the browser event loop to allow paint and prevent blocking/layout-thrashing lag
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
-  } finally {
-    renderQueue.clear();
-    renderFrameId = null;
+  } catch (err) {
+    console.error('Error flushing chart render queue:', err);
   }
 };
 
@@ -835,13 +838,18 @@ export const calculateOpportunityCostData = (
   compX: number[];
   compY: number[];
 } => {
-  const ir = inputs.investRate / 100;
-  const hp = state.currentMode === 'mortgage' ? inputs.homePrice : inputs.ccBalance;
+  if (!baseData.schedule || baseData.schedule.length === 0) {
+    return { p1X: [], p1Y: [], p2X: [], p2Y: [], compX: [], compY: [] };
+  }
 
+  const ir = inputs.investRate / 100;
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
   const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const hp = state.currentMode === 'mortgage' ? safeHomePrice : Math.max(0, inputs.ccBalance || 0);
   const initialBalance =
-    state.currentMode === 'mortgage' ? safeHomePrice - safeDownPayment : inputs.ccBalance || 0;
+    state.currentMode === 'mortgage'
+      ? safeHomePrice - safeDownPayment
+      : Math.max(0, inputs.ccBalance || 0);
 
   const lastBaseYear = baseData.schedule[baseData.schedule.length - 1].year;
   const maxYear = Math.max(

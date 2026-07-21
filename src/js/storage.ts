@@ -711,8 +711,7 @@ export const loadSettingsFromStorage = (
   return settings;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const removePrototypeKeys = (obj: any): any => {
+export const removePrototypeKeys = (obj: unknown): unknown => {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
@@ -720,11 +719,12 @@ export const removePrototypeKeys = (obj: any): any => {
     return obj.map(removePrototypeKeys);
   }
   const clean: Record<string, unknown> = {};
-  for (const key of Object.keys(obj)) {
+  const record = obj as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
     if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
       continue;
     }
-    clean[key] = removePrototypeKeys(obj[key]);
+    clean[key] = removePrototypeKeys(record[key]);
   }
   return clean;
 };

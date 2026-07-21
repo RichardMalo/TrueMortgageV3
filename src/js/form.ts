@@ -153,6 +153,12 @@ export const validateForm = (
   return true;
 };
 
+const parseNum = (val: unknown, defaultVal = 0): number => {
+  if (val === undefined || val === null || val === '') return defaultVal;
+  const num = typeof val === 'number' ? val : parseFloat(String(val));
+  return isNaN(num) ? defaultVal : num;
+};
+
 /**
  * Extracts inputs from DOM form elements and returns a typed calculation Inputs object.
  */
@@ -162,7 +168,6 @@ export const getCalculationsInputs = (
   termRates: Record<number, number>
 ): Inputs => {
   const isMortgage = currentMode === 'mortgage';
-  // Extract once to avoid repeating the cast 5 times
   const pitiOn = isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked;
 
   const lumpSums: LumpSumItem[] = [];
@@ -172,7 +177,7 @@ export const getCalculationsInputs = (
     const paymentInput = row.querySelector('.lump-sum-payment-number') as HTMLInputElement | null;
     if (amountInput && paymentInput) {
       const id = row.getAttribute('data-id') || '';
-      const amount = parseFloat(amountInput.value) || 0;
+      const amount = parseNum(amountInput.value);
       const paymentNumber = parseInt(paymentInput.value, 10) || 1;
       if (amount > 0 && paymentNumber >= 1) {
         lumpSums.push({ id, amount, paymentNumber });
@@ -180,37 +185,37 @@ export const getCalculationsInputs = (
     }
   });
 
+  const oppCostOn = !!(inputs.oppCostToggle as HTMLInputElement | null)?.checked;
+
   return {
-    homePrice: parseFloat(inputs.homePrice?.value || '0'),
-    downPayment: parseFloat(inputs.downPayment?.value || '0'),
-    ccBalance: parseFloat(inputs.ccBalance?.value || '0'),
+    homePrice: parseNum(inputs.homePrice?.value),
+    downPayment: parseNum(inputs.downPayment?.value),
+    ccBalance: parseNum(inputs.ccBalance?.value),
     province: inputs.province?.value || 'ON',
-    ccMinPercent: inputs.ccMinPercent ? parseFloat(inputs.ccMinPercent.value) : undefined,
+    ccMinPercent: inputs.ccMinPercent ? parseNum(inputs.ccMinPercent.value, 3) : undefined,
     ccMinPrincipalPct: inputs.ccMinPrincipalPct
-      ? parseFloat(inputs.ccMinPrincipalPct.value)
+      ? parseNum(inputs.ccMinPrincipalPct.value, 1)
       : undefined,
-    ccMinFlat: inputs.ccMinFlat ? parseFloat(inputs.ccMinFlat.value) : undefined,
-    annualRate: parseFloat(inputs.rate?.value || '0'),
-    amortizationYears: parseFloat(inputs.amortization?.value || '0'),
-    termYears: parseFloat(inputs.term?.value || '0'),
+    ccMinFlat: inputs.ccMinFlat ? parseNum(inputs.ccMinFlat.value, 10) : undefined,
+    annualRate: parseNum(inputs.rate?.value),
+    amortizationYears: parseNum(inputs.amortization?.value),
+    termYears: parseNum(inputs.term?.value),
     compounding: (inputs.compounding?.value || 'semi') as 'semi' | 'monthly',
     frequency: (inputs.frequency?.value || 'monthly') as Inputs['frequency'],
     usePiti: pitiOn,
-    taxRate: pitiOn ? parseFloat(inputs.tax?.value || '0') : 0,
-    insRate: pitiOn ? parseFloat(inputs.ins?.value || '0') : 0,
-    hoaRate: pitiOn ? parseFloat(inputs.hoa?.value || '0') : 0,
-    pmiRate: pitiOn ? parseFloat(inputs.pmi?.value || '0') : 0,
-    useOppCost: !!(inputs.oppCostToggle as HTMLInputElement | null)?.checked,
-    investRate: (inputs.oppCostToggle as HTMLInputElement | null)?.checked
-      ? parseFloat(inputs.investRate?.value || '7.0')
-      : 7.0,
-    extraPayment: parseFloat(inputs.extra?.value || '0'),
+    taxRate: pitiOn ? parseNum(inputs.tax?.value) : 0,
+    insRate: pitiOn ? parseNum(inputs.ins?.value) : 0,
+    hoaRate: pitiOn ? parseNum(inputs.hoa?.value) : 0,
+    pmiRate: pitiOn ? parseNum(inputs.pmi?.value) : 0,
+    useOppCost: oppCostOn,
+    investRate: oppCostOn ? parseNum(inputs.investRate?.value, 7.0) : 7.0,
+    extraPayment: parseNum(inputs.extra?.value),
     startDate: inputs.date?.value || '',
     rateShockEnabled: isMortgage && !!(inputs.rateShockToggle as HTMLInputElement | null)?.checked,
     goalSolverEnabled: !!(inputs.goalSolverToggle as HTMLInputElement | null)?.checked,
-    termRates: termRates,
+    termRates,
     ccCompounding: (inputs.ccCompounding?.value || 'simple') as 'simple' | 'daily',
-    lumpSum: parseFloat(inputs.lumpSum?.value || '0'),
+    lumpSum: parseNum(inputs.lumpSum?.value),
     lumpSums
   };
 };
@@ -227,45 +232,42 @@ export const profileToInputs = (
 ): Inputs => {
   const isMortgage = currentMode === 'mortgage';
   const pitiOn = isMortgage && profileInputs.pitiToggle === true;
+  const oppCostOn = profileInputs.oppCostToggle === true;
+
   return {
-    homePrice: parseFloat(String(profileInputs.homePrice || '0')),
-    downPayment: parseFloat(String(profileInputs.downPayment || '0')),
-    ccBalance: parseFloat(String(profileInputs.ccBalance || '0')),
+    homePrice: parseNum(profileInputs.homePrice),
+    downPayment: parseNum(profileInputs.downPayment),
+    ccBalance: parseNum(profileInputs.ccBalance),
     province: String(profileInputs.province || 'ON'),
     ccMinPercent:
       profileInputs.ccMinPercent !== undefined
-        ? parseFloat(String(profileInputs.ccMinPercent))
+        ? parseNum(profileInputs.ccMinPercent, 3)
         : undefined,
     ccMinPrincipalPct:
       profileInputs.ccMinPrincipalPct !== undefined
-        ? parseFloat(String(profileInputs.ccMinPrincipalPct))
+        ? parseNum(profileInputs.ccMinPrincipalPct, 1)
         : undefined,
     ccMinFlat:
-      profileInputs.ccMinFlat !== undefined
-        ? parseFloat(String(profileInputs.ccMinFlat))
-        : undefined,
-    annualRate: parseFloat(String(profileInputs.rate || '0')),
-    amortizationYears: parseFloat(String(profileInputs.amortization || '0')),
-    termYears: parseFloat(String(profileInputs.term || '0')),
+      profileInputs.ccMinFlat !== undefined ? parseNum(profileInputs.ccMinFlat, 10) : undefined,
+    annualRate: parseNum(profileInputs.rate),
+    amortizationYears: parseNum(profileInputs.amortization),
+    termYears: parseNum(profileInputs.term),
     compounding: (profileInputs.compounding || 'semi') as 'semi' | 'monthly',
     frequency: (profileInputs.frequency || 'monthly') as Inputs['frequency'],
     usePiti: pitiOn,
-    taxRate: pitiOn ? parseFloat(String(profileInputs.tax || '0')) : 0,
-    insRate: pitiOn ? parseFloat(String(profileInputs.ins || '0')) : 0,
-    hoaRate: pitiOn ? parseFloat(String(profileInputs.hoa || '0')) : 0,
-    pmiRate: pitiOn ? parseFloat(String(profileInputs.pmi || '0')) : 0,
-    useOppCost: profileInputs.oppCostToggle === true,
-    investRate:
-      profileInputs.oppCostToggle === true
-        ? parseFloat(String(profileInputs.investRate || '7.0'))
-        : 7.0,
-    extraPayment: parseFloat(String(profileInputs.extra || '0')),
+    taxRate: pitiOn ? parseNum(profileInputs.tax) : 0,
+    insRate: pitiOn ? parseNum(profileInputs.ins) : 0,
+    hoaRate: pitiOn ? parseNum(profileInputs.hoa) : 0,
+    pmiRate: pitiOn ? parseNum(profileInputs.pmi) : 0,
+    useOppCost: oppCostOn,
+    investRate: oppCostOn ? parseNum(profileInputs.investRate, 7.0) : 7.0,
+    extraPayment: parseNum(profileInputs.extra),
     startDate: String(profileInputs.date || ''),
     rateShockEnabled: isMortgage && profileInputs.rateShockToggle === true,
     goalSolverEnabled: profileInputs.goalSolverToggle === true,
     termRates,
     ccCompounding: (profileInputs.ccCompounding || 'simple') as 'simple' | 'daily',
-    lumpSum: parseFloat(String(profileInputs.lumpSum || '0')),
+    lumpSum: parseNum(profileInputs.lumpSum),
     lumpSums: Array.isArray(profileInputs.lumpSums) ? (profileInputs.lumpSums as LumpSumItem[]) : []
   };
 };

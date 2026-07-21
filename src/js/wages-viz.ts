@@ -147,6 +147,9 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
         ? `Année : ${yr}\nIntérêt : ${formatCurrency(displayVal)}`
         : `Year: ${yr}\nInterest: ${formatCurrency(displayVal)}`;
     }
+    circle.setAttribute('tabindex', '0');
+    circle.setAttribute('role', 'button');
+    circle.setAttribute('aria-label', `Year ${yr}: ${formatCurrency(displayVal)}`);
 
     const yearLbl = document.createElement('div');
     yearLbl.className = 'wage-circle-year';

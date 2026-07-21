@@ -12,10 +12,12 @@ import { currentLanguage } from './i18n.js';
  * @returns The periodic payment amount.
  */
 export const getMonthlyPayment = (principal: number, rate: number, periods: number): number => {
-  if (periods <= 0) return 0;
-  return rate === 0
+  if (periods <= 0 || principal <= 0) return 0;
+  const safeRate = Math.max(0, rate);
+  return safeRate === 0
     ? principal / periods
-    : (principal * (rate * Math.pow(1 + rate, periods))) / (Math.pow(1 + rate, periods) - 1);
+    : (principal * (safeRate * Math.pow(1 + safeRate, periods))) /
+        (Math.pow(1 + safeRate, periods) - 1);
 };
 
 /**
@@ -188,15 +190,16 @@ export const generateMortgageSchedule = (
     }
   }
 
+  const paidOff = balance <= 0.009;
   return {
     schedule,
     summary: {
-      periodsToPayoff: periodsToPayoff,
+      periodsToPayoff: paidOff ? periodsToPayoff : Infinity,
       periodsPerYear: periodsPerYear,
       totalInterest: totalInterest,
       totalPrincipal: totalPrincipal,
       totalEscrow: totalEscrow,
-      paidOff: balance <= 0.009
+      paidOff: paidOff
     }
   };
 };

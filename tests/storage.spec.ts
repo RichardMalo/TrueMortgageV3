@@ -533,7 +533,8 @@ describe('Storage & Cryptography (storage.ts)', () => {
       const polluted = JSON.parse(
         '{"__proto__": {"polluted": true}, "normal": 123, "nested": {"constructor": "dangerous", "prototype": "bad", "ok": "yes"}}'
       );
-      const cleaned = removePrototypeKeys(polluted);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const cleaned = removePrototypeKeys(polluted) as Record<string, any>;
 
       // Check clean object properties
       expect(cleaned.normal).toBe(123);

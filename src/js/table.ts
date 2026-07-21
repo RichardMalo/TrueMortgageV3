@@ -3,7 +3,7 @@ import { formatCurrency } from './charts.js';
 import { TABLE_RENDER_CHUNK_SIZE } from './constants.js';
 import { escapeHtml } from './ui.js';
 
-let tableRenderTimeoutId: ReturnType<typeof setTimeout> | null = null;
+let tableAnimationFrameId: number | null = null;
 
 /**
  * Progressively renders the amortization schedule table in chunks to preserve main-thread responsiveness.
@@ -25,11 +25,11 @@ export const updateTable = (
       escrowTh.classList.add('hidden');
     }
   }
-  tbody.innerHTML = '';
+  tbody.replaceChildren();
 
-  if (tableRenderTimeoutId !== null) {
-    clearTimeout(tableRenderTimeoutId);
-    tableRenderTimeoutId = null;
+  if (tableAnimationFrameId !== null) {
+    cancelAnimationFrame(tableAnimationFrameId);
+    tableAnimationFrameId = null;
   }
 
   const isPeriod = labelFormat === 'period';
@@ -73,9 +73,9 @@ export const updateTable = (
     tbody.appendChild(frag);
 
     if (end < schedule.length) {
-      tableRenderTimeoutId = setTimeout(() => renderChunk(end), 16);
+      tableAnimationFrameId = requestAnimationFrame(() => renderChunk(end));
     } else {
-      tableRenderTimeoutId = null;
+      tableAnimationFrameId = null;
     }
   };
 
