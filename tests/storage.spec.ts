@@ -7,7 +7,8 @@ import {
   loadSettingsFromStorage,
   getCountryCompoundingFromTimezone,
   removePrototypeKeys,
-  generateProfileId
+  generateProfileId,
+  isCryptoSupported
 } from '../src/js/storage.js';
 import { Inputs, AppState, AppElements } from '../src/js/types.js';
 import { webcrypto } from 'node:crypto';
@@ -80,6 +81,39 @@ describe('Storage & Cryptography (storage.ts)', () => {
       await expect(encryptData(plaintext, '')).rejects.toThrow('Passcode cannot be empty');
       await expect(encryptData(plaintext, '   ')).rejects.toThrow('Passcode cannot be empty');
       await expect(decryptData('some-ciphertext', '')).rejects.toThrow('Passcode cannot be empty');
+    });
+
+    it('should verify that isCryptoSupported returns true in standard test environment', () => {
+      expect(isCryptoSupported()).toBe(true);
+    });
+
+    it('should handle isCryptoSupported and throw error in encryptData/decryptData when subtle crypto is missing', async () => {
+      const originalSubtle = window.crypto.subtle;
+      // Mock subtle as undefined
+      Object.defineProperty(window.crypto, 'subtle', {
+        value: undefined,
+        writable: true,
+        configurable: true
+      });
+
+      try {
+        expect(isCryptoSupported()).toBe(false);
+
+        await expect(encryptData('plaintext', 'pass')).rejects.toThrow(
+          'Web Cryptography API is not supported in this browser environment.'
+        );
+
+        await expect(decryptData('ciphertext', 'pass')).rejects.toThrow(
+          'Web Cryptography API is not supported in this browser environment.'
+        );
+      } finally {
+        // Restore
+        Object.defineProperty(window.crypto, 'subtle', {
+          value: originalSubtle,
+          writable: true,
+          configurable: true
+        });
+      }
     });
 
     it('should fall back and decrypt legacy payloads encrypted with 100,000 iterations', async () => {

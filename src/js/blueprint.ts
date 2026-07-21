@@ -1,7 +1,7 @@
 import { AppState, Inputs, AppElements } from './types.js';
 import gsap from 'gsap';
 import { STORAGE_KEY } from './constants.js';
-import { removePrototypeKeys } from './storage.js';
+import { removePrototypeKeys, isCryptoSupported } from './storage.js';
 
 /**
  * Sets up listeners and logic for importing and exporting encrypted or plain
@@ -45,16 +45,40 @@ export const setupBlueprintSync = (
   if (!passcodeWrapper || !passcodeInput || !exportBtn || !fileInput || !dropzone || !feedback)
     return;
 
+  const cryptoAvailable = isCryptoSupported();
+
+  if (!cryptoAvailable) {
+    const encBtn = document.querySelector(
+      '.format-btn[data-format="encrypted"]'
+    ) as HTMLButtonElement | null;
+    if (encBtn) {
+      encBtn.classList.add('unsupported');
+      encBtn.disabled = true;
+      encBtn.setAttribute(
+        'title',
+        'Encryption is not supported in this browser or WebView environment.'
+      );
+      encBtn.setAttribute('aria-label', 'Encrypted layout format (Unsupported in this browser)');
+      encBtn.innerHTML = 'Encrypted (Unsupported) 🔒';
+    }
+  }
+
   formatBtns.forEach((btn) => {
     btn.addEventListener('click', (e) => {
+      const btnEl = e.currentTarget as HTMLElement;
+      const targetFormat = btnEl.getAttribute('data-format') || 'plain';
+
+      if (targetFormat === 'encrypted' && !cryptoAvailable) {
+        return;
+      }
+
       formatBtns.forEach((b) => {
         b.classList.remove('active');
         b.setAttribute('aria-pressed', 'false');
       });
-      const btnEl = e.currentTarget as HTMLElement;
       btnEl.classList.add('active');
       btnEl.setAttribute('aria-pressed', 'true');
-      activeFormat = btnEl.getAttribute('data-format') || 'plain';
+      activeFormat = targetFormat;
 
       if (activeFormat === 'encrypted') {
         passcodeWrapper.classList.add('active');
@@ -224,6 +248,13 @@ export const setupBlueprintSync = (
           return;
         }
       } else {
+        if (!cryptoAvailable) {
+          showFeedback(
+            'Restoration failed: Encryption is unsupported in this browser environment.',
+            true
+          );
+          return;
+        }
         const passcode = passcodeInput.value.trim();
         if (!passcode) {
           showFeedback('Encrypted file detected! Enter passcode below to unlock.', true);

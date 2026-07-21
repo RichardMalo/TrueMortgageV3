@@ -1714,6 +1714,14 @@ body.dark-mode .flag-icon {
   opacity: 1;
   box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.3);
 }
+.format-btn:disabled,
+.format-btn.unsupported {
+  opacity: 0.35 !important;
+  cursor: not-allowed !important;
+  background: none !important;
+  color: var(--text-color) !important;
+  box-shadow: none !important;
+}
 .dropzone-feedback {
   font-size: 0.8rem;
   font-weight: 700;

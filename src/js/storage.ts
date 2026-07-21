@@ -89,6 +89,14 @@ export const getCountryCompoundingFromTimezone = (): {
   return { country: 'semi', compounding: 'semi' };
 };
 
+export const isCryptoSupported = (): boolean => {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.crypto !== 'undefined' &&
+    typeof window.crypto.subtle !== 'undefined'
+  );
+};
+
 /**
  * Encrypts a plain text string using client-side AES-GCM 256-bit encryption.
  * Derives a cryptographic key from the user passcode via PBKDF2 (100K iterations).
@@ -98,6 +106,9 @@ export const getCountryCompoundingFromTimezone = (): {
  * @returns A promise resolving to a Base64-encoded encrypted string containing salt, IV, and ciphertext.
  */
 export const encryptData = async (plainText: string, passcode: string): Promise<string> => {
+  if (!isCryptoSupported()) {
+    throw new Error('Web Cryptography API is not supported in this browser environment.');
+  }
   if (!passcode || passcode.trim() === '') {
     throw new Error('Passcode cannot be empty');
   }
@@ -199,6 +210,9 @@ const decryptDataWithIterations = async (
  * @returns A promise resolving to the decrypted plain text string.
  */
 export const decryptData = async (cipherTextBase64: string, passcode: string): Promise<string> => {
+  if (!isCryptoSupported()) {
+    throw new Error('Web Cryptography API is not supported in this browser environment.');
+  }
   if (!passcode || passcode.trim() === '') {
     throw new Error('Passcode cannot be empty');
   }
