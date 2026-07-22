@@ -1625,6 +1625,7 @@ body.dark-mode .flag-icon {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
   font-size: 0.85rem;
@@ -1632,6 +1633,9 @@ body.dark-mode .flag-icon {
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-color);
+  background: transparent;
+  border: none;
+  text-align: left;
 }
 .dropdown-item:hover {
   background-color: var(--input-bg);
@@ -1818,6 +1822,7 @@ body.dark-mode .flag-icon {
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
   padding: 10px 14px;
   border-radius: 12px;
   font-size: 0.88rem;
@@ -1825,6 +1830,9 @@ body.dark-mode .flag-icon {
   cursor: pointer;
   transition: all 0.2s ease;
   color: var(--text-color);
+  background: transparent;
+  border: none;
+  text-align: left;
 }
 .settings-item:hover {
   background-color: var(--input-bg);
