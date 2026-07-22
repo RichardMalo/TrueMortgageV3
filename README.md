@@ -15,7 +15,7 @@ The entire application executes **locally in your browser**—all financial calc
 
 ## 🚀 Key Features
 
-### 1. Dual Optimization Engines
+### 1. Triple Optimization Engines
 - **Mortgage Engine:**
   - **Regional Compounding Standards:** Canadian fixed mortgages (**semi-annual compounding by law**) vs. US/UK/AU/NZ (**monthly compounding**).
   - **Private Mortgage Insurance (PMI):** Automatic LTV threshold tracking (cancellation at <= 80% LTV) for US mortgages, with automatic PMI omission for Canadian loans where mortgage insurance is added up-front to principal.
@@ -23,6 +23,9 @@ The entire application executes **locally in your browser**—all financial calc
 - **Credit Card Engine:**
   - **Legislation-Compliant Minimum Payments:** Ontario standard (3%) vs. Quebec legal mandate (5%), plus custom percentage/interest+principal rules and flat minimum floors.
   - **Negative Amortization Safeguards:** Handles minimum payments lower than monthly interest without cumulative principal underflow.
+- **Personal & Auto Loan Engine:**
+  - **Customizable Amortization & Origination Fees:** Models fixed-term consumer loans (personal, auto, student) incorporating up-front origination fees and effective APR calculations.
+  - **Accelerated Paydown Trajectories:** Models discretionary periodic extra principal paydowns, lump sums, and flexible payment frequencies.
 
 ### 2. Advanced Strategy Modeling
 - **Scheduled Future Lump Sums:** Dynamic scheduled lump-sum payments (annual bonuses, tax refunds) at specific payment numbers with automated date badges.
