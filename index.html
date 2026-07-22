@@ -21,9 +21,11 @@
     <!-- SEO Optimization Meta Tags -->
     <meta
       name="description"
-      content="Take control of your debt with the Debt Elimination Engine. Algorithmic mortgage and credit card optimizer featuring Canadian vs US compounding, refinancing rate shocks, opportunity cost comparisons, and bento dashboard customization."
+      content="Algorithmic mortgage & credit card optimizer featuring US/Canadian compounding, refinancing rate shocks, opportunity cost analytics, and bento dashboards."
     />
     <!-- Open Graph Metadata -->
+    <meta property="og:site_name" content="Debt Elimination Engine" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content="Debt Elimination Engine" />
     <meta
       property="og:description"
@@ -129,17 +131,17 @@
               </button>
               <div class="dropdown-menu settings-menu" id="settingsMenu">
                 <div class="settings-menu-header">Portability & Sync</div>
-                <div class="settings-item" id="settingsOptSync">
+                <button type="button" class="settings-item" id="settingsOptSync">
                   <span>🔑</span> Secure Sync & Portability
-                </div>
-                <div class="settings-item" id="settingsOptLayout">
+                </button>
+                <button type="button" class="settings-item" id="settingsOptLayout">
                   <span>📊</span> Customize Dashboard Layout
-                </div>
+                </button>
                 <div class="settings-menu-divider"></div>
                 <div class="settings-menu-header">Engine Logic</div>
-                <div class="settings-item" id="settingsOptLimits">
+                <button type="button" class="settings-item" id="settingsOptLimits">
                   <span>⚙️</span> Constraints & Limits
-                </div>
+                </button>
                 <div class="settings-menu-divider"></div>
 
                 <div class="settings-menu-header">App Preferences</div>
@@ -288,9 +290,9 @@
 
                 <div class="settings-menu-divider"></div>
                 <div class="settings-menu-header">System Operations</div>
-                <div class="settings-item danger-action" id="settingsOptReset">
+                <button type="button" class="settings-item danger-action" id="settingsOptReset">
                   <span>🔄</span> Reset Application Data
-                </div>
+                </button>
               </div>
             </div>
           </div>
@@ -950,6 +952,7 @@
                     type="range"
                     id="goalPayoffSlider"
                     class="goal-slider"
+                    aria-label="Target Payoff Timeline in Years"
                     style="width: 100%; cursor: pointer"
                     min="1"
                     max="30"

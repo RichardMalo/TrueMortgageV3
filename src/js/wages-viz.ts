@@ -87,7 +87,9 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
     let val = interest;
     if (isRentTaxIns) {
       const rentAlone = Math.ceil(interest / 12);
-      val = Math.ceil(rentAlone + annualTax / 12 + annualIns / 12);
+      const taxAlone = Math.ceil(annualTax / 12);
+      const insAlone = Math.ceil(annualIns / 12);
+      val = rentAlone + taxAlone + insAlone;
     } else if (isRent) {
       val = Math.ceil(interest / 12);
     }
@@ -125,17 +127,19 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
 
     if (isRentTaxIns) {
       const rentAlone = Math.ceil(interest / 12);
+      const taxAlone = Math.ceil(annualTax / 12);
+      const insAlone = Math.ceil(annualIns / 12);
       circle.innerHTML = `
         <span class="wage-circle-default-val">${formatCurrency(displayVal)}</span>
         <div class="wage-circle-hover-val">
           <span class="breakdown-rent">${formatCurrency(rentAlone)}</span>
-          <span class="breakdown-tax">+${formatCurrency(Math.ceil(annualTax / 12))}</span>
-          <span class="breakdown-ins">+${formatCurrency(Math.ceil(annualIns / 12))}</span>
+          <span class="breakdown-tax">+${formatCurrency(taxAlone)}</span>
+          <span class="breakdown-ins">+${formatCurrency(insAlone)}</span>
         </div>
       `;
       circle.title = isFr
-        ? `Année : ${yr}\nLoyer + Taxe et assurance : ${formatCurrency(displayVal)}/mois\n(Loyer : ${formatCurrency(rentAlone)} + Taxe : ${formatCurrency(Math.ceil(annualTax / 12))} + Assurance : ${formatCurrency(Math.ceil(annualIns / 12))})`
-        : `Year: ${yr}\nRent + Tax & Insurance: ${formatCurrency(displayVal)}/Month\n(Rent: ${formatCurrency(rentAlone)} + Tax: ${formatCurrency(Math.ceil(annualTax / 12))} + Insurance: ${formatCurrency(Math.ceil(annualIns / 12))})`;
+        ? `Année : ${yr}\nLoyer + Taxe et assurance : ${formatCurrency(displayVal)}/mois\n(Loyer : ${formatCurrency(rentAlone)} + Taxe : ${formatCurrency(taxAlone)} + Assurance : ${formatCurrency(insAlone)})`
+        : `Year: ${yr}\nRent + Tax & Insurance: ${formatCurrency(displayVal)}/Month\n(Rent: ${formatCurrency(rentAlone)} + Tax: ${formatCurrency(taxAlone)} + Insurance: ${formatCurrency(insAlone)})`;
     } else if (isRent) {
       circle.innerHTML = `<span class="wage-circle-value">${formatCurrency(displayVal)}</span>`;
       circle.title = isFr

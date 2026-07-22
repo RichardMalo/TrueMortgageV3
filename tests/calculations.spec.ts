@@ -73,6 +73,35 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(firstRow.principal).toBeCloseTo(865.92, 1);
   });
 
+  it('should omit periodic PMI escrow under Canadian semi-annual compounding even if pmiRate > 0', () => {
+    const inputs: Inputs = {
+      homePrice: 800000,
+      downPayment: 80000, // 90% LTV
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.39,
+      amortizationYears: 30,
+      termYears: 5,
+      compounding: 'semi',
+      frequency: 'monthly',
+      usePiti: true,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 1.0, // Active PMI rate
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    const firstRow = result.schedule[0];
+    expect(firstRow.pmi).toBe(0);
+  });
+
   it('should calculate credit card payoffs correctly', () => {
     const inputs: Inputs = {
       homePrice: 0,

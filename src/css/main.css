@@ -527,7 +527,8 @@ button:focus-visible,
 }
 .inline-tooltip-text {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--text-color);
+  opacity: 0.75;
   font-weight: 400;
   margin-left: 4px;
 }
@@ -2454,7 +2455,7 @@ body:not(.dark-mode) .scenario-sidebar {
   color: #3b82f6 !important;
 }
 .text-red {
-  color: #ef4444 !important;
+  color: var(--danger-color) !important;
 }
 .text-lg {
   font-size: 1.15rem !important;
@@ -2825,10 +2826,15 @@ body.dark-mode .text-highlight {
   box-shadow: none !important;
 }
 .goal-slider:focus {
-  outline: none !important;
-  border: none !important;
+  outline: none;
   background: var(--border-color) !important;
-  box-shadow: none !important;
+}
+.goal-slider:focus-visible,
+input[type='range']:focus-visible,
+.dropdown-item:focus-visible {
+  outline: 2px solid var(--accent-color) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25) !important;
 }
 .goal-slider::-webkit-slider-thumb {
   -webkit-appearance: none;

@@ -114,7 +114,7 @@ export const adjustTooltip = (tip: HTMLElement, active: boolean) => {
 export const setupTouchAndKeyboardTooltips = () => {
   const tips = document.querySelectorAll('.help-tip');
   let activeTip: HTMLElement | null = null;
-  let touchTimeout: ReturnType<typeof setTimeout> | undefined;
+  let activeTooltipTouchListener: ((e: TouchEvent) => void) | null = null;
 
   const getParentContainer = (element: Element) => {
     return element.closest('.column, .full-width-section');
@@ -176,6 +176,7 @@ export const setupTouchAndKeyboardTooltips = () => {
     });
 
     // Mobile touch bindings
+    let touchTimeout: ReturnType<typeof setTimeout>;
     tip.addEventListener(
       'touchstart',
       () => {
@@ -213,20 +214,20 @@ export const setupTouchAndKeyboardTooltips = () => {
     );
   });
 
-  document.addEventListener(
-    'touchstart',
-    (e: TouchEvent) => {
-      if (activeTip && !(e.target as Element).closest('.help-tip')) {
-        activeTip.classList.remove('touch-active');
-        const parent = getParentContainer(activeTip);
-        if (parent) parent.classList.remove('has-active-tooltip');
-        activeTip.setAttribute('aria-expanded', 'false');
-        adjustTooltip(activeTip, false);
-        activeTip = null;
-      }
-    },
-    { passive: true }
-  );
+  if (activeTooltipTouchListener) {
+    document.removeEventListener('touchstart', activeTooltipTouchListener);
+  }
+  activeTooltipTouchListener = (e: TouchEvent) => {
+    if (activeTip && !(e.target as Element).closest('.help-tip')) {
+      activeTip.classList.remove('touch-active');
+      const parent = getParentContainer(activeTip);
+      if (parent) parent.classList.remove('has-active-tooltip');
+      activeTip.setAttribute('aria-expanded', 'false');
+      adjustTooltip(activeTip, false);
+      activeTip = null;
+    }
+  };
+  document.addEventListener('touchstart', activeTooltipTouchListener, { passive: true });
 };
 
 export const swapDOMNodes = (node1: HTMLElement, node2: HTMLElement, onSwap?: () => void) => {
@@ -359,6 +360,8 @@ export const setupDragAndDrop = (onReorder: () => void) => {
   });
 };
 
+let activeCustomDropdownClickListener: (() => void) | null = null;
+
 // Keyboard-accessible country dropdown selection logic (a11y Fix)
 export const setupCustomDropdown = (onCountryChange: (_val: string) => void) => {
   const dropdown = document.getElementById('country-dropdown');
@@ -408,9 +411,13 @@ export const setupCustomDropdown = (onCountryChange: (_val: string) => void) => 
     e.stopPropagation();
   });
 
-  document.addEventListener('click', () => {
+  if (activeCustomDropdownClickListener) {
+    document.removeEventListener('click', activeCustomDropdownClickListener);
+  }
+  activeCustomDropdownClickListener = () => {
     closeDropdown();
-  });
+  };
+  document.addEventListener('click', activeCustomDropdownClickListener);
 
   items.forEach((itemEl, idx) => {
     const item = itemEl as HTMLElement;
@@ -490,18 +497,20 @@ export const setupTableExpandButton = () => {
   if (!btn || !tableResp) return;
 
   btn.setAttribute('aria-expanded', 'false');
-  btn.setAttribute('aria-label', 'Expand amortization ledger table view');
+  btn.setAttribute('aria-label', t('Expand amortization ledger table view'));
 
   btn.addEventListener('click', (e) => {
     e.preventDefault();
     e.stopPropagation();
     const isExpanded = tableResp.classList.toggle('expanded');
     btn.innerHTML = isExpanded ? '−' : '+';
-    btn.title = isExpanded ? 'Shrink Table' : 'Expand Table';
+    btn.title = isExpanded ? t('Shrink Table') : t('Expand Table');
     btn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
     btn.setAttribute(
       'aria-label',
-      isExpanded ? 'Shrink amortization ledger table view' : 'Expand amortization ledger table view'
+      isExpanded
+        ? t('Shrink amortization ledger table view')
+        : t('Expand amortization ledger table view')
     );
   });
 };
@@ -698,7 +707,7 @@ export const renderScheduledLumpSumRows = (
   };
   const periodsPerYear = freqMap[frequency] || 12;
 
-  lumpSums.forEach((item) => {
+  lumpSums.forEach((item, index) => {
     const row = document.createElement('div');
     row.className = 'lump-sum-row';
     row.setAttribute('data-id', item.id);
@@ -717,7 +726,7 @@ export const renderScheduledLumpSumRows = (
     amountInput.step = '100';
     amountInput.value = item.amount > 0 ? String(item.amount) : '';
     amountInput.placeholder = t('$ Amount');
-    amountInput.ariaLabel = `Scheduled Lump Sum Amount`;
+    amountInput.ariaLabel = `Scheduled Lump Sum ${index + 1} Amount`;
     amountGroup.appendChild(amountInput);
 
     // Payment number container
@@ -731,7 +740,7 @@ export const renderScheduledLumpSumRows = (
     paymentInput.min = '1';
     paymentInput.value = item.paymentNumber > 0 ? String(item.paymentNumber) : '';
     paymentInput.placeholder = t('Pmt #');
-    paymentInput.ariaLabel = `Scheduled Lump Sum Payment Number`;
+    paymentInput.ariaLabel = `Scheduled Lump Sum ${index + 1} Payment Number`;
     paymentGroup.appendChild(paymentInput);
 
     // Dynamic date badge

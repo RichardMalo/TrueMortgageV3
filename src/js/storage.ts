@@ -733,5 +733,11 @@ export const generateProfileId = (): string => {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return 'profile-' + crypto.randomUUID();
   }
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(8);
+    crypto.getRandomValues(bytes);
+    const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return 'profile-' + Date.now() + '-' + hex;
+  }
   return 'profile-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
 };

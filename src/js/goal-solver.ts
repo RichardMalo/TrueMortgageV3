@@ -33,6 +33,15 @@ export const solveRequiredMonthly = (
   let max = isMortgage ? principal : safeCcBalance;
   if (max <= 0) return 0;
 
+  // Feasibility check: if maximum extra payment cannot achieve target, return 0
+  const testMax = { ...inputs, extraPayment: max };
+  const resMax = isMortgage
+    ? generateMortgageSchedule(testMax, false, true)
+    : generateCCSchedule(testMax, false, true);
+  if (resMax.summary.periodsToPayoff > targetPeriods) {
+    return 0;
+  }
+
   let result = max;
   for (let i = 0; i < 24; i++) {
     const mid = (min + max) / 2;
@@ -80,6 +89,15 @@ export const solveRequiredLumpSum = (
   const safeCcBalance = Math.max(0, inputs.ccBalance || 0);
   let max = isMortgage ? principal : safeCcBalance;
   if (max <= 0) return 0;
+
+  // Feasibility check: if maximum lump sum cannot achieve target, return 0
+  const testMax = { ...inputs, lumpSum: max };
+  const resMax = isMortgage
+    ? generateMortgageSchedule(testMax, false, true)
+    : generateCCSchedule(testMax, false, true);
+  if (resMax.summary.periodsToPayoff > targetPeriods) {
+    return 0;
+  }
 
   let result = max;
   for (let i = 0; i < 24; i++) {
@@ -219,8 +237,10 @@ export const renderGoalSolver = (
     monthlyValEl.innerHTML = `+${formatCurrency(displayMonthly)}<span class="box-unit">${freqUnit}</span>`;
     lumpSumValEl.textContent = `+${formatCurrency(displayLumpSum)}`;
 
-    // Show/hide error if solver fails or returns zero while baseline is longer
-    if (solvedMonthly === 0 && targetPeriods < baselinePayoff - 1) {
+    // Show/hide error only if solver fails to meet target and current actual inputs do not already achieve it
+    const actualPayoff = actData.summary.periodsToPayoff;
+    const isAlreadyAchieved = actualPayoff <= targetPeriods;
+    if (solvedMonthly === 0 && !isAlreadyAchieved && targetPeriods < baselinePayoff - 1) {
       errorEl.classList.remove('hidden');
     } else {
       errorEl.classList.add('hidden');

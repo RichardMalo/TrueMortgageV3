@@ -74,4 +74,14 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const solvedSchedule = generateMortgageSchedule(solvedInputs, false);
     expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(300 + 1);
   });
+
+  it('should return 0 when target payoff period is mathematically unreachable', () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    // Target of 0 periods is impossible for any loan
+    const resultMonthly = solveRequiredMonthly(0, mortgageInputs, true, baseData);
+    expect(resultMonthly).toBe(0);
+
+    const resultLumpSum = solveRequiredLumpSum(0, mortgageInputs, true, baseData);
+    expect(resultLumpSum).toBe(0);
+  });
 });

@@ -108,11 +108,12 @@ export const generateMortgageSchedule = (
     if (balance <= 0.009) break;
     periodsToPayoff = i;
 
-    const elapsedYears = (i - 1) / periodsPerYear;
     let activeAnnualRate = safeRate;
 
     if (inputs.rateShockEnabled && termYears > 0) {
-      const y = Math.floor(elapsedYears / termYears) * termYears;
+      const termPeriods = Math.round(termYears * periodsPerYear);
+      const termIndex = Math.floor((i - 1) / termPeriods);
+      const y = termIndex * termYears;
       if (y > 0 && y < amortizationYears && inputs.termRates && inputs.termRates[y] !== undefined) {
         activeAnnualRate = Math.min(100, Math.max(0, inputs.termRates[y] || 0));
       }
@@ -125,7 +126,7 @@ export const generateMortgageSchedule = (
 
     const annualPmiRate = inputs.pmiRate || 0;
     const periodicPMI =
-      balance > pmiDropThreshold && annualPmiRate > 0
+      inputs.compounding !== 'semi' && balance > pmiDropThreshold && annualPmiRate > 0
         ? (principal * (Math.min(100, Math.max(0, annualPmiRate)) / 100)) / periodsPerYear
         : 0;
     const periodicEscrow = periodicTax + periodicInsurance + periodicHOA + periodicPMI;
@@ -298,7 +299,7 @@ export const generateCCSchedule = (
     if (balance < 0.01) balance = 0;
 
     totalInterest += interestPortion;
-    totalPrincipal += regularPrincipal + currentExtraPayment;
+    totalPrincipal += Math.max(0, regularPrincipal + currentExtraPayment);
     totalExtraPaid += currentExtraPayment;
 
     if (!summaryOnly) {
@@ -663,21 +664,22 @@ export const getRowDateLabel = (
       d.setDate(Math.min(startDay, lastDay));
     } else if (freq === 'semi-monthly') {
       const halfIndex = period - 1;
-      const monthsToAdd = Math.floor(halfIndex / 2);
-      const isSecondHalf = halfIndex % 2 === 1;
-      d.setDate(1);
-      d.setMonth(d.getMonth() + monthsToAdd);
-      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-      if (isSecondHalf) {
-        if (startDay <= 15) {
-          d.setDate(Math.min(startDay + 15, lastDay));
-        } else {
-          d.setMonth(d.getMonth() + 1);
-          const nextLastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-          d.setDate(Math.min(startDay - 15, nextLastDay));
-        }
+      if (startDay <= 15) {
+        const monthsToAdd = Math.floor(halfIndex / 2);
+        d.setDate(1);
+        d.setMonth(d.getMonth() + monthsToAdd);
+        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        d.setDate(
+          halfIndex % 2 === 1 ? Math.min(startDay + 15, lastDay) : Math.min(startDay, lastDay)
+        );
       } else {
-        d.setDate(Math.min(startDay, lastDay));
+        const monthsToAdd = Math.floor((halfIndex + 1) / 2);
+        d.setDate(1);
+        d.setMonth(d.getMonth() + monthsToAdd);
+        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        d.setDate(
+          halfIndex % 2 === 1 ? Math.min(startDay - 15, lastDay) : Math.min(startDay, lastDay)
+        );
       }
     } else if (freq === 'weekly') {
       d.setDate(d.getDate() + (period - 1) * 7);

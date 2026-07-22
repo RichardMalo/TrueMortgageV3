@@ -49,7 +49,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
   const existingYears = Array.from(existingBoxes)
     .map((boxEl: Element) => {
       const input = boxEl.querySelector('.term-rate-input');
-      return input ? parseInt(input.getAttribute('data-year') || '0') : null;
+      return input ? parseFloat(input.getAttribute('data-year') || '0') : null;
     })
     .filter((y) => y !== null) as number[];
 
@@ -77,7 +77,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
             <span style="font-size: 0.75rem; opacity: 0.7; font-weight: 500;" class="remaining-label">${remainingText}</span>
           </div>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <input type="number" class="term-rate-input" data-year="${y}" step="0.01" min="0" max="100" value="${(state.termRates[y] !== undefined ? state.termRates[y] : baseRate).toFixed(2)}">
+            <input type="number" class="term-rate-input" data-year="${y}" aria-label="${titleText}" step="0.01" min="0" max="100" value="${(state.termRates[y] !== undefined ? state.termRates[y] : baseRate).toFixed(2)}">
             <span style="font-weight: 800; font-size: 0.95rem;">%</span>
           </div>
         </div>
@@ -91,7 +91,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
     inputs.forEach((inpEl: Element) => {
       const inp = inpEl as HTMLInputElement;
       inp.addEventListener('input', () => {
-        const y = parseInt(inp.getAttribute('data-year') || '0');
+        const y = parseFloat(inp.getAttribute('data-year') || '0');
         const val = parseFloat(inp.value);
         if (!isNaN(val)) {
           state.customizedYears[y] = true;
@@ -101,7 +101,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
         }
       });
       inp.addEventListener('blur', () => {
-        const y = parseInt(inp.getAttribute('data-year') || '0');
+        const y = parseFloat(inp.getAttribute('data-year') || '0');
         let val = parseFloat(inp.value);
         if (isNaN(val)) {
           val = baseRate;
@@ -118,7 +118,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
       const input = box.querySelector('.term-rate-input') as HTMLInputElement | null;
       const remainingLabel = box.querySelector('.remaining-label');
       if (input) {
-        const y = parseInt(input.getAttribute('data-year') || '0');
+        const y = parseFloat(input.getAttribute('data-year') || '0');
         const remaining = amortYrs - y;
         const remainingText = isFr
           ? `${remaining.toFixed(0)} ans restants`

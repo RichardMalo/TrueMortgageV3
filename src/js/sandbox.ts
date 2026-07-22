@@ -46,12 +46,14 @@ export const renderSandboxList = (
       p.complexity === 'advanced' ? (isFr ? 'Avancé' : 'Advanced') : isFr ? 'Simple' : 'Simple';
     const cloneTitle = isFr ? 'Cloner le scénario' : 'Clone Scenario';
     const deleteTitle = isFr ? 'Supprimer le scénario' : 'Delete Scenario';
+    const renameTitle = isFr ? 'Renommer le scénario' : 'Rename Scenario';
     const compareLabel = isFr ? 'COMPARER' : 'COMPARE';
 
     card.innerHTML = `
       <div class="profile-card-header">
         <h4 class="profile-card-title" id="title-text-${escId}"></h4>
         <div class="profile-card-actions">
+          <button type="button" class="profile-btn rename-btn" title="${renameTitle}" data-id="${escId}" aria-label="${renameTitle} ${escName}">✏️</button>
           <button type="button" class="profile-btn clone-btn" title="${cloneTitle}" data-id="${escId}" aria-label="${cloneTitle} ${escName}">📋</button>
           <button type="button" class="profile-btn delete-btn" title="${deleteTitle}" data-id="${escId}" style="${Object.keys(state.profiles).length <= 1 ? 'display:none' : ''}" aria-label="${deleteTitle} ${escName}">🗑️</button>
         </div>
@@ -73,35 +75,46 @@ export const renderSandboxList = (
       titleEl.textContent = p.name;
     }
 
+    const startRename = () => {
+      const titleText = document.getElementById(`title-text-${p.id}`) as HTMLElement | null;
+      if (!titleText) return;
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = p.name;
+      input.ariaLabel = renameTitle;
+      input.placeholder = isFr ? 'Nom du scénario...' : 'New Scenario Name...';
+      input.addEventListener('blur', () => {
+        const newName = input.value.trim() || p.name;
+        p.name = newName;
+        titleText.textContent = newName;
+        saveSettingsToStorage(state, inputsMap, defaultInputs, false);
+        onRecalculate();
+      });
+      input.addEventListener('keydown', (evt) => {
+        if (evt.key === 'Enter') {
+          input.blur();
+        }
+      });
+      titleText.innerHTML = '';
+      titleText.appendChild(input);
+      input.focus();
+    };
+
+    // Rename scenario button handler
+    card.querySelector('.rename-btn')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      startRename();
+    });
+
     card.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;
       if (target.closest('.profile-card-actions') || target.closest('.compare-toggle-label')) {
         return;
       }
 
-      const titleText = document.getElementById(`title-text-${p.id}`) as HTMLElement | null;
-
-      // Double click inline rename
-      if (e.detail === 2 && titleText) {
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = p.name;
-        input.placeholder = isFr ? 'Nom du scénario...' : 'New Scenario Name...';
-        input.addEventListener('blur', () => {
-          const newName = input.value.trim() || p.name;
-          p.name = newName;
-          titleText.textContent = newName;
-          saveSettingsToStorage(state, inputsMap, defaultInputs, false);
-          onRecalculate();
-        });
-        input.addEventListener('keydown', (evt) => {
-          if (evt.key === 'Enter') {
-            input.blur();
-          }
-        });
-        titleText.innerHTML = '';
-        titleText.appendChild(input);
-        input.focus();
+      // Double click inline rename fallback
+      if (e.detail === 2) {
+        startRename();
         return;
       }
 
