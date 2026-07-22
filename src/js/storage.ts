@@ -251,7 +251,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
   const sanitized: Profile = {
     id: cleanId,
     name: typeof p.name === 'string' ? p.name : 'Active Scenario',
-    currentMode: p.currentMode === 'cc' ? 'cc' : 'mortgage',
+    currentMode: p.currentMode === 'loan' ? 'loan' : p.currentMode === 'cc' ? 'cc' : 'mortgage',
     complexity: p.complexity === 'advanced' ? 'advanced' : 'simple',
     isDark: p.isDark === true,
     language: p.language === 'fr' ? 'fr' : 'en',
@@ -344,6 +344,8 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     homePrice: 'homePrice',
     downPayment: 'downPayment',
     ccBalance: 'ccBalance',
+    loanAmount: 'loanAmount',
+    loanOriginationFee: 'loanOriginationFee',
     province: 'province',
     annualRate: 'rate',
     amortizationYears: 'amortization',

@@ -5,7 +5,7 @@ import { Inputs, LumpSumItem } from './types.js';
  * Renders error messages into the DOM if any field fails limits/checks.
  */
 export const validateForm = (
-  currentMode: 'mortgage' | 'cc',
+  currentMode: 'mortgage' | 'cc' | 'loan',
   inputs: Record<string, HTMLInputElement | HTMLSelectElement | null>,
   errorContainer: HTMLElement | null
 ): boolean => {
@@ -17,6 +17,36 @@ export const validateForm = (
       errorContainer.style.display = 'block';
     }
   };
+
+  if (currentMode === 'loan') {
+    const loanAmt = parseFloat(inputs.loanAmount?.value || inputs.homePrice?.value || '0');
+    const term = parseFloat(inputs.term?.value || inputs.amortization?.value || '0');
+    const rate = parseFloat(inputs.rate?.value || '0');
+    const extra = parseFloat(inputs.extra?.value || '0');
+    const origination = parseFloat(inputs.loanOriginationFee?.value || '0');
+
+    if (isNaN(loanAmt) || loanAmt <= 0) {
+      showError('Loan Amount must be a valid positive number.');
+      return false;
+    }
+    if (isNaN(term) || term <= 0 || term > 50) {
+      showError('Loan Term must be a valid number between 0.1 and 50 years.');
+      return false;
+    }
+    if (isNaN(rate) || rate < 0 || rate > 100) {
+      showError('Interest Rate must be a valid number between 0% and 100%.');
+      return false;
+    }
+    if (isNaN(extra) || extra < 0) {
+      showError('Extra Payment must be a valid non-negative number.');
+      return false;
+    }
+    if (isNaN(origination) || origination < 0) {
+      showError('Origination Fee must be a valid non-negative number.');
+      return false;
+    }
+    return true;
+  }
 
   if (currentMode === 'mortgage') {
     const hp = parseFloat(inputs.homePrice?.value || '0');
@@ -163,7 +193,7 @@ const parseNum = (val: unknown, defaultVal = 0): number => {
  * Extracts inputs from DOM form elements and returns a typed calculation Inputs object.
  */
 export const getCalculationsInputs = (
-  currentMode: 'mortgage' | 'cc',
+  currentMode: 'mortgage' | 'cc' | 'loan',
   inputs: Record<string, HTMLInputElement | HTMLSelectElement | null>,
   termRates: Record<number, number>
 ): Inputs => {
@@ -191,6 +221,8 @@ export const getCalculationsInputs = (
     homePrice: parseNum(inputs.homePrice?.value),
     downPayment: parseNum(inputs.downPayment?.value),
     ccBalance: parseNum(inputs.ccBalance?.value),
+    loanAmount: parseNum(inputs.loanAmount?.value || inputs.homePrice?.value, 25000),
+    loanOriginationFee: parseNum(inputs.loanOriginationFee?.value, 0),
     province: inputs.province?.value || 'ON',
     ccMinPercent: inputs.ccMinPercent ? parseNum(inputs.ccMinPercent.value, 3) : undefined,
     ccMinPrincipalPct: inputs.ccMinPrincipalPct
@@ -228,7 +260,7 @@ export const getCalculationsInputs = (
 export const profileToInputs = (
   profileInputs: Record<string, string | boolean | number | LumpSumItem[] | undefined>,
   termRates: Record<number, number>,
-  currentMode: 'mortgage' | 'cc'
+  currentMode: 'mortgage' | 'cc' | 'loan'
 ): Inputs => {
   const isMortgage = currentMode === 'mortgage';
   const pitiOn = isMortgage && profileInputs.pitiToggle === true;

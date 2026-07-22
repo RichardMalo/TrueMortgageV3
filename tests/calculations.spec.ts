@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   generateMortgageSchedule,
   generateCCSchedule,
+  generateLoanSchedule,
   calculateMilestones,
   getMonthlyPayment
 } from '../src/js/math.js';
@@ -925,6 +926,78 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       expect(results.p1Y[results.p1Y.length - 1]).toBeGreaterThan(
         results.p2Y[results.p2Y.length - 1]
       );
+    });
+  });
+
+  describe('Personal & Auto Loan Schedule Engine', () => {
+    it('should generate a correct 5-year personal loan amortization schedule', () => {
+      const inputs: Inputs = {
+        homePrice: 0,
+        downPayment: 0,
+        loanAmount: 25000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 8.99,
+        amortizationYears: 5,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'monthly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: false,
+        investRate: 7.0,
+        extraPayment: 0,
+        startDate: '2026-08-01',
+        rateShockEnabled: false,
+        termRates: {}
+      };
+
+      const result = generateLoanSchedule(inputs, false);
+      expect(result.schedule.length).toBe(60); // 5 years * 12 months = 60 payments
+      expect(result.summary.paidOff).toBe(true);
+      expect(result.summary.periodsToPayoff).toBe(60);
+
+      const firstRow = result.schedule[0];
+      expect(firstRow.payment).toBeCloseTo(518.84, 1);
+      expect(firstRow.interest).toBeCloseTo(187.29, 1);
+
+      const lastRow = result.schedule[result.schedule.length - 1];
+      expect(lastRow.balance).toBeCloseTo(0, 5);
+    });
+
+    it('should accelerate loan payoff when extra principal payments are applied', () => {
+      const inputs: Inputs = {
+        homePrice: 0,
+        downPayment: 0,
+        loanAmount: 25000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 8.99,
+        amortizationYears: 5,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'monthly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: false,
+        investRate: 7.0,
+        extraPayment: 150, // Extra $150/month
+        startDate: '2026-08-01',
+        rateShockEnabled: false,
+        termRates: {}
+      };
+
+      const baseline = generateLoanSchedule(inputs, true);
+      const actual = generateLoanSchedule(inputs, false);
+
+      expect(actual.summary.periodsToPayoff).toBeLessThan(baseline.summary.periodsToPayoff);
+      expect(actual.summary.totalInterest).toBeLessThan(baseline.summary.totalInterest);
     });
   });
 });

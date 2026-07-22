@@ -25,6 +25,8 @@ export const DEFAULT_INPUTS: Inputs = Object.freeze({
   homePrice: 800000,
   downPayment: 160000,
   ccBalance: 15000,
+  loanAmount: 25000,
+  loanOriginationFee: 0,
   province: 'ON',
   ccMinPercent: 3,
   ccMinPrincipalPct: 1,

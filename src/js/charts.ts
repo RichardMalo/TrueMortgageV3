@@ -586,7 +586,7 @@ const renderEquityBuildUpChart = (
 const renderCumulativeOutflowChart = (
   actualData: ScheduleResult,
   inputs: Inputs,
-  currentMode: 'mortgage' | 'cc',
+  currentMode: 'mortgage' | 'cc' | 'loan',
   isDark: boolean,
   xKey: 'year'
 ) => {
@@ -628,7 +628,7 @@ const renderCumulativeOutflowChart = (
 const renderAnnualCashFlowChart = (
   actualData: ScheduleResult,
   inputs: Inputs,
-  currentMode: 'mortgage' | 'cc',
+  currentMode: 'mortgage' | 'cc' | 'loan',
   isDark: boolean,
   xKey: 'year'
 ) => {
@@ -721,7 +721,7 @@ const renderPaymentCompositionChart = (
 const renderLifetimeBreakdownChart = (
   actualData: ScheduleResult,
   inputs: Inputs,
-  currentMode: 'mortgage' | 'cc',
+  currentMode: 'mortgage' | 'cc' | 'loan',
   isDark: boolean
 ) => {
   const chartEl = document.getElementById('chart');
@@ -780,35 +780,31 @@ const renderLtvChart = (
   isDark: boolean,
   termLine: unknown | null
 ) => {
-  const chartLTVEl = document.getElementById('chartLTV');
-  if (!chartLTVEl) return;
+  const chartLtvEl = document.getElementById('chartLTV');
+  if (!chartLtvEl) return;
   const tLTV: unknown[] = [
     {
       x: baseData.schedule.map((d) => d[xKey]),
       y: baseData.schedule.map((d) => d.ltv),
-      name: t('Baseline'),
+      name: t('Baseline LTV %'),
       type: 'scatter',
-      line: { color: CONFIG.colors.principal }
+      mode: 'lines',
+      line: { color: CONFIG.colors.principal, width: 2, dash: 'dot' }
     }
   ];
   if (hasStrat) {
     tLTV.push({
       x: actualData.schedule.map((d) => d[xKey]),
       y: actualData.schedule.map((d) => d.ltv),
-      name: t('Actual'),
+      name: t('Strategy LTV %'),
       type: 'scatter',
+      mode: 'lines',
       line: { color: CONFIG.colors.extra, width: 3 }
     });
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lLTV: any = getBaseLayout(
-    'LTV (Loan To Value) & PMI (Private Mortgage Insurance) Drop',
-    'Year',
-    'LTV (%)',
-    isDark
-  );
-  lLTV.yaxis.range = [0, Math.max(105, actualData.schedule[0]?.ltv || 100)];
-  lLTV.shapes = [
+  const lLTV = getBaseLayout('LTV Eradication (%)', 'Year', '%', isDark) as Record<string, unknown>;
+  lLTV.yaxis = { ...(lLTV.yaxis as Record<string, unknown>), range: [0, 105] };
+  const shapes3: unknown[] = [
     termLine,
     {
       type: 'line',
@@ -821,11 +817,12 @@ const renderLtvChart = (
       line: { color: CONFIG.colors.thresholdRed, width: 2, dash: 'dash' }
     }
   ].filter(Boolean);
+  lLTV.shapes = shapes3;
   queueChartRender('chartLTV', tLTV, lLTV, PLOT_CONFIG);
 };
 
 export const calculateOpportunityCostData = (
-  state: { currentMode: 'mortgage' | 'cc'; comparisonProfileId: string | null },
+  state: { currentMode: 'mortgage' | 'cc' | 'loan'; comparisonProfileId: string | null },
   baseData: ScheduleResult,
   actualData: ScheduleResult,
   compData: ScheduleResult | null,

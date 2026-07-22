@@ -111,6 +111,7 @@
                 Mortgage
               </button>
               <button class="mode-btn" data-mode="cc" aria-pressed="false">Credit Card</button>
+              <button class="mode-btn" data-mode="loan" aria-pressed="false">Personal Loan</button>
             </div>
 
             <!-- Sandbox button -->
@@ -313,6 +314,7 @@
             <div class="bento-card form-card">
               <h2 class="section-title mortgage-only">Property & Loan</h2>
               <h2 class="section-title cc-only">Revolving Debt</h2>
+              <h2 class="section-title loan-only">Personal Loan</h2>
 
               <div class="input-group-row">
                 <div class="input-group mortgage-only">
@@ -378,6 +380,42 @@
                     min="0"
                   />
                 </div>
+                <div class="input-group loan-only">
+                  <label for="loanAmount"
+                    >Loan Amount ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >The gross principal amount borrowed for your personal or auto loan.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="loanAmount"
+                    inputmode="decimal"
+                    value="25000"
+                    step="100"
+                    min="0"
+                  />
+                </div>
+                <div class="input-group loan-only">
+                  <label for="loanOriginationFee"
+                    >Origination Fee ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >Upfront processing or administrative fees assessed by the lender.</span
+                      ></span
+                    ></label
+                  >
+                  <input
+                    type="number"
+                    id="loanOriginationFee"
+                    inputmode="decimal"
+                    value="0"
+                    step="50"
+                    min="0"
+                  />
+                </div>
               </div>
 
               <div class="input-group-row">
@@ -403,9 +441,9 @@
                     min="0"
                   />
                 </div>
-                <div class="input-group mortgage-only">
+                <div class="input-group mortgage-or-loan">
                   <label for="amortization"
-                    >Amortization (Years)
+                    >Amortization / Term (Years)
                     <span class="help-tip"
                       >?<span class="tooltip-text"
                         >The contractual timeline required to completely eradicate the debt balance
@@ -598,6 +636,14 @@
                         cycle, entirely bypassing the lender's interest calculation mechanism. Note:
                         Some lenders restrict prepayments or charge penalty fees for exceeding
                         yearly thresholds.</span
+                      ></span
+                    ></label
+                  >
+                  <label for="extraPayment" class="loan-only"
+                    >Extra Payment Surplus ($)
+                    <span class="help-tip"
+                      >?<span class="tooltip-text"
+                        >Discretionary principal paydown per payment period.</span
                       ></span
                     ></label
                   >

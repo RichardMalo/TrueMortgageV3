@@ -382,7 +382,7 @@ export const calculateMilestones = (
   baseData: ScheduleResult,
   actData: ScheduleResult,
   inputs: Inputs,
-  currentMode: 'mortgage' | 'cc'
+  currentMode: 'mortgage' | 'cc' | 'loan'
 ): Milestone[] => {
   const isMortgage = currentMode === 'mortgage';
   const baseSched = baseData.schedule;
@@ -614,6 +614,138 @@ export const calculateMilestones = (
   }
 
   return milestones;
+};
+
+/**
+ * Generates an amortization schedule for a generic personal / auto loan.
+ * Supports customizable loan amounts, terms, annual rates, payment frequencies,
+ * extra principal payments, and scheduled lump sums.
+ *
+ * @param inputs - The application state inputs containing loan amount, rates, and parameters.
+ * @param isBaseline - If true, baseline calculations are performed without discretionary strategy enhancements.
+ * @returns An object containing the array of schedule rows and a summary of totals.
+ */
+export const generateLoanSchedule = (
+  inputs: Inputs,
+  isBaseline = false,
+  summaryOnly = false
+): ScheduleResult => {
+  const loanAmount = Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment);
+  const safeAmort = Math.min(50, Math.max(0.1, inputs.amortizationYears || inputs.termYears || 5));
+  const safeRate = Math.min(100, Math.max(0, inputs.annualRate || 0));
+
+  const freq = isBaseline ? 'monthly' : inputs.frequency;
+  let periodsPerYear = 12;
+  if (freq === 'semi-monthly') {
+    periodsPerYear = 24;
+  } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
+    periodsPerYear = 26;
+  } else if (freq === 'weekly') {
+    periodsPerYear = 52;
+  }
+
+  const periodicRate = safeRate / 100 / periodsPerYear;
+  const totalPeriods = Math.round(safeAmort * periodsPerYear);
+  const baselineMonthlyPayment = getMonthlyPayment(loanAmount, safeRate / 100 / 12, safeAmort * 12);
+
+  let periodicPayment: number;
+  if (freq === 'accelerated-bi-weekly') {
+    periodicPayment = baselineMonthlyPayment / 2;
+  } else {
+    periodicPayment = getMonthlyPayment(loanAmount, periodicRate, totalPeriods);
+  }
+
+  const userExtra = isBaseline ? 0 : Math.max(0, inputs.extraPayment || 0);
+
+  let balance = loanAmount;
+  let totalInterest = 0;
+  let totalPrincipal = 0;
+  let totalExtraPaid = 0;
+  const schedule: ScheduleRow[] = [];
+  let currentDate: Date | null = null;
+  if (!summaryOnly && inputs.startDate) {
+    const parsed = new Date(inputs.startDate + 'T00:00:00');
+    if (!isNaN(parsed.getTime())) {
+      currentDate = parsed;
+    }
+  }
+
+  const maxPeriods = Math.max(1, totalPeriods * 2);
+  let period = 1;
+
+  while (balance > 0.001 && period <= maxPeriods) {
+    const interest = balance * periodicRate;
+    let scheduledPrincipal = Math.min(balance, periodicPayment - interest);
+    if (scheduledPrincipal < 0) scheduledPrincipal = 0;
+
+    let extra = userExtra;
+
+    if (!isBaseline && inputs.lumpSum && inputs.lumpSum > 0 && period === 1) {
+      extra += inputs.lumpSum;
+    }
+
+    if (!isBaseline && inputs.lumpSums && inputs.lumpSums.length > 0) {
+      const matched = inputs.lumpSums.filter((item) => item.paymentNumber === period);
+      for (const item of matched) {
+        extra += item.amount;
+      }
+    }
+
+    if (scheduledPrincipal + extra > balance) {
+      extra = Math.max(0, balance - scheduledPrincipal);
+    }
+
+    const principalPaid = Math.min(balance, scheduledPrincipal + extra);
+    const actualExtra = Math.max(0, principalPaid - scheduledPrincipal);
+    const actualPayment = scheduledPrincipal + interest + actualExtra;
+
+    balance -= principalPaid;
+    totalInterest += interest;
+    totalPrincipal += principalPaid;
+    totalExtraPaid += actualExtra;
+
+    if (!summaryOnly) {
+      const dateInfo = getRowDateLabel(currentDate, period, freq, periodsPerYear, 'M');
+      schedule.push({
+        period,
+        year: dateInfo.yearVal,
+        calendarYear: dateInfo.calendarYear,
+        dateLabel: dateInfo.dateLabel,
+        ltv: 0,
+        payment: actualPayment,
+        principal: scheduledPrincipal,
+        interest,
+        tax: 0,
+        ins: 0,
+        hoa: 0,
+        pmi: 0,
+        escrow: 0,
+        extra: actualExtra,
+        balance: Math.max(0, balance),
+        totalInterest,
+        totalPrincipal,
+        totalExtra: totalExtraPaid,
+        totalEscrow: 0
+      });
+    }
+
+    period++;
+  }
+
+  const paidOff = balance <= 0.001;
+  const periodsToPayoff = paidOff ? period - 1 : maxPeriods;
+
+  return {
+    schedule,
+    summary: {
+      periodsToPayoff,
+      periodsPerYear,
+      totalInterest,
+      totalPrincipal,
+      totalEscrow: 0,
+      paidOff
+    }
+  };
 };
 
 /**

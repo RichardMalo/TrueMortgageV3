@@ -8,6 +8,8 @@ export interface Inputs {
   homePrice: number;
   downPayment: number;
   ccBalance: number;
+  loanAmount?: number;
+  loanOriginationFee?: number;
   province: string;
   ccMinPercent?: number;
   ccMinPrincipalPct?: number;
@@ -78,6 +80,8 @@ export interface ProfileInputs {
   homePrice: string;
   downPayment: string;
   ccBalance: string;
+  loanAmount?: string;
+  loanOriginationFee?: string;
   province: string;
   ccMinPercent?: string;
   ccMinPrincipalPct?: string;
@@ -102,6 +106,8 @@ export interface ProfileInputs {
   mortgageExtra: string;
   ccRate: string;
   ccExtra: string;
+  loanRate?: string;
+  loanExtra?: string;
   ccCompounding?: string;
   lumpSum?: string;
   lumpSums?: LumpSumItem[];
@@ -111,7 +117,7 @@ export interface ProfileInputs {
 export interface Profile {
   id: string;
   name: string;
-  currentMode: 'mortgage' | 'cc';
+  currentMode: 'mortgage' | 'cc' | 'loan';
   complexity: 'simple' | 'advanced';
   isDark: boolean;
   language?: 'en' | 'fr';
@@ -123,7 +129,7 @@ export interface Profile {
 
 export interface AppState {
   isDark: boolean;
-  currentMode: 'mortgage' | 'cc';
+  currentMode: 'mortgage' | 'cc' | 'loan';
   complexity: 'simple' | 'advanced';
   language?: 'en' | 'fr';
   termRates: Record<number, number>;
@@ -158,6 +164,8 @@ export interface AppElements {
     homePrice: HTMLInputElement | null;
     downPayment: HTMLInputElement | null;
     ccBalance: HTMLInputElement | null;
+    loanAmount?: HTMLInputElement | null;
+    loanOriginationFee?: HTMLInputElement | null;
     province: HTMLSelectElement | null;
     ccMinPercent?: HTMLInputElement | null;
     ccMinPrincipalPct?: HTMLInputElement | null;

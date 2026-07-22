@@ -1120,10 +1120,17 @@ body.dark-mode .wage-toggle-btn.active {
   box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
 
-body.mode-mortgage .cc-only {
+body.mode-mortgage .cc-only,
+body.mode-mortgage .loan-only {
   display: none !important;
 }
-body.mode-cc .mortgage-only {
+body.mode-cc .mortgage-only,
+body.mode-cc .mortgage-or-loan,
+body.mode-cc .loan-only {
+  display: none !important;
+}
+body.mode-loan .mortgage-only,
+body.mode-loan .cc-only {
   display: none !important;
 }
 

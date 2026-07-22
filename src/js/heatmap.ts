@@ -1,16 +1,21 @@
 import { AppState, ScheduleResult, AppElements, Inputs } from './types.js';
-import { generateMortgageSchedule, generateCCSchedule } from './math.js';
+import { generateMortgageSchedule, generateCCSchedule, generateLoanSchedule } from './math.js';
 import { formatCurrency } from './charts.js';
 import { t, currentLanguage } from './i18n.js';
 
 /**
  * Determines row (monthly extra) and column (lump sum) values dynamically.
  */
-export const getHeatmapAxes = (mode: 'mortgage' | 'cc', balance: number) => {
+export const getHeatmapAxes = (mode: 'mortgage' | 'cc' | 'loan', balance: number) => {
   if (mode === 'cc') {
     return {
       monthly: [0, 50, 100, 200, 300, 500],
       lumpSum: [0, 500, 1000, 2000, 5000, 10000].filter((v) => v <= balance + 1000)
+    };
+  } else if (mode === 'loan') {
+    return {
+      monthly: [0, 50, 100, 250, 500, 1000],
+      lumpSum: [0, 1000, 2500, 5000, 10000, 25000].filter((v) => v <= balance + 2000)
     };
   } else {
     return {

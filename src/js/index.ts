@@ -10,6 +10,7 @@ import {
 import {
   generateMortgageSchedule,
   generateCCSchedule,
+  generateLoanSchedule,
   calculateMilestones,
   getRowDateLabel
 } from './math.js';
@@ -85,6 +86,8 @@ const els = {
     homePrice: document.getElementById('homePrice') as HTMLInputElement | null,
     downPayment: document.getElementById('downPayment') as HTMLInputElement | null,
     ccBalance: document.getElementById('ccBalance') as HTMLInputElement | null,
+    loanAmount: document.getElementById('loanAmount') as HTMLInputElement | null,
+    loanOriginationFee: document.getElementById('loanOriginationFee') as HTMLInputElement | null,
     province: document.getElementById('province') as HTMLSelectElement | null,
     ccMinPercent: document.getElementById('ccMinPercent') as HTMLInputElement | null,
     ccMinPrincipalPct: document.getElementById('ccMinPrincipalPct') as HTMLInputElement | null,
@@ -203,11 +206,14 @@ const calculate = (e?: Event) => {
     els.containers.goalSolverSection.style.display = inputs.goalSolverEnabled ? 'block' : 'none';
   }
 
-  const principalBorrowAmount = isMortgage
-    ? inputs.homePrice - inputs.downPayment
-    : inputs.ccBalance;
+  const principalBorrowAmount =
+    state.currentMode === 'mortgage'
+      ? inputs.homePrice - inputs.downPayment
+      : state.currentMode === 'loan'
+        ? inputs.loanAmount || inputs.homePrice - inputs.downPayment
+        : inputs.ccBalance;
 
-  if (!isMortgage) {
+  if (state.currentMode === 'cc') {
     const dailyVampireCost = principalBorrowAmount * (inputs.annualRate / 100 / 365);
     updateKineticText(els.results.vampireDrain, dailyVampireCost, true, true);
   }
@@ -227,21 +233,32 @@ const calculate = (e?: Event) => {
     els.containers.oppCost.style.display = inputs.useOppCost ? 'block' : 'none';
   }
 
-  const baseData = isMortgage
-    ? generateMortgageSchedule(inputs, true)
-    : generateCCSchedule(inputs, true);
-  const actData = isMortgage
-    ? generateMortgageSchedule(inputs, false)
-    : generateCCSchedule(inputs, false);
+  const baseData =
+    state.currentMode === 'mortgage'
+      ? generateMortgageSchedule(inputs, true)
+      : state.currentMode === 'loan'
+        ? generateLoanSchedule(inputs, true)
+        : generateCCSchedule(inputs, true);
+
+  const actData =
+    state.currentMode === 'mortgage'
+      ? generateMortgageSchedule(inputs, false)
+      : state.currentMode === 'loan'
+        ? generateLoanSchedule(inputs, false)
+        : generateCCSchedule(inputs, false);
 
   // Calculate savings specifically from the one-time lump sum payment
   const inputsWithoutLumpSum = {
     ...inputs,
     lumpSum: 0
   };
-  const lumpSumFreeData = isMortgage
-    ? generateMortgageSchedule(inputsWithoutLumpSum, false)
-    : generateCCSchedule(inputsWithoutLumpSum, false);
+  const lumpSumFreeData =
+    state.currentMode === 'mortgage'
+      ? generateMortgageSchedule(inputsWithoutLumpSum, false)
+      : state.currentMode === 'loan'
+        ? generateLoanSchedule(inputsWithoutLumpSum, false)
+        : generateCCSchedule(inputsWithoutLumpSum, false);
+
   const lumpSumSavings = Math.max(
     0,
     lumpSumFreeData.summary.totalInterest - actData.summary.totalInterest
@@ -252,9 +269,13 @@ const calculate = (e?: Event) => {
     ...inputs,
     extraPayment: 0
   };
-  const extraFreeData = isMortgage
-    ? generateMortgageSchedule(inputsWithoutExtra, false)
-    : generateCCSchedule(inputsWithoutExtra, false);
+  const extraFreeData =
+    state.currentMode === 'mortgage'
+      ? generateMortgageSchedule(inputsWithoutExtra, false)
+      : state.currentMode === 'loan'
+        ? generateLoanSchedule(inputsWithoutExtra, false)
+        : generateCCSchedule(inputsWithoutExtra, false);
+
   const extraPaymentSavings = Math.max(
     0,
     extraFreeData.summary.totalInterest - actData.summary.totalInterest
@@ -267,15 +288,17 @@ const calculate = (e?: Event) => {
     state.profiles[state.comparisonProfileId]
   ) {
     const compProfile = state.profiles[state.comparisonProfileId];
-    const isCompMortgage = compProfile.currentMode === 'mortgage';
     const compInputs = profileToInputs(
       compProfile.inputs as Record<string, string | boolean | number | undefined>,
       compProfile.termRates || {},
       compProfile.currentMode || 'mortgage'
     );
-    compData = isCompMortgage
-      ? generateMortgageSchedule(compInputs, false)
-      : generateCCSchedule(compInputs, false);
+    compData =
+      compProfile.currentMode === 'mortgage'
+        ? generateMortgageSchedule(compInputs, false)
+        : compProfile.currentMode === 'loan'
+          ? generateLoanSchedule(compInputs, false)
+          : generateCCSchedule(compInputs, false);
   }
 
   const totalActualLifetimePaidToBank = actData.summary.totalInterest + principalBorrowAmount;
@@ -918,7 +941,7 @@ const bootApp = () => {
   els.masterBtns.forEach((btnEl) => {
     const btn = btnEl as HTMLButtonElement;
     btn.addEventListener('click', () => {
-      const targetMode = btn.getAttribute('data-mode') as 'mortgage' | 'cc';
+      const targetMode = btn.getAttribute('data-mode') as 'mortgage' | 'cc' | 'loan';
       if (state.currentMode === targetMode) return;
 
       saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
@@ -933,6 +956,13 @@ const bootApp = () => {
         if (els.inputs.extra) els.inputs.extra.value = savedExtra !== undefined ? savedExtra : '0';
         const innerLabel = document.getElementById('inner-circle-label');
         if (innerLabel) innerLabel.textContent = t('CC Balance');
+      } else if (state.currentMode === 'loan') {
+        const savedRate = activeProfile?.inputs?.loanRate;
+        const savedExtra = activeProfile?.inputs?.loanExtra;
+        if (els.inputs.rate) els.inputs.rate.value = savedRate !== undefined ? savedRate : '8.99';
+        if (els.inputs.extra) els.inputs.extra.value = savedExtra !== undefined ? savedExtra : '0';
+        const innerLabel = document.getElementById('inner-circle-label');
+        if (innerLabel) innerLabel.textContent = t('Loan Amount ($)');
       } else {
         const savedRate = activeProfile?.inputs?.mortgageRate;
         const savedExtra = activeProfile?.inputs?.mortgageExtra;
