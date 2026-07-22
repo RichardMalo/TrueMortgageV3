@@ -3,7 +3,7 @@
 > **Algorithmic Mortgage & Credit Card Payoff Optimization Platform**  
 > Engineered to eliminate interest friction and accelerate your path to zero debt.
 
-👉 **[Live Application](https://truemortgagemath.com/)** | **[GitHub Repository](https://github.com/RichardMalo/TrueMortgageV3)**
+👉 **[Live Application](https://richardmalo.github.io/TrueMortgageV3/)** | **[GitHub Repository](https://github.com/RichardMalo/TrueMortgageV3)**
 
 ---
 
