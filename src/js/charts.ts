@@ -438,6 +438,8 @@ const renderMonthlyPaymentCircle = (
 const renderPaymentBreakdownCircle = (p1: { principal: number; interest: number }, tc: string) => {
   const breakEl = document.getElementById('paymentBreakdownCircle');
   if (!breakEl) return;
+  const totPI = p1.principal + p1.interest;
+  const fs = window.innerWidth < MOBILE_BREAKPOINT ? '14px' : '16px';
   queueChartRender(
     'paymentBreakdownCircle',
     [
@@ -456,7 +458,11 @@ const renderPaymentBreakdownCircle = (p1: { principal: number; interest: number 
       paper_bgcolor: 'rgba(0,0,0,0)',
       margin: { t: 0, b: 0, l: 0, r: 0 },
       annotations: [
-        { text: t('P & I Only'), showarrow: false, font: { size: 14, color: tc, weight: 800 } }
+        {
+          text: `<b>${t('P & I Only')}</b><br><span style="font-size: 4px;">&nbsp;</span><br><span style="font-size: ${fs}; color: ${tc}; font-weight: 700;">${formatDecimal(totPI)}</span>`,
+          showarrow: false,
+          font: { size: 13, color: tc }
+        }
       ]
     },
     PLOT_CONFIG
