@@ -104,10 +104,14 @@ export interface ProfileInputs {
   goalSolverToggle?: boolean;
   mortgageRate: string;
   mortgageExtra: string;
+  mortgageAmortization?: string;
+  mortgageTerm?: string;
   ccRate: string;
   ccExtra: string;
   loanRate?: string;
   loanExtra?: string;
+  loanAmortization?: string;
+  loanTerm?: string;
   ccCompounding?: string;
   lumpSum?: string;
   lumpSums?: LumpSumItem[];

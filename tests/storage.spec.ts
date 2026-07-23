@@ -570,5 +570,36 @@ describe('Storage & Cryptography (storage.ts)', () => {
         configurable: true
       });
     });
+
+    it('should save and sanitize mode-independent amortization and term fields', () => {
+      const profile = sanitizeProfile(
+        {
+          id: 'test-profile',
+          name: 'Test Profile',
+          currentMode: 'mortgage',
+          complexity: 'simple',
+          isDark: false,
+          termRates: {},
+          customizedYears: {},
+          bankWagesView: 'wages',
+          inputs: {
+            rate: '4.5',
+            extra: '100',
+            amortization: '30',
+            term: '5',
+            mortgageAmortization: '30',
+            mortgageTerm: '5',
+            loanAmortization: '7',
+            loanTerm: '7'
+          }
+        },
+        DEFAULT_INPUTS
+      );
+
+      expect(profile!.inputs.mortgageAmortization).toBe('30');
+      expect(profile!.inputs.mortgageTerm).toBe('5');
+      expect(profile!.inputs.loanAmortization).toBe('7');
+      expect(profile!.inputs.loanTerm).toBe('7');
+    });
   });
 });

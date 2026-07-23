@@ -284,8 +284,20 @@ export const profileToInputs = (
     ccMinFlat:
       profileInputs.ccMinFlat !== undefined ? parseNum(profileInputs.ccMinFlat, 10) : undefined,
     annualRate: parseNum(profileInputs.rate),
-    amortizationYears: parseNum(profileInputs.amortization),
-    termYears: parseNum(profileInputs.term),
+    amortizationYears: parseNum(
+      isMortgage
+        ? profileInputs.mortgageAmortization || profileInputs.amortization
+        : currentMode === 'loan'
+          ? profileInputs.loanAmortization || profileInputs.amortization
+          : profileInputs.amortization
+    ),
+    termYears: parseNum(
+      isMortgage
+        ? profileInputs.mortgageTerm || profileInputs.term
+        : currentMode === 'loan'
+          ? profileInputs.loanTerm || profileInputs.term
+          : profileInputs.term
+    ),
     compounding: (profileInputs.compounding || 'semi') as 'semi' | 'monthly',
     frequency: (profileInputs.frequency || 'monthly') as Inputs['frequency'],
     usePiti: pitiOn,

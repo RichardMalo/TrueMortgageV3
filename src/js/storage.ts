@@ -400,15 +400,33 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
   });
 
   // Preserve mode-specific persistent fields
-  const extraKeys = ['mortgageRate', 'mortgageExtra', 'ccRate', 'ccExtra', 'countrySelect'];
+  const extraKeys = [
+    'mortgageRate',
+    'mortgageExtra',
+    'mortgageAmortization',
+    'mortgageTerm',
+    'ccRate',
+    'ccExtra',
+    'loanRate',
+    'loanExtra',
+    'loanAmortization',
+    'loanTerm',
+    'countrySelect'
+  ];
   extraKeys.forEach((k) => {
     if (sourceInputs[k] !== undefined) {
       sanitized.inputs[k] = String(sourceInputs[k]);
     } else {
       if (k === 'mortgageRate') sanitized.inputs[k] = '4.39';
       if (k === 'mortgageExtra') sanitized.inputs[k] = '0';
+      if (k === 'mortgageAmortization') sanitized.inputs[k] = '30';
+      if (k === 'mortgageTerm') sanitized.inputs[k] = '5';
       if (k === 'ccRate') sanitized.inputs[k] = '19.99';
       if (k === 'ccExtra') sanitized.inputs[k] = '0';
+      if (k === 'loanRate') sanitized.inputs[k] = '8.99';
+      if (k === 'loanExtra') sanitized.inputs[k] = '0';
+      if (k === 'loanAmortization') sanitized.inputs[k] = '5';
+      if (k === 'loanTerm') sanitized.inputs[k] = '5';
       if (k === 'countrySelect') {
         sanitized.inputs[k] = getCountryCompoundingFromTimezone().country;
       }
@@ -493,6 +511,13 @@ export const saveSettingsToStorage = (
       if (state.currentMode === 'mortgage') {
         activeProfile.inputs.mortgageRate = activeProfile.inputs.rate;
         activeProfile.inputs.mortgageExtra = activeProfile.inputs.extra;
+        activeProfile.inputs.mortgageAmortization = activeProfile.inputs.amortization;
+        activeProfile.inputs.mortgageTerm = activeProfile.inputs.term;
+      } else if (state.currentMode === 'loan') {
+        activeProfile.inputs.loanRate = activeProfile.inputs.rate;
+        activeProfile.inputs.loanExtra = activeProfile.inputs.extra;
+        activeProfile.inputs.loanAmortization = activeProfile.inputs.amortization;
+        activeProfile.inputs.loanTerm = activeProfile.inputs.term;
       } else if (state.currentMode === 'cc') {
         activeProfile.inputs.ccRate = activeProfile.inputs.rate;
         activeProfile.inputs.ccExtra = activeProfile.inputs.extra;

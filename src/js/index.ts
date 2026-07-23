@@ -960,22 +960,40 @@ const bootApp = () => {
       if (state.currentMode === 'cc') {
         const savedRate = activeProfile?.inputs?.ccRate;
         const savedExtra = activeProfile?.inputs?.ccExtra;
-        if (els.inputs.rate) els.inputs.rate.value = savedRate !== undefined ? savedRate : '19.99';
-        if (els.inputs.extra) els.inputs.extra.value = savedExtra !== undefined ? savedExtra : '0';
+        if (els.inputs.rate)
+          els.inputs.rate.value = savedRate !== undefined ? String(savedRate) : '19.99';
+        if (els.inputs.extra)
+          els.inputs.extra.value = savedExtra !== undefined ? String(savedExtra) : '0';
         const innerLabel = document.getElementById('inner-circle-label');
         if (innerLabel) innerLabel.textContent = t('CC Balance');
       } else if (state.currentMode === 'loan') {
         const savedRate = activeProfile?.inputs?.loanRate;
         const savedExtra = activeProfile?.inputs?.loanExtra;
-        if (els.inputs.rate) els.inputs.rate.value = savedRate !== undefined ? savedRate : '8.99';
-        if (els.inputs.extra) els.inputs.extra.value = savedExtra !== undefined ? savedExtra : '0';
+        const savedAmort = activeProfile?.inputs?.loanAmortization;
+        const savedTerm = activeProfile?.inputs?.loanTerm;
+        if (els.inputs.rate)
+          els.inputs.rate.value = savedRate !== undefined ? String(savedRate) : '8.99';
+        if (els.inputs.extra)
+          els.inputs.extra.value = savedExtra !== undefined ? String(savedExtra) : '0';
+        if (els.inputs.amortization)
+          els.inputs.amortization.value = savedAmort !== undefined ? String(savedAmort) : '5';
+        if (els.inputs.term)
+          els.inputs.term.value = savedTerm !== undefined ? String(savedTerm) : '5';
         const innerLabel = document.getElementById('inner-circle-label');
         if (innerLabel) innerLabel.textContent = t('Loan Amount ($)');
       } else {
         const savedRate = activeProfile?.inputs?.mortgageRate;
         const savedExtra = activeProfile?.inputs?.mortgageExtra;
-        if (els.inputs.rate) els.inputs.rate.value = savedRate !== undefined ? savedRate : '4.39';
-        if (els.inputs.extra) els.inputs.extra.value = savedExtra !== undefined ? savedExtra : '0';
+        const savedAmort = activeProfile?.inputs?.mortgageAmortization;
+        const savedTerm = activeProfile?.inputs?.mortgageTerm;
+        if (els.inputs.rate)
+          els.inputs.rate.value = savedRate !== undefined ? String(savedRate) : '4.39';
+        if (els.inputs.extra)
+          els.inputs.extra.value = savedExtra !== undefined ? String(savedExtra) : '0';
+        if (els.inputs.amortization)
+          els.inputs.amortization.value = savedAmort !== undefined ? String(savedAmort) : '30';
+        if (els.inputs.term)
+          els.inputs.term.value = savedTerm !== undefined ? String(savedTerm) : '5';
         const innerLabel = document.getElementById('inner-circle-label');
         if (innerLabel) innerLabel.textContent = t('Principal');
       }
