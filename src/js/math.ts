@@ -14,10 +14,11 @@ import { currentLanguage } from './i18n.js';
 export const getMonthlyPayment = (principal: number, rate: number, periods: number): number => {
   if (periods <= 0 || principal <= 0) return 0;
   const safeRate = Math.max(0, rate);
-  return safeRate === 0
-    ? principal / periods
-    : (principal * (safeRate * Math.pow(1 + safeRate, periods))) /
-        (Math.pow(1 + safeRate, periods) - 1);
+  if (safeRate < 1e-7) return principal / periods;
+  return (
+    (principal * (safeRate * Math.pow(1 + safeRate, periods))) /
+    (Math.pow(1 + safeRate, periods) - 1)
+  );
 };
 
 /**
@@ -112,10 +113,32 @@ export const generateMortgageSchedule = (
 
     if (inputs.rateShockEnabled && termYears > 0) {
       const termPeriods = Math.round(termYears * periodsPerYear);
+      const isTermRenewal = i - 1 > 0 && (i - 1) % termPeriods === 0;
       const termIndex = Math.floor((i - 1) / termPeriods);
       const y = termIndex * termYears;
       if (y > 0 && y < amortizationYears && inputs.termRates && inputs.termRates[y] !== undefined) {
         activeAnnualRate = Math.min(100, Math.max(0, inputs.termRates[y] || 0));
+      }
+      if (isTermRenewal) {
+        const remainingPeriods = Math.max(1, Math.round(safeAmort * periodsPerYear) - (i - 1));
+        const renewalPeriodicRate =
+          inputs.compounding === 'semi'
+            ? Math.pow(1 + activeAnnualRate / 100 / 2, 2 / periodsPerYear) - 1
+            : activeAnnualRate / 100 / periodsPerYear;
+        if (freq === 'accelerated-bi-weekly') {
+          const renewalMonthlyRate =
+            inputs.compounding === 'semi'
+              ? Math.pow(1 + activeAnnualRate / 100 / 2, 1 / 6) - 1
+              : activeAnnualRate / 100 / 12;
+          const remainingMonthlyPeriods = Math.max(
+            1,
+            Math.round(safeAmort * 12) - Math.floor(((i - 1) * 12) / periodsPerYear)
+          );
+          periodicPayment =
+            getMonthlyPayment(balance, renewalMonthlyRate, remainingMonthlyPeriods) / 2;
+        } else {
+          periodicPayment = getMonthlyPayment(balance, renewalPeriodicRate, remainingPeriods);
+        }
       }
     }
 

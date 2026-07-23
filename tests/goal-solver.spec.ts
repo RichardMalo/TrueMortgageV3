@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { solveRequiredMonthly, solveRequiredLumpSum } from '../src/js/goal-solver.js';
-import { generateMortgageSchedule } from '../src/js/math.js';
+import { generateMortgageSchedule, generateLoanSchedule } from '../src/js/math.js';
 import { Inputs } from '../src/js/types.js';
 
 describe('Goal Solver logic (goal-solver.ts)', () => {
@@ -31,10 +31,10 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const baseData = generateMortgageSchedule(mortgageInputs, true);
     // Baseline payoff is 360 periods (30 years).
     // Target is 35 years (420 periods), which is longer, so required extra is 0.
-    const result = solveRequiredMonthly(420, mortgageInputs, true, baseData);
+    const result = solveRequiredMonthly(420, mortgageInputs, 'mortgage', baseData);
     expect(result).toBe(0);
 
-    const lumpResult = solveRequiredLumpSum(420, mortgageInputs, true, baseData);
+    const lumpResult = solveRequiredLumpSum(420, mortgageInputs, 'mortgage', baseData);
     expect(lumpResult).toBe(0);
   });
 
@@ -47,14 +47,14 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     };
     // Target is 25 years (300 periods). 200000 lump sum achieves payoff in ~200 periods.
     // So target is already exceeded by the lump sum.
-    const result = solveRequiredMonthly(300, inputsWithLumpSum, true, baseData);
+    const result = solveRequiredMonthly(300, inputsWithLumpSum, 'mortgage', baseData);
     expect(result).toBe(0);
   });
 
   it('should solve for required extra monthly payment to meet a target payoff year', () => {
     const baseData = generateMortgageSchedule(mortgageInputs, true);
     // Solve for 25 years target (300 periods)
-    const result = solveRequiredMonthly(300, mortgageInputs, true, baseData);
+    const result = solveRequiredMonthly(300, mortgageInputs, 'mortgage', baseData);
     expect(result).toBeGreaterThan(0);
 
     // Verify that applying the solved monthly payment achieves target periods <= 300
@@ -66,7 +66,7 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
   it('should solve for required lump sum payment to meet a target payoff year', () => {
     const baseData = generateMortgageSchedule(mortgageInputs, true);
     // Solve for 25 years target (300 periods)
-    const result = solveRequiredLumpSum(300, mortgageInputs, true, baseData);
+    const result = solveRequiredLumpSum(300, mortgageInputs, 'mortgage', baseData);
     expect(result).toBeGreaterThan(0);
 
     // Verify that applying the solved lump sum achieves target periods <= 300
@@ -78,10 +78,30 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
   it('should return 0 when target payoff period is mathematically unreachable', () => {
     const baseData = generateMortgageSchedule(mortgageInputs, true);
     // Target of 0 periods is impossible for any loan
-    const resultMonthly = solveRequiredMonthly(0, mortgageInputs, true, baseData);
+    const resultMonthly = solveRequiredMonthly(0, mortgageInputs, 'mortgage', baseData);
     expect(resultMonthly).toBe(0);
 
-    const resultLumpSum = solveRequiredLumpSum(0, mortgageInputs, true, baseData);
+    const resultLumpSum = solveRequiredLumpSum(0, mortgageInputs, 'mortgage', baseData);
     expect(resultLumpSum).toBe(0);
+  });
+
+  it('should solve for required monthly extra payment in Personal Loan mode', () => {
+    const loanInputs: Inputs = {
+      ...mortgageInputs,
+      loanAmount: 30000,
+      annualRate: 7.5,
+      amortizationYears: 5,
+      termYears: 5
+    };
+    const baseData = generateLoanSchedule(loanInputs, true);
+    expect(baseData.summary.periodsToPayoff).toBe(60); // 5 years * 12 months = 60 months
+
+    // Target 3 years (36 months)
+    const solvedMonthly = solveRequiredMonthly(36, loanInputs, 'loan', baseData);
+    expect(solvedMonthly).toBeGreaterThan(0);
+
+    const testInputs = { ...loanInputs, extraPayment: solvedMonthly };
+    const resultSchedule = generateLoanSchedule(testInputs, false);
+    expect(resultSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(36);
   });
 });

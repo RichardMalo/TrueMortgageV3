@@ -47,9 +47,16 @@ export const renderHeatmap = (
   const card = document.getElementById('heatmap-card');
   if (!card) return;
 
-  const isMortgage = state.currentMode === 'mortgage';
+  const mode = state.currentMode || 'mortgage';
   const inputs = getInputs();
-  const balance = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
+  let balance: number;
+  if (mode === 'mortgage') {
+    balance = Math.max(0, inputs.homePrice - inputs.downPayment);
+  } else if (mode === 'loan') {
+    balance = Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment);
+  } else {
+    balance = Math.max(0, inputs.ccBalance || 0);
+  }
 
   // Hide heatmap if there is no balance/debt
   if (balance <= 0) {
@@ -85,9 +92,14 @@ export const renderHeatmap = (
         lumpSum: lumpSum
       };
 
-      const res = isMortgage
-        ? generateMortgageSchedule(cellInputs, false, true)
-        : generateCCSchedule(cellInputs, false, true);
+      let res: ScheduleResult;
+      if (mode === 'mortgage') {
+        res = generateMortgageSchedule(cellInputs, false, true);
+      } else if (mode === 'loan') {
+        res = generateLoanSchedule(cellInputs, false, true);
+      } else {
+        res = generateCCSchedule(cellInputs, false, true);
+      }
 
       const cellPayoff = res.summary.periodsToPayoff;
       const cellYears = cellPayoff / periodsPerYear;

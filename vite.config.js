@@ -7,6 +7,7 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     minify: 'esbuild',
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -31,10 +32,10 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/**', 'dist/**', 'tests/**', 'eslint.config.js', 'vite.config.js'],
       thresholds: {
-        statements: 40,
-        branches: 35,
-        functions: 28,
-        lines: 40
+        statements: 45,
+        branches: 40,
+        functions: 30,
+        lines: 45
       }
     }
   }

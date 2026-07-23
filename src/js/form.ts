@@ -270,6 +270,8 @@ export const profileToInputs = (
     homePrice: parseNum(profileInputs.homePrice),
     downPayment: parseNum(profileInputs.downPayment),
     ccBalance: parseNum(profileInputs.ccBalance),
+    loanAmount: parseNum(profileInputs.loanAmount),
+    loanOriginationFee: parseNum(profileInputs.loanOriginationFee),
     province: String(profileInputs.province || 'ON'),
     ccMinPercent:
       profileInputs.ccMinPercent !== undefined

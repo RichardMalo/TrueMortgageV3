@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
-import { validateForm, getCalculationsInputs } from '../src/js/form.js';
+import { validateForm, getCalculationsInputs, profileToInputs } from '../src/js/form.js';
 
 describe('Form Validation & Parsing (form.ts)', () => {
   let inputs: Record<string, HTMLInputElement | HTMLSelectElement | null>;
@@ -373,6 +373,27 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(errorContainer.textContent).toBe(
         'Scheduled Lump Sum Payment Number must be a valid positive integer (>= 1).'
       );
+    });
+  });
+
+  describe('profileToInputs', () => {
+    it('should correctly preserve loanAmount and loanOriginationFee when hydrating a profile', () => {
+      const rawProfileInputs = {
+        homePrice: '0',
+        downPayment: '0',
+        ccBalance: '0',
+        loanAmount: '25000',
+        loanOriginationFee: '500',
+        rate: '6.5',
+        amortization: '5',
+        term: '5',
+        frequency: 'monthly'
+      };
+
+      const resultInputs = profileToInputs(rawProfileInputs, {}, 'loan');
+      expect(resultInputs.loanAmount).toBe(25000);
+      expect(resultInputs.loanOriginationFee).toBe(500);
+      expect(resultInputs.annualRate).toBe(6.5);
     });
   });
 });

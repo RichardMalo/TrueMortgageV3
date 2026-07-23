@@ -514,8 +514,11 @@ const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleR
   const container = els.containers.lumpSumsContainer;
   if (!container) return;
 
-  const isMortgage = state.currentMode === 'mortgage';
   const rows = container.querySelectorAll('.lump-sum-row');
+  if (rows.length === 0) return;
+
+  const mode = state.currentMode || 'mortgage';
+
   rows.forEach((row) => {
     const currentId = row.getAttribute('data-id');
     if (!currentId) return;
@@ -529,9 +532,14 @@ const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleR
       lumpSums: listWithoutThisItem
     };
 
-    const freeData = isMortgage
-      ? generateMortgageSchedule(inputsWithoutThisItem, false)
-      : generateCCSchedule(inputsWithoutThisItem, false);
+    let freeData: ScheduleResult;
+    if (mode === 'mortgage') {
+      freeData = generateMortgageSchedule(inputsWithoutThisItem, false, true);
+    } else if (mode === 'loan') {
+      freeData = generateLoanSchedule(inputsWithoutThisItem, false, true);
+    } else {
+      freeData = generateCCSchedule(inputsWithoutThisItem, false, true);
+    }
 
     const savings = Math.max(0, freeData.summary.totalInterest - actData.summary.totalInterest);
     updateKineticText(savingsBox, savings);

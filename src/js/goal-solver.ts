@@ -1,7 +1,30 @@
 import { AppState, Inputs, ScheduleResult, AppElements } from './types.js';
-import { generateMortgageSchedule, generateCCSchedule } from './math.js';
+import { generateMortgageSchedule, generateCCSchedule, generateLoanSchedule } from './math.js';
 import { formatCurrency } from './charts.js';
 import { t, currentLanguage } from './i18n.js';
+
+const runScheduleForMode = (
+  inputs: Inputs,
+  mode: 'mortgage' | 'cc' | 'loan',
+  isBaseline = false,
+  summaryOnly = true
+): ScheduleResult => {
+  if (mode === 'mortgage') return generateMortgageSchedule(inputs, isBaseline, summaryOnly);
+  if (mode === 'loan') return generateLoanSchedule(inputs, isBaseline, summaryOnly);
+  return generateCCSchedule(inputs, isBaseline, summaryOnly);
+};
+
+const getStartingBalanceForMode = (inputs: Inputs, mode: 'mortgage' | 'cc' | 'loan'): number => {
+  if (mode === 'mortgage') {
+    const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+    const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+    return safeHomePrice - safeDownPayment;
+  }
+  if (mode === 'loan') {
+    return Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment);
+  }
+  return Math.max(0, inputs.ccBalance || 0);
+};
 
 /**
  * Solves for the required monthly extra payment using a binary search.
@@ -9,7 +32,7 @@ import { t, currentLanguage } from './i18n.js';
 export const solveRequiredMonthly = (
   targetPeriods: number,
   inputs: Inputs,
-  isMortgage: boolean,
+  mode: 'mortgage' | 'cc' | 'loan',
   baseData: ScheduleResult
 ): number => {
   if (baseData.summary.periodsToPayoff <= targetPeriods) {
@@ -18,26 +41,18 @@ export const solveRequiredMonthly = (
 
   // Early return if 0 extra payment is already enough (target met by other inputs)
   const testZero = { ...inputs, extraPayment: 0 };
-  const resZero = isMortgage
-    ? generateMortgageSchedule(testZero, false, true)
-    : generateCCSchedule(testZero, false, true);
+  const resZero = runScheduleForMode(testZero, mode, false, true);
   if (resZero.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
   let min = 0;
-  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
-  const principal = safeHomePrice - safeDownPayment;
-  const safeCcBalance = Math.max(0, inputs.ccBalance || 0);
-  let max = isMortgage ? principal : safeCcBalance;
+  let max = getStartingBalanceForMode(inputs, mode);
   if (max <= 0) return 0;
 
   // Feasibility check: if maximum extra payment cannot achieve target, return 0
   const testMax = { ...inputs, extraPayment: max };
-  const resMax = isMortgage
-    ? generateMortgageSchedule(testMax, false, true)
-    : generateCCSchedule(testMax, false, true);
+  const resMax = runScheduleForMode(testMax, mode, false, true);
   if (resMax.summary.periodsToPayoff > targetPeriods) {
     return 0;
   }
@@ -46,9 +61,7 @@ export const solveRequiredMonthly = (
   for (let i = 0; i < 24; i++) {
     const mid = (min + max) / 2;
     const testInputs = { ...inputs, extraPayment: mid };
-    const res = isMortgage
-      ? generateMortgageSchedule(testInputs, false, true)
-      : generateCCSchedule(testInputs, false, true);
+    const res = runScheduleForMode(testInputs, mode, false, true);
 
     if (res.summary.periodsToPayoff <= targetPeriods) {
       result = mid;
@@ -66,7 +79,7 @@ export const solveRequiredMonthly = (
 export const solveRequiredLumpSum = (
   targetPeriods: number,
   inputs: Inputs,
-  isMortgage: boolean,
+  mode: 'mortgage' | 'cc' | 'loan',
   baseData: ScheduleResult
 ): number => {
   if (baseData.summary.periodsToPayoff <= targetPeriods) {
@@ -75,26 +88,18 @@ export const solveRequiredLumpSum = (
 
   // Early return if 0 lump sum is already enough (target met by other inputs)
   const testZero = { ...inputs, lumpSum: 0 };
-  const resZero = isMortgage
-    ? generateMortgageSchedule(testZero, false, true)
-    : generateCCSchedule(testZero, false, true);
+  const resZero = runScheduleForMode(testZero, mode, false, true);
   if (resZero.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
   let min = 0;
-  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
-  const principal = safeHomePrice - safeDownPayment;
-  const safeCcBalance = Math.max(0, inputs.ccBalance || 0);
-  let max = isMortgage ? principal : safeCcBalance;
+  let max = getStartingBalanceForMode(inputs, mode);
   if (max <= 0) return 0;
 
   // Feasibility check: if maximum lump sum cannot achieve target, return 0
   const testMax = { ...inputs, lumpSum: max };
-  const resMax = isMortgage
-    ? generateMortgageSchedule(testMax, false, true)
-    : generateCCSchedule(testMax, false, true);
+  const resMax = runScheduleForMode(testMax, mode, false, true);
   if (resMax.summary.periodsToPayoff > targetPeriods) {
     return 0;
   }
@@ -103,9 +108,7 @@ export const solveRequiredLumpSum = (
   for (let i = 0; i < 24; i++) {
     const mid = (min + max) / 2;
     const testInputs = { ...inputs, lumpSum: mid };
-    const res = isMortgage
-      ? generateMortgageSchedule(testInputs, false, true)
-      : generateCCSchedule(testInputs, false, true);
+    const res = runScheduleForMode(testInputs, mode, false, true);
 
     if (res.summary.periodsToPayoff <= targetPeriods) {
       result = mid;
@@ -131,12 +134,9 @@ export const renderGoalSolver = (
   const card = document.getElementById('goal-solver-card');
   if (!card) return;
 
-  const isMortgage = state.currentMode === 'mortgage';
+  const mode = state.currentMode || 'mortgage';
   const inputs = getInputs();
-  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
-  const principal = safeHomePrice - safeDownPayment;
-  const balance = isMortgage ? principal : inputs.ccBalance;
+  const balance = getStartingBalanceForMode(inputs, mode);
 
   // Hide solver card if no debt
   if (balance <= 0) {
@@ -174,6 +174,7 @@ export const renderGoalSolver = (
     return;
 
   const isFr = currentLanguage() === 'fr';
+  const isMortgage = mode === 'mortgage';
   const freq = isMortgage ? inputs.frequency : 'monthly';
   let freqLabel = t('Required Monthly Extra');
   let freqUnit = isFr ? '/mois' : '/mo';
@@ -222,8 +223,8 @@ export const renderGoalSolver = (
 
     const targetPeriods = targetYears * periodsPerYear;
 
-    solvedMonthly = solveRequiredMonthly(targetPeriods, inputs, isMortgage, baseData);
-    solvedLumpSum = solveRequiredLumpSum(targetPeriods, inputs, isMortgage, baseData);
+    solvedMonthly = solveRequiredMonthly(targetPeriods, inputs, mode, baseData);
+    solvedLumpSum = solveRequiredLumpSum(targetPeriods, inputs, mode, baseData);
 
     const displayMonthly = Math.max(0, solvedMonthly - (inputs.extraPayment || 0));
     const displayLumpSum = Math.max(0, solvedLumpSum - (inputs.lumpSum || 0));

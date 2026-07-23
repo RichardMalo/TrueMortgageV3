@@ -308,6 +308,52 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(lastRow.totalPrincipal + lastRow.balance).toBeCloseTo(500000 - 500000 * 0.999, 1);
   });
 
+  it('should safely calculate getMonthlyPayment with near-zero interest rates without division by zero', () => {
+    const payment = getMonthlyPayment(100000, 1e-12, 360);
+    expect(Number.isFinite(payment)).toBe(true);
+    expect(payment).toBeCloseTo(100000 / 360, 4);
+  });
+
+  it('should recalculate periodic payment on rate shock term renewal', () => {
+    const rateShockInputs: Inputs = {
+      homePrice: 500000,
+      downPayment: 100000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.0,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: true,
+      termRates: {
+        5: 7.0 // Rate resets from 4% to 7% at Year 5
+      }
+    };
+
+    const result = generateMortgageSchedule(rateShockInputs, false);
+    expect(result.summary.paidOff).toBe(true);
+    // Period 60 is end of Year 5 (at 4% rate)
+    const month60 = result.schedule[59];
+    // Period 61 is start of Year 6 (at 7% rate shock)
+    const month61 = result.schedule[60];
+
+    // Year 1-5 monthly payment at 4% for $400,000 amortized over 25 yrs is $2111.35
+    expect(month60.payment).toBeCloseTo(2111.35, 1);
+    // Year 6+ monthly payment should adjust upward to amortize remaining balance at 7% over remaining 20 yrs
+    expect(month61.payment).toBeGreaterThan(month60.payment);
+    expect(month61.payment).toBeCloseTo(2701.28, 1);
+  });
+
   it('should handle homePrice = 0 gracefully without NaN values', () => {
     const inputs: Inputs = {
       homePrice: 0,
@@ -370,16 +416,13 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const row60 = result.schedule[59];
     const row61 = result.schedule[60];
 
-    // Payments stay constant
-    expect(row61.payment).toBeCloseTo(row60.payment, 1);
-
-    // But interest increases and principal contribution decreases
+    // Payment increases at term renewal to amortize remaining balance at new rate
+    expect(row61.payment).toBeGreaterThan(row60.payment);
     expect(row61.interest).toBeGreaterThan(row60.interest);
-    expect(row61.principal).toBeLessThan(row60.principal);
 
-    // Payoff period extends beyond standard 300 months
-    expect(result.summary.periodsToPayoff).toBeGreaterThan(300);
-    expect(result.summary.periodsToPayoff).toBe(377);
+    // Amortizes to zero by original 300 months
+    expect(result.summary.paidOff).toBe(true);
+    expect(result.summary.periodsToPayoff).toBe(300);
   });
 
   it('should calculate getMonthlyPayment directly', () => {
@@ -731,13 +774,16 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
   it('should correctly set paidOff to false under negative amortization / unpaid status', () => {
     const inputs: Inputs = {
-      homePrice: 800000,
+      homePrice: 0,
       downPayment: 0,
-      ccBalance: 0,
-      province: 'ON',
-      annualRate: 1.0,
-      amortizationYears: 25,
-      termYears: 5,
+      ccBalance: 10000,
+      province: 'CUSTOM',
+      ccMinPercent: 0,
+      ccMinPrincipalPct: 0,
+      ccMinFlat: 5,
+      annualRate: 24.0,
+      amortizationYears: 0,
+      termYears: 0,
       compounding: 'monthly',
       frequency: 'monthly',
       usePiti: false,
@@ -749,13 +795,11 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       investRate: 0,
       extraPayment: 0,
       startDate: '2026-07-01',
-      rateShockEnabled: true,
-      termRates: {
-        5: 30.0
-      }
+      rateShockEnabled: false,
+      termRates: {}
     };
 
-    const result = generateMortgageSchedule(inputs, false);
+    const result = generateCCSchedule(inputs, false);
     expect(result.summary.paidOff).toBe(false);
   });
 

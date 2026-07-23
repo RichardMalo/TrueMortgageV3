@@ -80,7 +80,7 @@ describe('Math Edge Cases & Logic Corrections', () => {
 
     const baseData = generateMortgageSchedule(extremeInputs, true);
     // Solve for payoff in 5 years (60 periods)
-    const result = solveRequiredMonthly(60, extremeInputs, true, baseData);
+    const result = solveRequiredMonthly(60, extremeInputs, 'mortgage', baseData);
     expect(result).toBeGreaterThan(0);
 
     const solvedInputs = { ...extremeInputs, extraPayment: result };
@@ -113,7 +113,7 @@ describe('Math Edge Cases & Logic Corrections', () => {
     };
 
     const baseData = generateMortgageSchedule(invalidInputs, true);
-    const result = solveRequiredMonthly(60, invalidInputs, true, baseData);
+    const result = solveRequiredMonthly(60, invalidInputs, 'mortgage', baseData);
     expect(result).toBeGreaterThan(0);
 
     const solvedInputs = { ...invalidInputs, extraPayment: result };
