@@ -115,7 +115,7 @@ export const generateMortgageSchedule = (
       const termPeriods = Math.round(termYears * periodsPerYear);
       const isTermRenewal = i - 1 > 0 && (i - 1) % termPeriods === 0;
       const termIndex = Math.floor((i - 1) / termPeriods);
-      const y = termIndex * termYears;
+      const y = Math.round(termIndex * termYears * 100) / 100;
       if (y > 0 && y < amortizationYears && inputs.termRates && inputs.termRates[y] !== undefined) {
         activeAnnualRate = Math.min(100, Math.max(0, inputs.termRates[y] || 0));
       }
@@ -356,15 +356,16 @@ export const generateCCSchedule = (
     }
   }
 
+  const paidOff = balance <= 0.01;
   return {
     schedule,
     summary: {
-      periodsToPayoff: periodsToPayoff,
+      periodsToPayoff: paidOff ? periodsToPayoff : Infinity,
       periodsPerYear: 12,
       totalInterest: totalInterest,
       totalPrincipal: totalPrincipal,
       totalEscrow: 0,
-      paidOff: balance <= 0.01
+      paidOff: paidOff
     }
   };
 };
@@ -465,7 +466,7 @@ export const calculateMilestones = (
       const row = actSched[actIdx];
       targetDate = row.dateLabel;
       targetPeriod = `${moLabel} ${row.period}`;
-      const pmiAmt = (startingPrincipal * (inputs.pmiRate / 100)) / periodsPerYear;
+      const pmiAmt = (startingPrincipal * ((inputs.pmiRate || 0) / 100)) / periodsPerYear;
       let savingsStr = '';
       if (inputs.usePiti && inputs.pmiRate > 0) {
         savingsStr = isFr
@@ -756,7 +757,7 @@ export const generateLoanSchedule = (
   }
 
   const paidOff = balance <= 0.001;
-  const periodsToPayoff = paidOff ? period - 1 : maxPeriods;
+  const periodsToPayoff = paidOff ? period - 1 : Infinity;
 
   return {
     schedule,

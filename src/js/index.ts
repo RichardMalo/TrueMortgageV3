@@ -442,6 +442,7 @@ let calcTimer: ReturnType<typeof setTimeout> | undefined;
 const debouncedCalculate = () => {
   clearTimeout(calcTimer);
   calcTimer = setTimeout(() => {
+    calcTimer = undefined;
     calculate();
   }, 150);
 };
@@ -1129,8 +1130,11 @@ const bootApp = () => {
       )
     ) {
       inp.addEventListener('blur', () => {
-        if (calcTimer) clearTimeout(calcTimer);
-        calculate();
+        if (calcTimer) {
+          clearTimeout(calcTimer);
+          calcTimer = undefined;
+          calculate();
+        }
       });
       inp.addEventListener('input', () => {
         debouncedCalculate();

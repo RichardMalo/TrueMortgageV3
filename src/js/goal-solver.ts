@@ -35,7 +35,7 @@ export const solveRequiredMonthly = (
   mode: 'mortgage' | 'cc' | 'loan',
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.periodsToPayoff <= targetPeriods) {
+  if (baseData.summary.paidOff !== false && baseData.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 
@@ -82,7 +82,7 @@ export const solveRequiredLumpSum = (
   mode: 'mortgage' | 'cc' | 'loan',
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.periodsToPayoff <= targetPeriods) {
+  if (baseData.summary.paidOff !== false && baseData.summary.periodsToPayoff <= targetPeriods) {
     return 0;
   }
 

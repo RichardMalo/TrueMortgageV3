@@ -217,7 +217,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     // Assert that it loops to max months and flags paidOff as false
     expect(result.summary.paidOff).toBe(false);
-    expect(result.summary.periodsToPayoff).toBe(600);
+    expect(result.summary.periodsToPayoff).toBe(Infinity);
   });
 
   it('should calculate milestones correctly', () => {
@@ -970,6 +970,43 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       expect(results.p1Y[results.p1Y.length - 1]).toBeGreaterThan(
         results.p2Y[results.p2Y.length - 1]
       );
+    });
+
+    it('should calculate opportunity cost correctly for personal loan mode', () => {
+      const inputs: Inputs = {
+        homePrice: 0,
+        downPayment: 0,
+        loanAmount: 25000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 8.99,
+        amortizationYears: 5,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'monthly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: true,
+        investRate: 7.0,
+        extraPayment: 150,
+        startDate: '2026-07-01',
+        rateShockEnabled: false,
+        termRates: {}
+      };
+
+      const baseData = generateLoanSchedule(inputs, true);
+      const actualData = generateLoanSchedule(inputs, false);
+      const state = {
+        currentMode: 'loan' as const,
+        comparisonProfileId: null
+      };
+
+      const results = calculateOpportunityCostData(state, baseData, actualData, null, inputs);
+      expect(results.p1X.length).toBe(baseData.schedule.length);
+      expect(results.p1Y[0]).toBeGreaterThan(0);
     });
   });
 
