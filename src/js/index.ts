@@ -254,10 +254,10 @@ const calculate = (e?: Event) => {
   };
   const lumpSumFreeData =
     state.currentMode === 'mortgage'
-      ? generateMortgageSchedule(inputsWithoutLumpSum, false)
+      ? generateMortgageSchedule(inputsWithoutLumpSum, false, true)
       : state.currentMode === 'loan'
-        ? generateLoanSchedule(inputsWithoutLumpSum, false)
-        : generateCCSchedule(inputsWithoutLumpSum, false);
+        ? generateLoanSchedule(inputsWithoutLumpSum, false, true)
+        : generateCCSchedule(inputsWithoutLumpSum, false, true);
 
   const lumpSumSavings = Math.max(
     0,
@@ -271,10 +271,10 @@ const calculate = (e?: Event) => {
   };
   const extraFreeData =
     state.currentMode === 'mortgage'
-      ? generateMortgageSchedule(inputsWithoutExtra, false)
+      ? generateMortgageSchedule(inputsWithoutExtra, false, true)
       : state.currentMode === 'loan'
-        ? generateLoanSchedule(inputsWithoutExtra, false)
-        : generateCCSchedule(inputsWithoutExtra, false);
+        ? generateLoanSchedule(inputsWithoutExtra, false, true)
+        : generateCCSchedule(inputsWithoutExtra, false, true);
 
   const extraPaymentSavings = Math.max(
     0,
