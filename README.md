@@ -41,13 +41,13 @@ The entire application executes **locally in your browser**—all financial calc
 - **Customizable Bento Grid:** Drag-and-drop or keyboard-accessible card reordering, widget visibility toggling, and full-width card expansions.
 - **WAI-ARIA Standards:** Accessible modal dialogs with focus trapping and focus restoration (`modals.ts`), WAI-ARIA listboxes for custom selects, accessible scenario renaming, screen reader live regions, and WCAG AA compliant color contrast ratios.
 - **Progressive Table Rendering:** Renders large amortization schedules (up to 1,200 payment periods) in progressive 50-row chunks using `requestAnimationFrame` for 60fps main-thread responsiveness.
-- **Zero-Flash Dark Mode:** Inline theme initialization script preventing dark mode FOUC (Flash of Unstyled Content).
+- **Zero-Flash Dark Mode:** Synchronous `theme-loader.ts` module ensuring zero-FOUC theme initialization under strict Content Security Policies (`script-src 'self' blob:`).
 
 ### 4. Zero-Trust Security & Portability
 
 - **Web Cryptography Storage:** Profile data encrypted locally via Web Cryptography (`window.crypto.subtle`) using PBKDF2 with **600,000 iterations**, SHA-256 key derivation, and 256-bit AES-GCM encryption with 16-byte random salt and 12-byte IVs.
 - **Prototype Pollution Defense:** Recursive `removePrototypeKeys()` sanitizer filtering untrusted JSON file uploads and state hydrations.
-- **Content Security Policy (CSP):** Strict CSP meta headers restricting resource origins and blocking inline script injections.
+- **Content Security Policy (CSP):** Strict CSP meta headers restricting resource origins, enforcing module-isolated script loading without inline script vulnerabilities.
 - **Blueprint Import/Export:** Encrypted payload sync or plain-text JSON blueprint file exports.
 - **Shareable Reports & PDF Export:** Client-side dynamic PDF report generation using `html2pdf.js`, clean markdown copy summaries, and direct WhatsApp sharing.
 - **Multilingual (i18n):** Real-time localized translation engine supporting English and Quebecois French across all UI labels, dynamic chart legends, tooltips, scenario sandboxes, and PDF exports.
@@ -62,7 +62,7 @@ The entire application executes **locally in your browser**—all financial calc
 - **Animations:** [GSAP 3.12](https://greensock.com/gsap/) (Micro-animations with `@media (prefers-reduced-motion)` support)
 - **Charting:** [Plotly.js Basic Dist](https://plotly.com/javascript/) (Asynchronous vendor chunk)
 - **PDF Generation:** [html2pdf.js](https://github.com/eKoopmans/html2pdf.js) (Client-side HTML5 canvas PDF exporter)
-- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (142 logic, math, and cryptography tests)
+- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (148 logic, math, modal focus trap, and cryptography tests across 12 test suites)
 - **E2E Testing:** [Playwright 1.61](https://playwright.dev/) (27 multi-browser E2E tests across Chromium, Firefox, and WebKit)
 - **Linting & Formatting:** ESLint 9/10 (Flat Config) + Prettier 3.3
 
@@ -95,7 +95,7 @@ npm ci
 | `npm run type-check`    | `tsc --noEmit`          | Execute strict TypeScript compiler type check.              |
 | `npm run lint`          | `eslint .`              | Run ESLint checks across codebase.                          |
 | `npm run format`        | `prettier --write .`    | Format all files using Prettier.                            |
-| `npm run test`          | `vitest run`            | Run Vitest unit & integration test suite (142 tests).       |
+| `npm run test`          | `vitest run`            | Run Vitest unit & integration test suite (148 tests across 12 suites). |
 | `npm run test:coverage` | `vitest run --coverage` | Run Vitest test suite with V8 coverage reports.             |
 | `npm run test:e2e`      | `playwright test`       | Run Playwright E2E tests across Chromium, Firefox, WebKit.  |
 | `npm run test:e2e:ui`   | `playwright test --ui`  | Run Playwright E2E tests in interactive UI mode.            |
@@ -150,8 +150,10 @@ TrueMortgageV3/
 │   ├── goal-solver.spec.ts        # Binary search solver accuracy tests
 │   ├── i18n.spec.ts               # Translation engine unit tests
 │   ├── milestones.spec.ts         # Payoff milestone logic tests
+│   ├── modals.spec.ts             # Focus trap and confirmation/alert modal dialog unit tests
 │   ├── rate-shock.spec.ts         # Refinancing rate shock UI binder tests
 │   ├── storage.spec.ts            # Schema migration & Web Crypto encryption tests
+│   ├── theme-loader.spec.ts       # Dark-mode initialization & FOUC prevention unit tests
 │   ├── ui.spec.ts                 # DOM helper & formatting unit tests
 │   └── wages.spec.ts              # Bank wages visualization tests
 ├── eslint.config.js                # ESLint flat configuration
