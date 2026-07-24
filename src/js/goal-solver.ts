@@ -237,8 +237,16 @@ export const renderGoalSolver = (
     if (applyMonthlyBtn) {
       applyMonthlyBtn.textContent = btnText;
     }
-    monthlyValEl.innerHTML = `+${formatCurrency(displayMonthly)}<span class="box-unit">${freqUnit}</span>`;
-    lumpSumValEl.textContent = `+${formatCurrency(displayLumpSum)}`;
+    if (monthlyValEl) {
+      monthlyValEl.textContent = `+${formatCurrency(displayMonthly)}`;
+      const unitSpan = document.createElement('span');
+      unitSpan.className = 'box-unit';
+      unitSpan.textContent = freqUnit;
+      monthlyValEl.appendChild(unitSpan);
+    }
+    if (lumpSumValEl) {
+      lumpSumValEl.textContent = `+${formatCurrency(displayLumpSum)}`;
+    }
 
     // Show/hide error only if solver fails to meet target and current actual inputs do not already achieve it
     const actualPayoff = actData.summary.periodsToPayoff;

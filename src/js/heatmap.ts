@@ -272,7 +272,14 @@ export const renderHeatmap = (
       if (cell.yearsSaved === 0) {
         td.textContent = t('Baseline');
       } else {
-        td.innerHTML = `<strong>−${cell.yearsSaved.toFixed(1)}</strong><span class="unit-yrs">${isFr ? ' ans' : ' yrs'}</span>`;
+        td.textContent = '';
+        const strong = document.createElement('strong');
+        strong.textContent = `−${cell.yearsSaved.toFixed(1)}`;
+        const span = document.createElement('span');
+        span.className = 'unit-yrs';
+        span.textContent = isFr ? ' ans' : ' yrs';
+        td.appendChild(strong);
+        td.appendChild(span);
       }
 
       // Highlight if selected

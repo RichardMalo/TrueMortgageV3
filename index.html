@@ -64,25 +64,8 @@
       rel="stylesheet"
     />
 
-    <!-- Synchronous Dark Mode Initialization Script (Prevents FOUC) -->
-    <script>
-      (function () {
-        try {
-          var s = localStorage.getItem('mtg_calculator_settings');
-          var p = s ? JSON.parse(s) : null;
-          var d = p
-            ? p.isDark
-            : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (d) {
-            document.documentElement.classList.add('dark-mode');
-            document.documentElement.classList.remove('light-mode');
-          } else {
-            document.documentElement.classList.add('light-mode');
-            document.documentElement.classList.remove('dark-mode');
-          }
-        } catch (e) {}
-      })();
-    </script>
+    <!-- Synchronous Dark Mode Initialization Module (Prevents FOUC & Complies with CSP) -->
+    <script type="module" src="./src/js/theme-loader.ts"></script>
 
     <!-- Local Compiled Assets Linking -->
     <link rel="stylesheet" href="./src/css/main.css" />

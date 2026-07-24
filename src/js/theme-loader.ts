@@ -1,18 +1,29 @@
-(function () {
+export const initTheme = (): void => {
   try {
     const settingsStr = localStorage.getItem('mtg_calculator_settings');
     const settings = settingsStr ? JSON.parse(settingsStr) : null;
     const isDark = settings
       ? settings.isDark
-      : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (isDark) {
-      document.body.classList.add('dark-mode');
-      document.body.classList.remove('light-mode');
-    } else {
+      : typeof window !== 'undefined' &&
+        window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const modeClass = isDark ? 'dark-mode' : 'light-mode';
+    const removeClass = isDark ? 'light-mode' : 'dark-mode';
+    document.documentElement.classList.add(modeClass);
+    document.documentElement.classList.remove(removeClass);
+    if (document.body) {
+      document.body.classList.add(modeClass);
+      document.body.classList.remove(removeClass);
+    }
+  } catch {
+    document.documentElement.classList.add('light-mode');
+    document.documentElement.classList.remove('dark-mode');
+    if (document.body) {
       document.body.classList.add('light-mode');
       document.body.classList.remove('dark-mode');
     }
-  } catch {
-    // Silent catch
   }
-})();
+};
+
+// Immediately initialize theme on load
+initTheme();

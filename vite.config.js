@@ -30,22 +30,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: [
-        'node_modules/**',
-        'dist/**',
-        'tests/**',
-        'eslint.config.js',
-        'vite.config.js',
-        'src/js/ui.ts',
-        'src/js/modals.ts',
-        'src/js/pdf.ts',
-        'src/js/share.ts'
-      ],
+      exclude: ['node_modules/**', 'dist/**', 'tests/**', 'eslint.config.js', 'vite.config.js'],
       thresholds: {
-        statements: 65,
-        branches: 55,
-        functions: 45,
-        lines: 65
+        statements: 45,
+        branches: 40,
+        functions: 30,
+        lines: 45
       }
     }
   }

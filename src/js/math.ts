@@ -382,8 +382,12 @@ export const generateCCSchedule = (
 const formatPeriodDelta = (periods: number, periodsPerYear: number): string | null => {
   if (periods <= 0) return null;
   const totalYears = periods / periodsPerYear;
-  const yrs = Math.floor(totalYears);
-  const mos = Math.round((totalYears - yrs) * 12);
+  let yrs = Math.floor(totalYears);
+  let mos = Math.round((totalYears - yrs) * 12);
+  if (mos === 12) {
+    yrs += 1;
+    mos = 0;
+  }
   if (yrs > 0) {
     return `${yrs} Year${yrs > 1 ? 's' : ''}${mos > 0 ? `, ${mos} Month${mos > 1 ? 's' : ''}` : ''}`;
   }

@@ -19,7 +19,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
     state.currentMode !== 'mortgage' ||
     !els.containers.rateShockTimeline
   ) {
-    if (els.containers.rateShockTimeline) els.containers.rateShockTimeline.innerHTML = '';
+    if (els.containers.rateShockTimeline) els.containers.rateShockTimeline.textContent = '';
     return;
   }
 
@@ -29,7 +29,16 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
     const errorMsg = isFr
       ? 'La chronologie est trop dense pour être affichée (maximum 50 périodes). Veuillez saisir une durée de terme plus longue.'
       : 'Timeline is too dense to display (maximum 50 periods). Please enter a larger Term Length.';
-    els.containers.rateShockTimeline.innerHTML = `<div style="padding: 15px; font-size: 0.85rem; opacity: 0.8; text-align: center; width: 100%; font-weight: 600;">${errorMsg}</div>`;
+    els.containers.rateShockTimeline.textContent = '';
+    const errDiv = document.createElement('div');
+    errDiv.style.padding = '15px';
+    errDiv.style.fontSize = '0.85rem';
+    errDiv.style.opacity = '0.8';
+    errDiv.style.textAlign = 'center';
+    errDiv.style.width = '100%';
+    errDiv.style.fontWeight = '600';
+    errDiv.textContent = errorMsg;
+    els.containers.rateShockTimeline.appendChild(errDiv);
     return;
   }
 
