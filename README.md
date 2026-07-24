@@ -16,6 +16,7 @@ The entire application executes **locally in your browser**—all financial calc
 ## 🚀 Key Features
 
 ### 1. Triple Optimization Engines
+
 - **Mortgage Engine:**
   - **Regional Compounding Standards:** Canadian fixed mortgages (**semi-annual compounding by law**) vs. US/UK/AU/NZ (**monthly compounding**).
   - **Private Mortgage Insurance (PMI):** Automatic LTV threshold tracking (cancellation at <= 80% LTV) for US mortgages, with automatic PMI omission for Canadian loans where mortgage insurance is added up-front to principal.
@@ -28,6 +29,7 @@ The entire application executes **locally in your browser**—all financial calc
   - **Accelerated Paydown Trajectories:** Models discretionary periodic extra principal paydowns, lump sums, and flexible payment frequencies.
 
 ### 2. Advanced Strategy Modeling
+
 - **Scheduled Future Lump Sums:** Dynamic scheduled lump-sum payments (annual bonuses, tax refunds) at specific payment numbers with automated date badges.
 - **Refinancing Rate Shocks:** Dynamic interest rate adjustments at renewal milestones (e.g. modeling 5-year term rate hikes or drops) with integer period boundary math.
 - **Payoff Goal Solver:** High-precision binary search algorithm that solves for the exact monthly surplus or one-time lump sum required to achieve a target payoff date, with automatic feasibility guards for unattainable targets.
@@ -35,12 +37,14 @@ The entire application executes **locally in your browser**—all financial calc
 - **Strategy Impact Heatmap:** Interactive 2D matrix visualizing payoff acceleration and interest savings across varying interest rates and loan terms.
 
 ### 3. Bento Dashboard & Accessibility (a11y)
+
 - **Customizable Bento Grid:** Drag-and-drop or keyboard-accessible card reordering, widget visibility toggling, and full-width card expansions.
 - **WAI-ARIA Standards:** Accessible modal dialogs with focus trapping and focus restoration (`modals.ts`), WAI-ARIA listboxes for custom selects, accessible scenario renaming, screen reader live regions, and WCAG AA compliant color contrast ratios.
 - **Progressive Table Rendering:** Renders large amortization schedules (up to 1,200 payment periods) in progressive 50-row chunks using `requestAnimationFrame` for 60fps main-thread responsiveness.
 - **Zero-Flash Dark Mode:** Inline theme initialization script preventing dark mode FOUC (Flash of Unstyled Content).
 
 ### 4. Zero-Trust Security & Portability
+
 - **Web Cryptography Storage:** Profile data encrypted locally via Web Cryptography (`window.crypto.subtle`) using PBKDF2 with **600,000 iterations**, SHA-256 key derivation, and 256-bit AES-GCM encryption with 16-byte random salt and 12-byte IVs.
 - **Prototype Pollution Defense:** Recursive `removePrototypeKeys()` sanitizer filtering untrusted JSON file uploads and state hydrations.
 - **Content Security Policy (CSP):** Strict CSP meta headers restricting resource origins and blocking inline script injections.
@@ -58,7 +62,7 @@ The entire application executes **locally in your browser**—all financial calc
 - **Animations:** [GSAP 3.12](https://greensock.com/gsap/) (Micro-animations with `@media (prefers-reduced-motion)` support)
 - **Charting:** [Plotly.js Basic Dist](https://plotly.com/javascript/) (Asynchronous vendor chunk)
 - **PDF Generation:** [html2pdf.js](https://github.com/eKoopmans/html2pdf.js) (Client-side HTML5 canvas PDF exporter)
-- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (134 logic, math, and cryptography tests)
+- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (142 logic, math, and cryptography tests)
 - **E2E Testing:** [Playwright 1.61](https://playwright.dev/) (27 multi-browser E2E tests across Chromium, Firefox, and WebKit)
 - **Linting & Formatting:** ESLint 9/10 (Flat Config) + Prettier 3.3
 
@@ -83,18 +87,18 @@ npm ci
 
 ### NPM Scripts
 
-| Script | Command | Description |
-| :--- | :--- | :--- |
-| `npm run dev` | `vite` | Start local Vite development server with HMR. |
-| `npm run build` | `tsc && vite build` | Compile TypeScript and bundle production assets to `/dist`. |
-| `npm run preview` | `vite preview` | Preview production build locally. |
-| `npm run type-check` | `tsc --noEmit` | Execute strict TypeScript compiler type check. |
-| `npm run lint` | `eslint .` | Run ESLint checks across codebase. |
-| `npm run format` | `prettier --write .` | Format all files using Prettier. |
-| `npm run test` | `vitest run` | Run Vitest unit & integration test suite (134 tests). |
-| `npm run test:coverage`| `vitest run --coverage` | Run Vitest test suite with V8 coverage reports. |
-| `npm run test:e2e` | `playwright test` | Run Playwright E2E tests across Chromium, Firefox, WebKit. |
-| `npm run test:e2e:ui` | `playwright test --ui` | Run Playwright E2E tests in interactive UI mode. |
+| Script                  | Command                 | Description                                                 |
+| :---------------------- | :---------------------- | :---------------------------------------------------------- |
+| `npm run dev`           | `vite`                  | Start local Vite development server with HMR.               |
+| `npm run build`         | `tsc && vite build`     | Compile TypeScript and bundle production assets to `/dist`. |
+| `npm run preview`       | `vite preview`          | Preview production build locally.                           |
+| `npm run type-check`    | `tsc --noEmit`          | Execute strict TypeScript compiler type check.              |
+| `npm run lint`          | `eslint .`              | Run ESLint checks across codebase.                          |
+| `npm run format`        | `prettier --write .`    | Format all files using Prettier.                            |
+| `npm run test`          | `vitest run`            | Run Vitest unit & integration test suite (142 tests).       |
+| `npm run test:coverage` | `vitest run --coverage` | Run Vitest test suite with V8 coverage reports.             |
+| `npm run test:e2e`      | `playwright test`       | Run Playwright E2E tests across Chromium, Firefox, WebKit.  |
+| `npm run test:e2e:ui`   | `playwright test --ui`  | Run Playwright E2E tests in interactive UI mode.            |
 
 ---
 
