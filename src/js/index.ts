@@ -44,7 +44,7 @@ import {
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
-import { applyTranslations, t } from './i18n.js';
+import { applyTranslations, t, currentLanguage } from './i18n.js';
 import { getCalculationsInputs, validateForm, profileToInputs } from './form.js';
 import { syncRateShockTimeline } from './rate-shock.js';
 import { renderBankWages, setupBankWagesToggle } from './wages-viz.js';
@@ -387,7 +387,13 @@ const calculate = (e?: Event) => {
     compData ? compData.schedule : null
   );
 
-  const milestones = calculateMilestones(baseData, actData, inputs, state.currentMode);
+  const milestones = calculateMilestones(
+    baseData,
+    actData,
+    inputs,
+    state.currentMode,
+    currentLanguage()
+  );
   renderMilestonesUI(els, milestones);
 
   lastActData = actData;

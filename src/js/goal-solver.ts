@@ -146,7 +146,9 @@ export const renderGoalSolver = (
 
   const periodsPerYear = baseData.summary.periodsPerYear || 12;
   const baselinePayoff = baseData.summary.periodsToPayoff;
-  const baselineYears = Math.max(1, Math.floor(baselinePayoff / periodsPerYear));
+  const baselineYears = isFinite(baselinePayoff)
+    ? Math.max(1, Math.floor(baselinePayoff / periodsPerYear))
+    : 30;
 
   // If baseline payoff is too short, hide solver card
   if (baselineYears <= 1) {

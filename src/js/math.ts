@@ -1,6 +1,5 @@
 import { Inputs, ScheduleResult, ScheduleRow, Milestone } from './types.js';
 import { PMI_LTV_THRESHOLD, MAX_CC_PAYOFF_MONTHS, MIN_CC_PAYMENT } from './constants.js';
-import { currentLanguage } from './i18n.js';
 
 /**
  * Calculates the periodic installment payment (principal + interest)
@@ -156,7 +155,8 @@ export const generateMortgageSchedule = (
     const interestPortion = balance * activePeriodicRate;
     let principalPortion = periodicPayment - interestPortion;
     let currentExtraPayment = userExtra;
-    if (i === 1 && !isBaseline) {
+    const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
+    if (i === 1 && !isBaseline && !hasLumpSumInArray) {
       currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
     }
     if (inputs.lumpSums && !isBaseline) {
@@ -176,7 +176,7 @@ export const generateMortgageSchedule = (
     }
 
     balance -= principalPortion + currentExtraPayment;
-    if (balance < 0.01) balance = 0;
+    if (balance < 0.001) balance = 0;
 
     totalInterest += interestPortion;
     totalPrincipal += principalPortion + currentExtraPayment;
@@ -299,7 +299,8 @@ export const generateCCSchedule = (
     let regularPrincipal = calculatedMinimumPayment - interestPortion;
 
     let currentExtraPayment = userExtra;
-    if (i === 1 && !isBaseline) {
+    const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
+    if (i === 1 && !isBaseline && !hasLumpSumInArray) {
       currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
     }
     if (inputs.lumpSums && !isBaseline) {
@@ -319,7 +320,7 @@ export const generateCCSchedule = (
     }
 
     balance -= regularPrincipal + currentExtraPayment;
-    if (balance < 0.01) balance = 0;
+    if (balance < 0.001) balance = 0;
 
     totalInterest += interestPortion;
     totalPrincipal += Math.max(0, regularPrincipal + currentExtraPayment);
@@ -406,7 +407,8 @@ export const calculateMilestones = (
   baseData: ScheduleResult,
   actData: ScheduleResult,
   inputs: Inputs,
-  currentMode: 'mortgage' | 'cc' | 'loan'
+  currentMode: 'mortgage' | 'cc' | 'loan',
+  lang = 'en'
 ): Milestone[] => {
   const isMortgage = currentMode === 'mortgage';
   const baseSched = baseData.schedule;
@@ -417,7 +419,7 @@ export const calculateMilestones = (
     ? safeHomePrice - safeDownPayment
     : Math.max(0, inputs.ccBalance || 0);
   const periodsPerYear = actData.summary.periodsPerYear;
-  const isFr = currentLanguage() === 'fr';
+  const isFr = lang === 'fr';
   const moLabel = isFr ? 'Mois' : 'Month';
 
   if (!actSched || actSched.length === 0) return [];
@@ -703,8 +705,9 @@ export const generateLoanSchedule = (
     if (scheduledPrincipal < 0) scheduledPrincipal = 0;
 
     let extra = userExtra;
+    const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === period);
 
-    if (!isBaseline && inputs.lumpSum && inputs.lumpSum > 0 && period === 1) {
+    if (!isBaseline && inputs.lumpSum && inputs.lumpSum > 0 && period === 1 && !hasLumpSumInArray) {
       extra += inputs.lumpSum;
     }
 
@@ -804,7 +807,8 @@ export const getRowDateLabel = (
   period: number,
   freq: string,
   periodsPerYear: number,
-  fallbackPrefix = 'P'
+  fallbackPrefix = 'P',
+  lang = 'en'
 ): { dateLabel: string; yearVal: number; calendarYear: number } => {
   let dateLabel = `${fallbackPrefix}${period}`;
   let yearVal = period / periodsPerYear;
@@ -842,7 +846,7 @@ export const getRowDateLabel = (
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);
     }
-    const isFr = currentLanguage() === 'fr';
+    const isFr = lang === 'fr';
     const monthStr = isFr ? MONTHS_FR[d.getMonth()] : MONTHS[d.getMonth()];
     const dayStr = d.getDate();
     const yearStr = d.getFullYear();

@@ -74,7 +74,8 @@ export const renderHeatmap = (
   const axes = getHeatmapAxes(state.currentMode, balance);
   const baselinePayoff = baseData.summary.periodsToPayoff;
   const periodsPerYear = baseData.summary.periodsPerYear || 12;
-  const baselineYears = baselinePayoff / periodsPerYear;
+  const isBaselineFinite = isFinite(baselinePayoff);
+  const baselineYears = isBaselineFinite ? baselinePayoff / periodsPerYear : 99;
 
   // Run schedules for all combinations to collect payoff reduction and interest savings
   const grid: GridCell[][] = [];
@@ -102,10 +103,16 @@ export const renderHeatmap = (
       }
 
       const cellPayoff = res.summary.periodsToPayoff;
-      const cellYears = cellPayoff / periodsPerYear;
-      const yearsSaved = Math.max(0, baselineYears - cellYears);
-      const interestSaved = Math.max(0, baseData.summary.totalInterest - res.summary.totalInterest);
-      const pctSaved = baselineYears > 0 ? (yearsSaved / baselineYears) * 100 : 0;
+      const isCellFinite = isFinite(cellPayoff);
+      const cellYears = isCellFinite ? cellPayoff / periodsPerYear : 99;
+      const yearsSaved =
+        isBaselineFinite && isCellFinite ? Math.max(0, baselineYears - cellYears) : 0;
+      const interestSaved =
+        isFinite(baseData.summary.totalInterest) && isFinite(res.summary.totalInterest)
+          ? Math.max(0, baseData.summary.totalInterest - res.summary.totalInterest)
+          : 0;
+      const pctSaved =
+        isBaselineFinite && baselineYears > 0 ? (yearsSaved / baselineYears) * 100 : 0;
 
       if (yearsSaved > maxSaved) {
         maxSaved = yearsSaved;
