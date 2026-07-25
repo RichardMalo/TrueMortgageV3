@@ -25,7 +25,7 @@ The entire application executes **locally in your browser**—all financial calc
   - **Legislation-Compliant Minimum Payments:** Ontario standard (3%) vs. Quebec legal mandate (5%), plus custom percentage/interest+principal rules and flat minimum floors.
   - **Negative Amortization Safeguards:** Handles minimum payments lower than monthly interest without cumulative principal underflow.
 - **Personal & Auto Loan Engine:**
-  - **Customizable Amortization & Origination Fees:** Models fixed-term consumer loans (personal, auto, student) incorporating up-front origination fees and effective APR calculations.
+  - **Customizable Amortization & Origination Fees:** Models fixed-term consumer loans (personal, auto, student) featuring an optional ON/OFF upfront origination fee toggle and effective APR calculations.
   - **Accelerated Paydown Trajectories:** Models discretionary periodic extra principal paydowns, lump sums, and flexible payment frequencies.
 
 ### 2. Advanced Strategy Modeling
