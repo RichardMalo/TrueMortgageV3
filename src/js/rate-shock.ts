@@ -44,7 +44,7 @@ export const syncRateShockTimeline = (state: AppState, els: AppElements, calcula
 
   const years: number[] = [];
   for (let y = termYrs; y < amortYrs; y += termYrs) {
-    years.push(y);
+    years.push(Math.round(y * 100) / 100);
   }
 
   state.customizedYears = state.customizedYears || {};

@@ -210,13 +210,22 @@ h3 {
 }
 
 .help-tip:hover,
+.help-tip:focus,
+.help-tip:focus-visible,
 .help-tip:active,
 .help-tip.touch-active {
   z-index: var(--z-tooltip);
 }
 
+.help-tip:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
 @media (hover: hover) and (pointer: fine) {
-  .help-tip:hover {
+  .help-tip:hover,
+  .help-tip:focus,
+  .help-tip:focus-visible {
     background: rgba(var(--primary-rgb), 0.2);
     transform: scale(1.1);
   }
@@ -265,6 +274,8 @@ h3 {
 
 @media (hover: hover) and (pointer: fine) {
   .help-tip:hover .tooltip-text,
+  .help-tip:focus .tooltip-text,
+  .help-tip:focus-visible .tooltip-text,
   .help-tip:active .tooltip-text {
     visibility: visible;
     opacity: 1;
@@ -3157,4 +3168,28 @@ body.dark-mode .goal-result-box:hover {
 
 .plotly-container {
   min-height: 320px;
+}
+
+/* Print Media Styles */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .app-header,
+  .master-mode-selector,
+  .card-action-btn,
+  .sidebar-close-btn,
+  .modal-overlay {
+    display: none !important;
+  }
+  .bento-grid {
+    display: block !important;
+  }
+  .chart-wrapper,
+  .bento-card {
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+    page-break-inside: avoid;
+  }
 }

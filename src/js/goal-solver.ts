@@ -22,7 +22,11 @@ const getStartingBalanceForMode = (inputs: Inputs, mode: 'mortgage' | 'cc' | 'lo
   }
   if (mode === 'loan') {
     const fee = inputs.loanOriginationFeeEnabled ? Math.max(0, inputs.loanOriginationFee || 0) : 0;
-    return Math.max(0, (inputs.loanAmount ?? inputs.homePrice - inputs.downPayment) + fee);
+    const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+    const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+    const rawLoan =
+      inputs.loanAmount !== undefined ? inputs.loanAmount : safeHomePrice - safeDownPayment;
+    return Math.max(0, (rawLoan || 0) + fee);
   }
   return Math.max(0, inputs.ccBalance || 0);
 };

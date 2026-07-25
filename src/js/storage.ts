@@ -99,7 +99,7 @@ export const isCryptoSupported = (): boolean => {
 
 /**
  * Encrypts a plain text string using client-side AES-GCM 256-bit encryption.
- * Derives a cryptographic key from the user passcode via PBKDF2 (100K iterations).
+ * Derives a cryptographic key from the user passcode via PBKDF2 (600K iterations).
  *
  * @param plainText - The unencrypted payload string to encrypt.
  * @param passcode - User-provided password to derive the key from.

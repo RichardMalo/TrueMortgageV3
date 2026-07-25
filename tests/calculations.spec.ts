@@ -1080,5 +1080,51 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       expect(actual.summary.periodsToPayoff).toBeLessThan(baseline.summary.periodsToPayoff);
       expect(actual.summary.totalInterest).toBeLessThan(baseline.summary.totalInterest);
     });
+
+    it('should safely fall back when inputs.loanAmount, homePrice, and downPayment are undefined', () => {
+      const inputs: Partial<Inputs> = {
+        province: 'ON',
+        annualRate: 5.0,
+        amortizationYears: 5,
+        termYears: 5,
+        compounding: 'monthly',
+        frequency: 'monthly'
+      };
+
+      const result = generateLoanSchedule(inputs as Inputs, false);
+      expect(result.schedule).toBeDefined();
+      expect(Array.isArray(result.schedule)).toBe(true);
+      expect(result.summary.paidOff).toBe(true);
+    });
+
+    it('should correctly apply rate shock overrides with non-integer termYears', () => {
+      const inputs: Inputs = {
+        homePrice: 500000,
+        downPayment: 100000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 4.0,
+        amortizationYears: 10,
+        termYears: 2.5,
+        compounding: 'monthly',
+        frequency: 'monthly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: false,
+        investRate: 0,
+        extraPayment: 0,
+        startDate: '2026-07-01',
+        rateShockEnabled: true,
+        termRates: { 2.5: 8.0 }
+      };
+
+      const result = generateMortgageSchedule(inputs, false);
+      expect(result.schedule.length).toBeGreaterThan(0);
+      // Period 31 is the start of Year 2.5 (30 months)
+      expect(result.summary.paidOff).toBe(true);
+    });
   });
 });

@@ -188,7 +188,7 @@ export const generateMortgageSchedule = (
         dateLabel: dLbl,
         yearVal: yLbl,
         calendarYear
-      } = getRowDateLabel(currentDate, i, freq, periodsPerYear, 'P');
+      } = getRowDateLabel(currentDate, i, freq, periodsPerYear, 'P', inputs.lang || 'en');
 
       schedule.push({
         period: i,
@@ -331,7 +331,7 @@ export const generateCCSchedule = (
         dateLabel: dLbl,
         yearVal: yLbl,
         calendarYear
-      } = getRowDateLabel(currentDate, i, 'monthly', 12, 'M');
+      } = getRowDateLabel(currentDate, i, 'monthly', 12, 'M', inputs.lang || 'en');
 
       schedule.push({
         period: i,
@@ -670,10 +670,11 @@ export const generateLoanSchedule = (
   const originationFee = inputs.loanOriginationFeeEnabled
     ? Math.max(0, inputs.loanOriginationFee || 0)
     : 0;
-  const loanAmount = Math.max(
-    0,
-    (inputs.loanAmount ?? inputs.homePrice - inputs.downPayment) + originationFee
-  );
+  const safeHomePrice = Math.max(0, inputs.homePrice || 0);
+  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const rawLoan =
+    inputs.loanAmount !== undefined ? inputs.loanAmount : safeHomePrice - safeDownPayment;
+  const loanAmount = Math.max(0, (rawLoan || 0) + originationFee);
   const safeAmort = Math.min(50, Math.max(0.1, inputs.amortizationYears || inputs.termYears || 5));
   const safeRate = Math.min(100, Math.max(0, inputs.annualRate || 0));
 
@@ -749,7 +750,14 @@ export const generateLoanSchedule = (
     totalExtraPaid += actualExtra;
 
     if (!summaryOnly) {
-      const dateInfo = getRowDateLabel(currentDate, period, freq, periodsPerYear, 'M');
+      const dateInfo = getRowDateLabel(
+        currentDate,
+        period,
+        freq,
+        periodsPerYear,
+        'M',
+        inputs.lang || 'en'
+      );
       schedule.push({
         period,
         year: dateInfo.yearVal,

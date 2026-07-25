@@ -38,6 +38,7 @@ export interface Inputs {
   ccCompounding?: 'simple' | 'daily';
   lumpSum?: number;
   lumpSums?: LumpSumItem[];
+  lang?: 'en' | 'fr';
 }
 
 export interface ScheduleRow {
