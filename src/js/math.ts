@@ -366,7 +366,8 @@ export const generateCCSchedule = (
       totalInterest: totalInterest,
       totalPrincipal: totalPrincipal,
       totalEscrow: 0,
-      paidOff: paidOff
+      paidOff: paidOff,
+      isTruncated: !paidOff
     }
   };
 };
@@ -419,9 +420,15 @@ export const calculateMilestones = (
   const actSched = actData.schedule;
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
   const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
-  const startingPrincipal = isMortgage
-    ? safeHomePrice - safeDownPayment
-    : Math.max(0, inputs.ccBalance || 0);
+  const originationFee = inputs.loanOriginationFeeEnabled
+    ? Math.max(0, inputs.loanOriginationFee || 0)
+    : 0;
+  const startingPrincipal =
+    currentMode === 'mortgage'
+      ? safeHomePrice - safeDownPayment
+      : currentMode === 'loan'
+        ? Math.max(0, (inputs.loanAmount ?? safeHomePrice - safeDownPayment) + originationFee)
+        : Math.max(0, inputs.ccBalance || 0);
   const periodsPerYear = actData.summary.periodsPerYear;
   const isFr = lang === 'fr';
   const moLabel = isFr ? 'Mois' : 'Month';
@@ -660,7 +667,13 @@ export const generateLoanSchedule = (
   isBaseline = false,
   summaryOnly = false
 ): ScheduleResult => {
-  const loanAmount = Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment);
+  const originationFee = inputs.loanOriginationFeeEnabled
+    ? Math.max(0, inputs.loanOriginationFee || 0)
+    : 0;
+  const loanAmount = Math.max(
+    0,
+    (inputs.loanAmount ?? inputs.homePrice - inputs.downPayment) + originationFee
+  );
   const safeAmort = Math.min(50, Math.max(0.1, inputs.amortizationYears || inputs.termYears || 5));
   const safeRate = Math.min(100, Math.max(0, inputs.annualRate || 0));
 

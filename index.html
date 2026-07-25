@@ -403,14 +403,28 @@
                   />
                 </div>
                 <div class="input-group loan-only">
-                  <label for="loanOriginationFee"
-                    >Origination Fee ($)
-                    <span class="help-tip"
-                      >?<span class="tooltip-text"
-                        >Upfront processing or administrative fees assessed by the lender.</span
-                      ></span
-                    ></label
+                  <div
+                    class="flex items-center justify-between mb-1"
+                    style="display: flex; align-items: center; justify-content: space-between"
                   >
+                    <label for="loanOriginationFee" style="margin-bottom: 0"
+                      >Origination Fee ($)
+                      <span class="help-tip"
+                        >?<span class="tooltip-text"
+                          >Upfront processing or administrative fees assessed by the lender.</span
+                        ></span
+                      ></label
+                    >
+                    <label class="switch" title="Toggle Loan Origination Fee">
+                      <input
+                        type="checkbox"
+                        id="loanOriginationFeeEnabled"
+                        role="switch"
+                        aria-checked="false"
+                      />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
                   <input
                     type="number"
                     id="loanOriginationFee"
@@ -418,6 +432,8 @@
                     value="0"
                     step="50"
                     min="0"
+                    disabled
+                    style="opacity: 0.5"
                   />
                 </div>
               </div>

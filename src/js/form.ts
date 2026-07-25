@@ -223,6 +223,8 @@ export const getCalculationsInputs = (
     ccBalance: parseNum(inputs.ccBalance?.value),
     loanAmount: parseNum(inputs.loanAmount?.value || inputs.homePrice?.value, 25000),
     loanOriginationFee: parseNum(inputs.loanOriginationFee?.value, 0),
+    loanOriginationFeeEnabled: !!(inputs.loanOriginationFeeEnabled as HTMLInputElement | null)
+      ?.checked,
     province: inputs.province?.value || 'ON',
     ccMinPercent: inputs.ccMinPercent ? parseNum(inputs.ccMinPercent.value, 3) : undefined,
     ccMinPrincipalPct: inputs.ccMinPrincipalPct
@@ -272,6 +274,7 @@ export const profileToInputs = (
     ccBalance: parseNum(profileInputs.ccBalance),
     loanAmount: parseNum(profileInputs.loanAmount),
     loanOriginationFee: parseNum(profileInputs.loanOriginationFee),
+    loanOriginationFeeEnabled: profileInputs.loanOriginationFeeEnabled === true,
     province: String(profileInputs.province || 'ON'),
     ccMinPercent:
       profileInputs.ccMinPercent !== undefined

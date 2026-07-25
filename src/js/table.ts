@@ -1,7 +1,6 @@
 import { ScheduleRow } from './types.js';
 import { formatCurrency } from './charts.js';
 import { TABLE_RENDER_CHUNK_SIZE } from './constants.js';
-import { escapeHtml } from './ui.js';
 
 let tableAnimationFrameId: number | null = null;
 
@@ -42,31 +41,67 @@ export const updateTable = (
     for (let index = start; index < end; index++) {
       const row = schedule[index];
       const tr = document.createElement('tr');
-      const eTd = usePiti ? `<td style="color: #8b5cf6">${formatCurrency(row.escrow)}</td>` : '';
-      const label = escapeHtml(isPeriod ? `P${row.period}` : row.dateLabel);
 
-      let deltaHtml = '';
+      // Date / Period label
+      const tdLabel = document.createElement('td');
+      tdLabel.textContent = isPeriod ? `P${row.period}` : row.dateLabel;
+      tr.appendChild(tdLabel);
+
+      // Payment
+      const tdPayment = document.createElement('td');
+      const strongPayment = document.createElement('strong');
+      strongPayment.textContent = formatCurrency(row.payment);
+      tdPayment.appendChild(strongPayment);
+      tr.appendChild(tdPayment);
+
+      // Principal
+      const tdPrincipal = document.createElement('td');
+      tdPrincipal.textContent = formatCurrency(row.principal);
+      tr.appendChild(tdPrincipal);
+
+      // Interest
+      const tdInterest = document.createElement('td');
+      tdInterest.textContent = formatCurrency(row.interest);
+      tr.appendChild(tdInterest);
+
+      // Escrow (PITI mode)
+      if (usePiti) {
+        const tdEscrow = document.createElement('td');
+        tdEscrow.style.color = '#8b5cf6';
+        tdEscrow.textContent = formatCurrency(row.escrow);
+        tr.appendChild(tdEscrow);
+      }
+
+      // Extra
+      const tdExtra = document.createElement('td');
+      tdExtra.textContent = formatCurrency(row.extra);
+      tr.appendChild(tdExtra);
+
+      // Balance & Delta Badge
+      const tdBalance = document.createElement('td');
+      const strongBalance = document.createElement('strong');
+      strongBalance.textContent = formatCurrency(row.balance);
+      tdBalance.appendChild(strongBalance);
+
       if (compSchedule && compSchedule[index]) {
         const diff = row.balance - compSchedule[index].balance;
         if (Math.abs(diff) >= 1) {
           const isBetter = diff < 0;
           const diffText = formatCurrency(Math.abs(diff));
-          deltaHtml = `<div class="delta-badge ${isBetter ? 'better' : 'worse'}">${isBetter ? '↓' : '↑'} ${diffText}</div>`;
+          const deltaBadge = document.createElement('div');
+          deltaBadge.className = `delta-badge ${isBetter ? 'better' : 'worse'}`;
+          deltaBadge.textContent = `${isBetter ? '↓' : '↑'} ${diffText}`;
+          tdBalance.appendChild(deltaBadge);
         }
       } else if (compSchedule && !compSchedule[index] && row.balance > 0) {
         const diffText = formatCurrency(row.balance);
-        deltaHtml = `<div class="delta-badge worse">↑ ${diffText}</div>`;
+        const deltaBadge = document.createElement('div');
+        deltaBadge.className = 'delta-badge worse';
+        deltaBadge.textContent = `↑ ${diffText}`;
+        tdBalance.appendChild(deltaBadge);
       }
 
-      tr.innerHTML = `
-        <td>${label}</td>
-        <td><strong>${formatCurrency(row.payment)}</strong></td>
-        <td>${formatCurrency(row.principal)}</td>
-        <td>${formatCurrency(row.interest)}</td>
-        ${eTd}
-        <td>${formatCurrency(row.extra)}</td>
-        <td><strong>${formatCurrency(row.balance)}</strong>${deltaHtml}</td>
-      `;
+      tr.appendChild(tdBalance);
       frag.appendChild(tr);
     }
 

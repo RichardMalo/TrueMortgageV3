@@ -10,6 +10,7 @@ export interface Inputs {
   ccBalance: number;
   loanAmount?: number;
   loanOriginationFee?: number;
+  loanOriginationFeeEnabled?: boolean;
   province: string;
   ccMinPercent?: number;
   ccMinPrincipalPct?: number;
@@ -69,6 +70,8 @@ export interface ScheduleSummary {
   totalEscrow: number;
   /** Whether the debt was fully paid off within max periods limit */
   paidOff?: boolean;
+  /** Whether the schedule reached the max period limit without full payoff */
+  isTruncated?: boolean;
 }
 
 export interface ScheduleResult {
@@ -82,6 +85,7 @@ export interface ProfileInputs {
   ccBalance: string;
   loanAmount?: string;
   loanOriginationFee?: string;
+  loanOriginationFeeEnabled?: boolean;
   province: string;
   ccMinPercent?: string;
   ccMinPrincipalPct?: string;
@@ -170,6 +174,7 @@ export interface AppElements {
     ccBalance: HTMLInputElement | null;
     loanAmount?: HTMLInputElement | null;
     loanOriginationFee?: HTMLInputElement | null;
+    loanOriginationFeeEnabled?: HTMLInputElement | null;
     province: HTMLSelectElement | null;
     ccMinPercent?: HTMLInputElement | null;
     ccMinPrincipalPct?: HTMLInputElement | null;

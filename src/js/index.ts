@@ -88,6 +88,9 @@ const els = {
     ccBalance: document.getElementById('ccBalance') as HTMLInputElement | null,
     loanAmount: document.getElementById('loanAmount') as HTMLInputElement | null,
     loanOriginationFee: document.getElementById('loanOriginationFee') as HTMLInputElement | null,
+    loanOriginationFeeEnabled: document.getElementById(
+      'loanOriginationFeeEnabled'
+    ) as HTMLInputElement | null,
     province: document.getElementById('province') as HTMLSelectElement | null,
     ccMinPercent: document.getElementById('ccMinPercent') as HTMLInputElement | null,
     ccMinPrincipalPct: document.getElementById('ccMinPrincipalPct') as HTMLInputElement | null,
@@ -1069,6 +1072,11 @@ const bootApp = () => {
     syncCheckboxARIALabels();
     calculate();
     saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+  });
+
+  els.inputs.loanOriginationFeeEnabled?.addEventListener('change', () => {
+    syncCheckboxARIALabels();
+    calculate();
   });
 
   // Region and Compounding bidirectional synchronization

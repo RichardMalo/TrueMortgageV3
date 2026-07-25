@@ -346,6 +346,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     ccBalance: 'ccBalance',
     loanAmount: 'loanAmount',
     loanOriginationFee: 'loanOriginationFee',
+    loanOriginationFeeEnabled: 'loanOriginationFeeEnabled',
     province: 'province',
     annualRate: 'rate',
     amortizationYears: 'amortization',
