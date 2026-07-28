@@ -9,6 +9,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { syncRateShockTimeline } from '../src/js/rate-shock.js';
+import { generateMortgageSchedule } from '../src/js/math.js';
 import type { AppState, AppElements } from '../src/js/types.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -194,7 +195,7 @@ describe('syncRateShockTimeline (rate-shock.ts)', () => {
     const labels = timeline.querySelectorAll('.remaining-label');
     expect(labels).toHaveLength(4);
     // Year 5 renewal → 20 years remaining
-    expect(labels[0].textContent).toContain('20');
+    expect(labels[0]!.textContent).toContain('20');
   });
 
   // ── State population ──────────────────────────────────────────────────────
@@ -322,5 +323,39 @@ describe('syncRateShockTimeline (rate-shock.ts)', () => {
 
     // Remaining should update to 27 - 5 = 22, and must be in French
     expect(timeline.querySelector('.remaining-label')!.textContent).toContain('22 ans restants');
+  });
+
+  it('recalculates periodic payment correctly under Canadian semi-annual compounding rate shock', () => {
+    const inputs = {
+      homePrice: 500000,
+      downPayment: 100000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.5,
+      amortizationYears: 25,
+      termYears: 5,
+      compounding: 'semi' as const,
+      frequency: 'monthly' as const,
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: true,
+      termRates: { 5: 6.5 }
+    };
+
+    const result = generateMortgageSchedule(inputs, false);
+    expect(result.summary.paidOff).toBe(true);
+    const month60 = result.schedule[59]!;
+    const month61 = result.schedule[60]!;
+
+    expect(month60.payment).toBeCloseTo(2213.89, 1);
+    expect(month61.payment).toBeGreaterThan(month60.payment);
+    expect(month61.payment).toBeCloseTo(2600.53, 1);
   });
 });

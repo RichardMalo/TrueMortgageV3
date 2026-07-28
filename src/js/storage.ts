@@ -150,7 +150,7 @@ export const encryptData = async (plainText: string, passcode: string): Promise<
 
   let binary = '';
   for (let i = 0; i < combined.length; i++) {
-    binary += String.fromCharCode(combined[i]);
+    binary += String.fromCharCode(combined[i]!);
   }
   return btoa(binary);
 };
@@ -686,7 +686,7 @@ export const loadSettingsFromStorage = (
         throw new Error('No profiles verified after schema validation');
       }
       if (!state.profiles[state.activeProfileId as string]) {
-        state.activeProfileId = Object.keys(state.profiles)[0];
+        state.activeProfileId = Object.keys(state.profiles)[0] || 'default-1';
       }
 
       state.isDark = settings.isDark === true;

@@ -40,6 +40,7 @@ export const updateTable = (
 
     for (let index = start; index < end; index++) {
       const row = schedule[index];
+      if (!row) continue;
       const tr = document.createElement('tr');
 
       // Date / Period label
@@ -83,8 +84,9 @@ export const updateTable = (
       strongBalance.textContent = formatCurrency(row.balance);
       tdBalance.appendChild(strongBalance);
 
-      if (compSchedule && compSchedule[index]) {
-        const diff = row.balance - compSchedule[index].balance;
+      const compRow = compSchedule ? compSchedule[index] : undefined;
+      if (compRow) {
+        const diff = row.balance - compRow.balance;
         if (Math.abs(diff) >= 1) {
           const isBetter = diff < 0;
           const diffText = formatCurrency(Math.abs(diff));
@@ -93,7 +95,7 @@ export const updateTable = (
           deltaBadge.textContent = `${isBetter ? '↓' : '↑'} ${diffText}`;
           tdBalance.appendChild(deltaBadge);
         }
-      } else if (compSchedule && !compSchedule[index] && row.balance > 0) {
+      } else if (compSchedule && !compRow && row.balance > 0) {
         const diffText = formatCurrency(row.balance);
         const deltaBadge = document.createElement('div');
         deltaBadge.className = 'delta-badge worse';

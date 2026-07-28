@@ -290,7 +290,7 @@ const calculate = (e?: Event) => {
     state.comparisonProfileId &&
     state.profiles[state.comparisonProfileId]
   ) {
-    const compProfile = state.profiles[state.comparisonProfileId];
+    const compProfile = state.profiles[state.comparisonProfileId]!;
     const compInputs = profileToInputs(
       compProfile.inputs as Record<string, string | boolean | number | undefined>,
       compProfile.termRates || {},
@@ -364,7 +364,7 @@ const calculate = (e?: Event) => {
     const termPer = Math.ceil(inputs.termYears * actData.summary.periodsPerYear);
     updateKineticText(
       els.results.termBalance,
-      termPer < actData.schedule.length ? actData.schedule[Math.max(0, termPer - 1)].balance : 0
+      termPer < actData.schedule.length ? actData.schedule[Math.max(0, termPer - 1)]!.balance : 0
     );
   }
 
@@ -404,42 +404,52 @@ const calculate = (e?: Event) => {
   renderBankWages(state, els, actData);
   applyCardCustomizationsToDOM(state);
 
-  renderHeatmap(
-    state,
-    els,
-    actData,
-    baseData,
-    () => getCalculationsInputs(state.currentMode, els.inputs, state.termRates),
-    (monthly, lumpSum) => {
-      if (els.inputs.extra) {
-        els.inputs.extra.value = String(monthly);
-      }
-      if (els.inputs.lumpSum) {
-        els.inputs.lumpSum.value = String(lumpSum);
-      }
-      calculate();
+  const deferAux = (fn: () => void) => {
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(fn, { timeout: 200 });
+    } else {
+      setTimeout(fn, 0);
     }
-  );
+  };
 
-  renderGoalSolver(
-    state,
-    els,
-    actData,
-    baseData,
-    () => getCalculationsInputs(state.currentMode, els.inputs, state.termRates),
-    (type, value) => {
-      if (type === 'monthly') {
+  deferAux(() => {
+    renderHeatmap(
+      state,
+      els,
+      actData,
+      baseData,
+      () => getCalculationsInputs(state.currentMode, els.inputs, state.termRates),
+      (monthly, lumpSum) => {
         if (els.inputs.extra) {
-          els.inputs.extra.value = String(value);
+          els.inputs.extra.value = String(monthly);
         }
-      } else {
         if (els.inputs.lumpSum) {
-          els.inputs.lumpSum.value = String(value);
+          els.inputs.lumpSum.value = String(lumpSum);
         }
+        calculate();
       }
-      calculate();
-    }
-  );
+    );
+
+    renderGoalSolver(
+      state,
+      els,
+      actData,
+      baseData,
+      () => getCalculationsInputs(state.currentMode, els.inputs, state.termRates),
+      (type, value) => {
+        if (type === 'monthly') {
+          if (els.inputs.extra) {
+            els.inputs.extra.value = String(value);
+          }
+        } else {
+          if (els.inputs.lumpSum) {
+            els.inputs.lumpSum.value = String(value);
+          }
+        }
+        calculate();
+      }
+    );
+  });
 
   syncStateCardOrderFromDOM(state);
   saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
@@ -585,6 +595,7 @@ const setupScheduledLumpSums = () => {
 
 const handleProfileSwitch = (profileId: string) => {
   const activeProfile = state.profiles[profileId];
+  if (!activeProfile) return;
   state.currentMode = activeProfile.currentMode || 'mortgage';
   state.complexity = activeProfile.complexity || 'simple';
   state.isDark = activeProfile.isDark !== undefined ? activeProfile.isDark : getPrefersDark();

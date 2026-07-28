@@ -93,6 +93,7 @@ export const validateForm = (
     const dynamicRowEls = document.querySelectorAll('.lump-sum-row');
     for (let idx = 0; idx < dynamicRowEls.length; idx++) {
       const row = dynamicRowEls[idx];
+      if (!row) continue;
       const amountInput = row.querySelector('.lump-sum-amount') as HTMLInputElement | null;
       const paymentInput = row.querySelector('.lump-sum-payment-number') as HTMLInputElement | null;
       if (amountInput && paymentInput) {

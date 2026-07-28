@@ -132,8 +132,8 @@ describe('UI Helper Functions (ui.ts)', () => {
       setupTouchAndKeyboardTooltips();
 
       const tooltips = container.querySelectorAll('.tooltip-text');
-      expect(tooltips[0].id).toBe('existingId');
-      expect(tooltips[1].id).toBe('help-tooltip-text-1');
+      expect(tooltips[0]!.id).toBe('existingId');
+      expect(tooltips[1]!.id).toBe('help-tooltip-text-1');
 
       document.body.removeChild(container);
     });

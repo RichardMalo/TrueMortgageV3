@@ -389,12 +389,11 @@ const renderMonthlyPaymentCircle = (
 ) => {
   const pieEl = document.getElementById('monthlyPaymentCircle');
   if (!pieEl) return;
-  const values = [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra].filter(
-    (v) => v > 0
-  );
+  const lValues = [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra];
+  const values = lValues.filter((v) => v > 0);
   const labels = ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra']
     .map((l) => t(l))
-    .filter((_, i) => [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra][i] > 0);
+    .filter((_, i) => (lValues[i] ?? 0) > 0);
 
   queueChartRender(
     'monthlyPaymentCircle',
@@ -502,10 +501,10 @@ const renderDebtBalanceChart = (
   }
 
   if (compData && compData.schedule) {
-    const compName =
-      (state.profiles[state.comparisonProfileId as string] &&
-        state.profiles[state.comparisonProfileId as string].name) ||
-      (currentLanguage() === 'fr' ? 'Comparaison' : 'Comparison');
+    const compProf = state.comparisonProfileId
+      ? state.profiles[state.comparisonProfileId]
+      : undefined;
+    const compName = compProf?.name || (currentLanguage() === 'fr' ? 'Comparaison' : 'Comparison');
     t3.push({
       x: compData.schedule.map((d) => d[xKey]),
       y: compData.schedule.map((d) => d.balance),
@@ -560,8 +559,9 @@ const renderEquityBuildUpChart = (
   const chart4El = document.getElementById('chart4');
   if (!chart4El) return;
   const activeSched = actualData.schedule.length ? actualData.schedule : baseData.schedule;
-  const pAmt = activeSched.length
-    ? activeSched[0].balance + activeSched[0].principal + (activeSched[0].extra || 0)
+  const firstSchedRow = activeSched[0];
+  const pAmt = firstSchedRow
+    ? firstSchedRow.balance + firstSchedRow.principal + (firstSchedRow.extra || 0)
     : 0;
   const t4: unknown[] = [
     {
@@ -655,21 +655,21 @@ const renderAnnualCashFlowChart = (
   const t11: unknown[] = [
     {
       x: yrs,
-      y: yrs.map((y) => aData[Number(y)].i),
+      y: yrs.map((y) => aData[Number(y)]!.i),
       name: t('Interest'),
       type: 'bar',
       marker: { color: CONFIG.colors.interest }
     },
     {
       x: yrs,
-      y: yrs.map((y) => aData[Number(y)].p),
+      y: yrs.map((y) => aData[Number(y)]!.p),
       name: t('Principal'),
       type: 'bar',
       marker: { color: CONFIG.colors.principal }
     },
     {
       x: yrs,
-      y: yrs.map((y) => aData[Number(y)].e),
+      y: yrs.map((y) => aData[Number(y)]!.e),
       name: t('Extra'),
       type: 'bar',
       marker: { color: CONFIG.colors.extra }
@@ -678,7 +678,7 @@ const renderAnnualCashFlowChart = (
   if (inputs.usePiti && currentMode === 'mortgage') {
     t11.splice(1, 0, {
       x: yrs,
-      y: yrs.map((y) => aData[Number(y)].esc),
+      y: yrs.map((y) => aData[Number(y)]!.esc),
       name: t('Escrow'),
       type: 'bar',
       marker: { color: CONFIG.colors.tax }
@@ -861,7 +861,7 @@ export const calculateOpportunityCostData = (
         ? Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment)
         : Math.max(0, inputs.ccBalance || 0);
 
-  const lastBaseYear = baseData.schedule[baseData.schedule.length - 1].year;
+  const lastBaseYear = baseData.schedule[baseData.schedule.length - 1]?.year ?? 0;
   const maxYear = Math.max(
     lastBaseYear,
     actualData.schedule[actualData.schedule.length - 1]?.year ?? 0,
@@ -887,11 +887,11 @@ export const calculateOpportunityCostData = (
   const getMonthInterval = (m: number) => {
     const len = baseData.schedule.length;
     if (m < len) {
-      const T_end = baseData.schedule[m].year;
-      const T_start = m === 0 ? T_end - 1 / 12 : baseData.schedule[m - 1].year;
+      const T_end = baseData.schedule[m]!.year;
+      const T_start = m === 0 ? T_end - 1 / 12 : baseData.schedule[m - 1]!.year;
       return { T_start, T_end };
     } else {
-      const lastYear = baseData.schedule[len - 1].year;
+      const lastYear = baseData.schedule[len - 1]?.year ?? 0;
       const T_start = lastYear + (m - len) / 12;
       const T_end = T_start + 1 / 12;
       return { T_start, T_end };
@@ -910,14 +910,14 @@ export const calculateOpportunityCostData = (
 
     getIntervalData(T_start: number, T_end: number): { cashPaid: number; balance: number } {
       let cashPaid = 0;
-      while (this.idx < this.schedule.length && this.schedule[this.idx].year <= T_end + 1e-7) {
-        const row = this.schedule[this.idx];
+      while (this.idx < this.schedule.length && this.schedule[this.idx]!.year <= T_end + 1e-7) {
+        const row = this.schedule[this.idx]!;
         if (row.year > T_start + 1e-7) {
           cashPaid += row.principal + row.interest + (row.extra || 0) + (row.pmi || 0);
         }
         this.idx++;
       }
-      const balance = this.idx > 0 ? this.schedule[this.idx - 1].balance : this.initialBalance;
+      const balance = this.idx > 0 ? this.schedule[this.idx - 1]!.balance : this.initialBalance;
       return { cashPaid, balance };
     }
   }
@@ -1013,10 +1013,10 @@ const renderOpportunityCostChart = (
   ];
 
   if (compData && compData.schedule && compData.schedule.length > 0) {
-    const compName =
-      (state.profiles[state.comparisonProfileId as string] &&
-        state.profiles[state.comparisonProfileId as string].name) ||
-      (currentLanguage() === 'fr' ? 'Comparaison' : 'Comparison');
+    const compProf = state.comparisonProfileId
+      ? state.profiles[state.comparisonProfileId]
+      : undefined;
+    const compName = compProf?.name || (currentLanguage() === 'fr' ? 'Comparaison' : 'Comparison');
 
     tOpp.push({
       x: compX,
@@ -1115,7 +1115,7 @@ export const renderCharts = (
   let termX: number | null = state.currentMode === 'mortgage' ? inputs.termYears : null;
 
   if (termX !== null && inputs.startDate && baseData.schedule.length > 0) {
-    termX = baseData.schedule[0].year + inputs.termYears;
+    termX = baseData.schedule[0]!.year + inputs.termYears;
   }
 
   const termLine = termX
@@ -1133,7 +1133,7 @@ export const renderCharts = (
 
   const payoffX =
     hasStrat && actualData.schedule.length > 0
-      ? actualData.schedule[actualData.schedule.length - 1].year
+      ? actualData.schedule[actualData.schedule.length - 1]!.year
       : null;
   const payoffLine = payoffX
     ? {

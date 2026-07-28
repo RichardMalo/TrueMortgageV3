@@ -91,8 +91,13 @@ export const solveRequiredLumpSum = (
     return 0;
   }
 
+  // Filter out payment 1 items from lumpSums array so inputs.lumpSum is not bypassed
+  const cleanLumpSums = inputs.lumpSums
+    ? inputs.lumpSums.filter((item) => item.paymentNumber !== 1)
+    : undefined;
+
   // Early return if 0 lump sum is already enough (target met by other inputs)
-  const testZero = { ...inputs, lumpSum: 0 };
+  const testZero = { ...inputs, lumpSums: cleanLumpSums, lumpSum: 0 };
   const resZero = runScheduleForMode(testZero, mode, false, true);
   if (resZero.summary.periodsToPayoff <= targetPeriods) {
     return 0;
@@ -103,7 +108,7 @@ export const solveRequiredLumpSum = (
   if (max <= 0) return 0;
 
   // Feasibility check: if maximum lump sum cannot achieve target, return 0
-  const testMax = { ...inputs, lumpSum: max };
+  const testMax = { ...inputs, lumpSums: cleanLumpSums, lumpSum: max };
   const resMax = runScheduleForMode(testMax, mode, false, true);
   if (resMax.summary.periodsToPayoff > targetPeriods) {
     return 0;
@@ -112,7 +117,7 @@ export const solveRequiredLumpSum = (
   let result = max;
   for (let i = 0; i < 24; i++) {
     const mid = (min + max) / 2;
-    const testInputs = { ...inputs, lumpSum: mid };
+    const testInputs = { ...inputs, lumpSums: cleanLumpSums, lumpSum: mid };
     const res = runScheduleForMode(testInputs, mode, false, true);
 
     if (res.summary.periodsToPayoff <= targetPeriods) {

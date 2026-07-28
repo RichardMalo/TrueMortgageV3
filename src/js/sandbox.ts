@@ -141,9 +141,10 @@ export const renderSandboxList = (
         return;
       }
       const newId = generateProfileId();
-      state.profiles[newId] = JSON.parse(JSON.stringify(p));
-      state.profiles[newId].id = newId;
-      state.profiles[newId].name = isFr ? `${p.name} (Copie)` : `${p.name} (Copy)`;
+      const newProfile = JSON.parse(JSON.stringify(p));
+      newProfile.id = newId;
+      newProfile.name = isFr ? `${p.name} (Copie)` : `${p.name} (Copy)`;
+      state.profiles[newId] = newProfile;
 
       saveSettingsToStorage(state, inputsMap, defaultInputs, false);
       onRecalculate();
@@ -173,9 +174,12 @@ export const renderSandboxList = (
           delete state.profiles[p.id];
 
           if (wasActive) {
-            state.activeProfileId = Object.keys(state.profiles)[0];
-            saveSettingsToStorage(state, inputsMap, defaultInputs, true);
-            onProfileSelect(state.activeProfileId);
+            const nextActiveId = Object.keys(state.profiles)[0];
+            if (nextActiveId) {
+              state.activeProfileId = nextActiveId;
+              saveSettingsToStorage(state, inputsMap, defaultInputs, true);
+              onProfileSelect(state.activeProfileId);
+            }
           } else {
             saveSettingsToStorage(state, inputsMap, defaultInputs, false);
           }

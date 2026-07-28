@@ -82,10 +82,10 @@ export const renderHeatmap = (
   let maxSaved = 0;
 
   for (let r = 0; r < axes.monthly.length; r++) {
-    const monthlyExtra = axes.monthly[r];
+    const monthlyExtra = axes.monthly[r] ?? 0;
     const row: GridCell[] = [];
     for (let c = 0; c < axes.lumpSum.length; c++) {
-      const lumpSum = axes.lumpSum[c];
+      const lumpSum = axes.lumpSum[c] ?? 0;
 
       const cellInputs: Inputs = {
         ...inputs,
@@ -242,10 +242,11 @@ export const renderHeatmap = (
     // Row Header (Monthly Extra)
     const rowHeaderTd = document.createElement('td');
     rowHeaderTd.className = 'heatmap-row-header';
+    const firstCell = row[0]!;
     rowHeaderTd.textContent =
-      row[0].monthly === 0
+      firstCell.monthly === 0
         ? t('No Extra')
-        : `+${formatCurrency(row[0].monthly)}${isFr ? '/mois' : '/mo'}`;
+        : `+${formatCurrency(firstCell.monthly)}${isFr ? '/mois' : '/mo'}`;
     tr.appendChild(rowHeaderTd);
 
     row.forEach((cell) => {

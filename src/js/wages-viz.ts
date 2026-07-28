@@ -59,8 +59,9 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
     if (!yearlyData[yr]) {
       yearlyData[yr] = { year: yr, interest: 0, count: 0 };
     }
-    yearlyData[yr].interest += row.interest;
-    yearlyData[yr].count += 1;
+    const yData = yearlyData[yr]!;
+    yData.interest += row.interest;
+    yData.count += 1;
   }
 
   const years = Object.keys(yearlyData)
@@ -68,12 +69,22 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
     .sort((a, b) => a - b);
   if (years.length === 0) return;
 
-  // extrapolated run-rate logic for mid-year starts
-  const firstYear = years[0];
-  if (yearlyData[firstYear].count < periodsPerYear && schedule.length >= periodsPerYear) {
-    const count = yearlyData[firstYear].count;
+  // extrapolated run-rate logic for mid-year starts and partial final years
+  const firstYear = years[0]!;
+  const firstYearData = yearlyData[firstYear];
+  if (firstYearData && firstYearData.count < periodsPerYear && schedule.length >= periodsPerYear) {
+    const count = firstYearData.count;
     if (count > 0) {
-      yearlyData[firstYear].interest = (yearlyData[firstYear].interest / count) * periodsPerYear;
+      firstYearData.interest = (firstYearData.interest / count) * periodsPerYear;
+    }
+  }
+
+  const lastYear = years[years.length - 1]!;
+  const lastYearData = yearlyData[lastYear];
+  if (years.length > 1 && lastYearData && lastYearData.count < periodsPerYear) {
+    const count = lastYearData.count;
+    if (count > 0) {
+      lastYearData.interest = (lastYearData.interest / count) * periodsPerYear;
     }
   }
 
@@ -83,7 +94,8 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
   const displayValues: Record<number, number> = {};
   let maxDisplayVal = 0;
   for (const yr of years) {
-    const interest = yearlyData[yr].interest;
+    const yData = yearlyData[yr]!;
+    const interest = yData.interest;
     let val = interest;
     if (isRentTaxIns) {
       const rentAlone = Math.ceil(interest / 12);
@@ -108,8 +120,9 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
   const isFr = currentLanguage() === 'fr';
 
   years.forEach((yr) => {
-    const interest = yearlyData[yr].interest;
-    const displayVal = displayValues[yr];
+    const yData = yearlyData[yr]!;
+    const interest = yData.interest;
+    const displayVal = displayValues[yr]!;
     const ratio = displayVal / maxDisplayVal;
     // Sqrt scale mapping for circle areas
     const size = minSize + (maxSize - minSize) * Math.sqrt(ratio);

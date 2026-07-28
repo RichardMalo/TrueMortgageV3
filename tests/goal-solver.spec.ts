@@ -104,4 +104,37 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const resultSchedule = generateLoanSchedule(testInputs, false);
     expect(resultSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(36);
   });
+
+  it('should solve for required lump sum when lumpSums array has a payment 1 item', () => {
+    const inputsWithLumpSumsArray: Inputs = {
+      ...mortgageInputs,
+      lumpSums: [{ id: 'ls1', paymentNumber: 1, amount: 5000 }]
+    };
+    const baseData = generateMortgageSchedule(inputsWithLumpSumsArray, true);
+    const result = solveRequiredLumpSum(300, inputsWithLumpSumsArray, 'mortgage', baseData);
+    expect(result).toBeGreaterThan(0);
+
+    const testInputs = {
+      ...inputsWithLumpSumsArray,
+      lumpSums: inputsWithLumpSumsArray.lumpSums?.filter((item) => item.paymentNumber !== 1),
+      lumpSum: result
+    };
+    const solvedSchedule = generateMortgageSchedule(testInputs, false);
+    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(301);
+  });
+
+  it('should solve for required monthly payment under accelerated biweekly frequency', () => {
+    const accelInputs: Inputs = {
+      ...mortgageInputs,
+      frequency: 'accelerated-bi-weekly'
+    };
+    const baseData = generateMortgageSchedule(accelInputs, true);
+    // Accelerated bi-weekly base payoff is ~670 periods (~25.8 years of biweekly payments)
+    const result = solveRequiredMonthly(200, accelInputs, 'mortgage', baseData);
+    expect(result).toBeGreaterThan(0);
+
+    const solvedInputs = { ...accelInputs, extraPayment: result };
+    const solvedSchedule = generateMortgageSchedule(solvedInputs, false);
+    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(201);
+  });
 });

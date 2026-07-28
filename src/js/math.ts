@@ -11,7 +11,15 @@ import { PMI_LTV_THRESHOLD, MAX_CC_PAYOFF_MONTHS, MIN_CC_PAYMENT } from './const
  * @returns The periodic payment amount.
  */
 export const getMonthlyPayment = (principal: number, rate: number, periods: number): number => {
-  if (periods <= 0 || principal <= 0) return 0;
+  if (
+    Number.isNaN(principal) ||
+    Number.isNaN(rate) ||
+    Number.isNaN(periods) ||
+    periods <= 0 ||
+    principal <= 0
+  ) {
+    return 0;
+  }
   const safeRate = Math.max(0, rate);
   if (safeRate < 1e-7) return principal / periods;
   return (
@@ -476,7 +484,7 @@ export const calculateMilestones = (
         : 'You started with 20% or more home equity! Standard PMI is not required, keeping your payments efficient from day one.';
       isAchieved = true;
     } else if (actIdx !== -1) {
-      const row = actSched[actIdx];
+      const row = actSched[actIdx]!;
       targetDate = row.dateLabel;
       targetPeriod = `${moLabel} ${row.period}`;
       const pmiAmt = (startingPrincipal * ((inputs.pmiRate || 0) / 100)) / periodsPerYear;
@@ -522,7 +530,7 @@ export const calculateMilestones = (
     const baseIdx = findIndex(baseSched, 'EQUITY_MASTERY');
 
     if (actIdx !== -1) {
-      const row = actSched[actIdx];
+      const row = actSched[actIdx]!;
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
@@ -555,7 +563,7 @@ export const calculateMilestones = (
     const baseIdx = findIndex(baseSched, 'INTEREST_BREAK_EVEN');
 
     if (actIdx !== -1) {
-      const row = actSched[actIdx];
+      const row = actSched[actIdx]!;
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
@@ -590,7 +598,7 @@ export const calculateMilestones = (
     const baseIdx = findIndex(baseSched, 'HALFWAY');
 
     if (actIdx !== -1) {
-      const row = actSched[actIdx];
+      const row = actSched[actIdx]!;
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
@@ -623,7 +631,7 @@ export const calculateMilestones = (
     const baseIdx = findIndex(baseSched, 'PAYOFF');
 
     if (actIdx !== -1) {
-      const row = actSched[actIdx];
+      const row = actSched[actIdx]!;
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;

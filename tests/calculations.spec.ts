@@ -36,7 +36,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateMortgageSchedule(inputs, false);
     expect(result.schedule.length).toBe(360); // 30 years * 12 months = 360 payments
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
     expect(firstRow.payment).toBeCloseTo(3201.09, 1);
     expect(firstRow.interest).toBeCloseTo(2341.33, 1);
     expect(firstRow.principal).toBeCloseTo(859.76, 1);
@@ -68,7 +68,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateMortgageSchedule(inputs, false);
     expect(result.schedule.length).toBe(360);
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
     expect(firstRow.payment).toBeCloseTo(3186.14, 1);
     expect(firstRow.interest).toBeCloseTo(2320.22, 1);
     expect(firstRow.principal).toBeCloseTo(865.92, 1);
@@ -99,7 +99,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const result = generateMortgageSchedule(inputs, false);
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
     expect(firstRow.pmi).toBe(0);
   });
 
@@ -128,7 +128,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const result = generateCCSchedule(inputs, false);
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
     expect(firstRow.payment).toBeCloseTo(450.0, 1);
     expect(firstRow.interest).toBeCloseTo(249.9, 1);
     expect(firstRow.principal).toBeCloseTo(200.1, 1);
@@ -161,8 +161,8 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const simpleResult = generateCCSchedule({ ...baseInputs, ccCompounding: 'simple' }, false);
     const dailyResult = generateCCSchedule({ ...baseInputs, ccCompounding: 'daily' }, false);
 
-    const firstSimple = simpleResult.schedule[0];
-    const firstDaily = dailyResult.schedule[0];
+    const firstSimple = simpleResult.schedule[0]!;
+    const firstDaily = dailyResult.schedule[0]!;
 
     // Simple compounding monthly rate is: 19.99 / 100 / 12 = 0.0166583
     // Interest portion: 15000 * 0.0166583 = 249.875 -> ~249.9
@@ -209,7 +209,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     // Minimum payment: flatMin = $10.
     // Since minimum payment is $10 and interest is $250, regularPrincipal = 10 - 250 = -$240.
     // The unpaid interest of $240 compounds and increases the balance: 15,000 - (-240) = $15,240.
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
     expect(firstRow.payment).toBe(10);
     expect(firstRow.interest).toBe(250);
     expect(firstRow.principal).toBe(-240);
@@ -281,7 +281,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const zeroResult = generateMortgageSchedule(zeroRateInputs, false);
     expect(zeroResult.summary.totalInterest).toBe(0);
-    const zeroFirstRow = zeroResult.schedule[0];
+    const zeroFirstRow = zeroResult.schedule[0]!;
     expect(zeroFirstRow.payment).toBeCloseTo((800000 - 160000) / (30 * 12), 1);
     expect(zeroFirstRow.interest).toBe(0);
     expect(zeroFirstRow.principal).toBeCloseTo((800000 - 160000) / (30 * 12), 1);
@@ -304,7 +304,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const clampedResult = generateMortgageSchedule(invalidInputs, false);
-    const lastRow = clampedResult.schedule[clampedResult.schedule.length - 1];
+    const lastRow = clampedResult.schedule[clampedResult.schedule.length - 1]!;
     expect(lastRow.totalPrincipal + lastRow.balance).toBeCloseTo(500000 - 500000 * 0.999, 1);
   });
 
@@ -343,9 +343,9 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const result = generateMortgageSchedule(rateShockInputs, false);
     expect(result.summary.paidOff).toBe(true);
     // Period 60 is end of Year 5 (at 4% rate)
-    const month60 = result.schedule[59];
+    const month60 = result.schedule[59]!;
     // Period 61 is start of Year 6 (at 7% rate shock)
-    const month61 = result.schedule[60];
+    const month61 = result.schedule[60]!;
 
     // Year 1-5 monthly payment at 4% for $400,000 amortized over 25 yrs is $2111.35
     expect(month60.payment).toBeCloseTo(2111.35, 1);
@@ -413,8 +413,8 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const result = generateMortgageSchedule(inputs, false);
     // Month 60 (Year 5, payment 60 is the last of the first term)
     // Month 61 (Year 5 + 1 period, payment 61 is the first of the second term)
-    const row60 = result.schedule[59];
-    const row61 = result.schedule[60];
+    const row60 = result.schedule[59]!;
+    const row61 = result.schedule[60]!;
 
     // Payment increases at term renewal to amortize remaining balance at new rate
     expect(row61.payment).toBeGreaterThan(row60.payment);
@@ -457,7 +457,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const result = generateCCSchedule(inputs, false);
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
     expect(firstRow.payment).toBeCloseTo(750.0, 1); // 5% of 15000
     expect(firstRow.interest).toBeCloseTo(249.9, 1);
     expect(firstRow.principal).toBeCloseTo(500.1, 1);
@@ -491,7 +491,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const result = generateCCSchedule(inputs, false);
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
 
     // Interest portion = 15000 * (19.99 / 100 / 12) = 249.875
     // Rule 1: Outstanding balance * 4% = 15000 * 0.04 = 600
@@ -505,7 +505,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     // Let's test a low balance to verify the flat floor minimum rule
     const lowBalanceInputs = { ...inputs, ccBalance: 100 };
     const lowResult = generateCCSchedule(lowBalanceInputs, false);
-    const lowFirstRow = lowResult.schedule[0];
+    const lowFirstRow = lowResult.schedule[0]!;
 
     // Outstanding balance * 4% = 4
     // Interest + principal * 1.5% = (100 * 0.1999 / 12) + 1.5 = 1.666 + 1.5 = 3.166
@@ -546,16 +546,16 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const result = generateMortgageSchedule(inputs, false);
 
     // Check first payment has the initial 5000 lump sum
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
     const standardPayment = 2213.89;
     expect(firstRow.payment).toBeCloseTo(standardPayment + 5000, 0);
 
     // Check payment 12 has the 10000 lump sum
-    const row12 = result.schedule[11];
+    const row12 = result.schedule[11]!;
     expect(row12.payment).toBeCloseTo(standardPayment + 10000, 0);
 
     // Check payment 24 has the 20000 lump sum
-    const row24 = result.schedule[23];
+    const row24 = result.schedule[23]!;
     expect(row24.payment).toBeCloseTo(standardPayment + 20000, 0);
 
     // Check that lifetime interest is significantly lower than a baseline with only the initial lump sum
@@ -645,7 +645,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const result = generateMortgageSchedule(inputs, false);
-    const firstRow = result.schedule[0];
+    const firstRow = result.schedule[0]!;
 
     // Escrow = Tax (3000/12 = 250) + Ins (1200/12 = 100) + HOA (100) + PMI (450000 * 0.01 / 12 = 375) = 825
     expect(firstRow.tax).toBeCloseTo(250, 1);
@@ -681,7 +681,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateCCSchedule(inputs, false);
     expect(result.schedule.length).toBeGreaterThan(0);
-    const lastRow = result.schedule[result.schedule.length - 1];
+    const lastRow = result.schedule[result.schedule.length - 1]!;
 
     // Total principal paid must equal the starting balance of 1000
     expect(lastRow.totalPrincipal).toBeCloseTo(1000, 1);
@@ -724,7 +724,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     const result = generateMortgageSchedule(inputs, false);
     expect(result.schedule.length).toBeGreaterThan(0);
-    const lastRow = result.schedule[result.schedule.length - 1];
+    const lastRow = result.schedule[result.schedule.length - 1]!;
 
     // Total principal paid must equal the starting loan principal of 400000
     expect(lastRow.totalPrincipal).toBeCloseTo(400000, 1);
@@ -766,10 +766,10 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const result = generateMortgageSchedule(inputs, false);
-    expect(result.schedule[0].dateLabel).toBe('Jul 20, 2026');
-    expect(result.schedule[1].dateLabel).toBe('Aug 5, 2026');
-    expect(result.schedule[2].dateLabel).toBe('Aug 20, 2026');
-    expect(result.schedule[3].dateLabel).toBe('Sep 5, 2026');
+    expect(result.schedule[0]!.dateLabel).toBe('Jul 20, 2026');
+    expect(result.schedule[1]!.dateLabel).toBe('Aug 5, 2026');
+    expect(result.schedule[2]!.dateLabel).toBe('Aug 20, 2026');
+    expect(result.schedule[3]!.dateLabel).toBe('Sep 5, 2026');
   });
 
   it('should correctly set paidOff to false under negative amortization / unpaid status', () => {
@@ -925,8 +925,8 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
       expect(results.p1X.length).toBe(baseData.schedule.length);
       // Long term net worth for actual should be greater because mortgage rate (5%) > investment rate (2%)
-      expect(results.p1Y[results.p1Y.length - 1]).toBeGreaterThan(
-        results.p2Y[results.p2Y.length - 1]
+      expect(results.p1Y[results.p1Y.length - 1]!).toBeGreaterThan(
+        results.p2Y[results.p2Y.length - 1]!
       );
     });
 
@@ -967,8 +967,8 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       // Without PMI savings, since mortgage rate and invest rate are identical (4.0%),
       // actual strategy net worth would be very close to baseline investment surplus net worth.
       // But because actual cancels PMI much earlier, actual should end up with a significantly higher net worth.
-      expect(results.p1Y[results.p1Y.length - 1]).toBeGreaterThan(
-        results.p2Y[results.p2Y.length - 1]
+      expect(results.p1Y[results.p1Y.length - 1]!).toBeGreaterThan(
+        results.p2Y[results.p2Y.length - 1]!
       );
     });
 
@@ -1041,11 +1041,11 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       expect(result.summary.paidOff).toBe(true);
       expect(result.summary.periodsToPayoff).toBe(60);
 
-      const firstRow = result.schedule[0];
+      const firstRow = result.schedule[0]!;
       expect(firstRow.payment).toBeCloseTo(518.84, 1);
       expect(firstRow.interest).toBeCloseTo(187.29, 1);
 
-      const lastRow = result.schedule[result.schedule.length - 1];
+      const lastRow = result.schedule[result.schedule.length - 1]!;
       expect(lastRow.balance).toBeCloseTo(0, 5);
     });
 

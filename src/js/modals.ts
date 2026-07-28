@@ -36,8 +36,8 @@ export const trapFocus = (
       e.preventDefault();
       return;
     }
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
 
     if (e.shiftKey) {
       if (document.activeElement === first) {
@@ -159,8 +159,8 @@ export const showConfirmModal = (title: string, message: string): Promise<boolea
       } else if (e.key === 'Tab') {
         // Trap focus
         const focusables = [cancelBtn, confirmBtn];
-        const first = focusables[0];
-        const last = focusables[focusables.length - 1];
+        const first = focusables[0]!;
+        const last = focusables[focusables.length - 1]!;
         if (e.shiftKey) {
           if (document.activeElement === first) {
             last.focus();

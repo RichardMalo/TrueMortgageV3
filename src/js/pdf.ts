@@ -64,7 +64,7 @@ export const generateReportHtml = (
   const termBalanceVal = isMortgage
     ? formatCurrency(
         termPer < actualData.schedule.length
-          ? actualData.schedule[Math.max(0, termPer - 1)].balance
+          ? actualData.schedule[Math.max(0, termPer - 1)]!.balance
           : 0
       )
     : 'N/A';

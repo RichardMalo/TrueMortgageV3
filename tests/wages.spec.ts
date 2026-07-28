@@ -239,15 +239,16 @@ describe('renderBankWages (wages-viz.ts)', () => {
   // ── Sizing / scaling ──────────────────────────────────────────────────────
 
   it('assigns a larger circle width to the year with higher interest (sqrt scale)', () => {
-    const result = makeScheduleResult([
-      { calendarYear: 2025, interest: 20000 },
-      { calendarYear: 2026, interest: 2000 }
-    ]);
+    const rows = [
+      ...Array(12).fill({ calendarYear: 2025, interest: 20000 / 12 }),
+      ...Array(12).fill({ calendarYear: 2026, interest: 2000 / 12 })
+    ];
+    const result = makeScheduleResult(rows);
     renderBankWages(makeState('wages'), makeEls(), result);
     const circles = container.querySelectorAll<HTMLElement>('.wage-circle');
     expect(circles).toHaveLength(2);
-    const w1 = parseFloat(circles[0].style.width);
-    const w2 = parseFloat(circles[1].style.width);
+    const w1 = parseFloat(circles[0]!.style.width);
+    const w2 = parseFloat(circles[1]!.style.width);
     expect(w1).toBeGreaterThan(w2);
   });
 
@@ -261,8 +262,8 @@ describe('renderBankWages (wages-viz.ts)', () => {
     );
     renderBankWages(makeState('wages'), makeEls(), result);
     const circles = container.querySelectorAll<HTMLElement>('.wage-circle');
-    const w1 = parseFloat(circles[0].style.width);
-    const w2 = parseFloat(circles[1].style.width);
+    const w1 = parseFloat(circles[0]!.style.width);
+    const w2 = parseFloat(circles[1]!.style.width);
     expect(w1).toBeCloseTo(w2, 1);
   });
 
@@ -300,7 +301,7 @@ describe('renderBankWages (wages-viz.ts)', () => {
     renderBankWages(makeState('wages'), makeEls(), result);
     const wrappers = container.querySelectorAll('.wage-circle-wrapper');
     expect(wrappers).toHaveLength(2);
-    const circle2026 = wrappers[0].querySelector('.wage-circle');
+    const circle2026 = wrappers[0]!.querySelector('.wage-circle');
     expect(circle2026).not.toBeNull();
   });
 });

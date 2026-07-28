@@ -138,6 +138,7 @@ export const setupTouchAndKeyboardTooltips = () => {
 
     tip.setAttribute('tabindex', '0');
     tip.setAttribute('role', 'button');
+    tip.setAttribute('aria-label', 'Help information');
     tip.setAttribute('aria-expanded', 'false');
     if (tooltipText) {
       tip.setAttribute('aria-describedby', tooltipText.id);
