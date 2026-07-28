@@ -57,7 +57,7 @@ export const generateMortgageSchedule = (
     periodsPerYear = 24;
   } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
     periodsPerYear = 26;
-  } else if (freq === 'weekly') {
+  } else if (freq === 'weekly' || freq === 'accelerated-weekly') {
     periodsPerYear = 52;
   }
 
@@ -74,6 +74,9 @@ export const generateMortgageSchedule = (
   if (freq === 'accelerated-bi-weekly') {
     // Accelerated Bi-Weekly payment is exactly half the standard monthly payment
     periodicPayment = baselineMonthlyPayment / 2;
+  } else if (freq === 'accelerated-weekly') {
+    // Accelerated Weekly payment is exactly one quarter of the standard monthly payment
+    periodicPayment = baselineMonthlyPayment / 4;
   } else {
     // For standard frequencies (monthly, semi-monthly, bi-weekly), calculate payment
     // using the exact frequency-appropriate periodic interest rate to ensure perfect amortization.
@@ -132,7 +135,8 @@ export const generateMortgageSchedule = (
           inputs.compounding === 'semi'
             ? Math.pow(1 + activeAnnualRate / 100 / 2, 2 / periodsPerYear) - 1
             : activeAnnualRate / 100 / periodsPerYear;
-        if (freq === 'accelerated-bi-weekly') {
+        if (freq === 'accelerated-bi-weekly' || freq === 'accelerated-weekly') {
+          const divisor = freq === 'accelerated-weekly' ? 4 : 2;
           const renewalMonthlyRate =
             inputs.compounding === 'semi'
               ? Math.pow(1 + activeAnnualRate / 100 / 2, 1 / 6) - 1
@@ -142,7 +146,7 @@ export const generateMortgageSchedule = (
             Math.round(safeAmort * 12) - Math.floor(((i - 1) * 12) / periodsPerYear)
           );
           periodicPayment =
-            getMonthlyPayment(balance, renewalMonthlyRate, remainingMonthlyPeriods) / 2;
+            getMonthlyPayment(balance, renewalMonthlyRate, remainingMonthlyPeriods) / divisor;
         } else {
           periodicPayment = getMonthlyPayment(balance, renewalPeriodicRate, remainingPeriods);
         }
@@ -176,10 +180,11 @@ export const generateMortgageSchedule = (
     }
 
     if (principalPortion + currentExtraPayment > balance) {
-      principalPortion = balance - currentExtraPayment;
-      if (principalPortion < 0) {
-        currentExtraPayment = balance;
-        principalPortion = 0;
+      if (principalPortion >= balance) {
+        principalPortion = balance;
+        currentExtraPayment = 0;
+      } else {
+        currentExtraPayment = Math.max(0, balance - principalPortion);
       }
     }
 
@@ -874,7 +879,7 @@ export const getRowDateLabel = (
           halfIndex % 2 === 1 ? Math.min(startDay - 15, lastDay) : Math.min(startDay, lastDay)
         );
       }
-    } else if (freq === 'weekly') {
+    } else if (freq === 'weekly' || freq === 'accelerated-weekly') {
       d.setDate(d.getDate() + (period - 1) * 7);
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);

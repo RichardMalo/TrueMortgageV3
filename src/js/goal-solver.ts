@@ -278,13 +278,13 @@ export const renderGoalSolver = (
 
   if (applyMonthlyBtn) {
     applyMonthlyBtn.onclick = () => {
-      onApply('monthly', solvedMonthly);
+      onApply('monthly', Math.max(solvedMonthly, inputs.extraPayment || 0));
     };
   }
 
   if (applyLumpSumBtn) {
     applyLumpSumBtn.onclick = () => {
-      onApply('lumpSum', solvedLumpSum);
+      onApply('lumpSum', Math.max(solvedLumpSum, inputs.lumpSum || 0));
     };
   }
 };

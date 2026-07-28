@@ -590,6 +590,9 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       termRates: {}
     };
 
+    // Monthly
+    const monthlyResult = generateMortgageSchedule({ ...baseInputs, frequency: 'monthly' }, false);
+
     // Semi-monthly
     const semiMonthlyResult = generateMortgageSchedule(
       { ...baseInputs, frequency: 'semi-monthly' },
@@ -617,6 +620,20 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(accBiWeeklyResult.summary.periodsPerYear).toBe(26);
     expect(accBiWeeklyResult.summary.periodsToPayoff).toBeLessThan(
       semiMonthlyResult.summary.periodsToPayoff
+    );
+
+    // Accelerated weekly
+    const accWeeklyResult = generateMortgageSchedule(
+      { ...baseInputs, frequency: 'accelerated-weekly' },
+      false
+    );
+    expect(accWeeklyResult.summary.periodsPerYear).toBe(52);
+    expect(accWeeklyResult.schedule[0]!.payment).toBeCloseTo(
+      monthlyResult.schedule[0]!.payment / 4,
+      1
+    );
+    expect(accWeeklyResult.summary.periodsToPayoff).toBeLessThan(
+      weeklyResult.summary.periodsToPayoff
     );
   });
 

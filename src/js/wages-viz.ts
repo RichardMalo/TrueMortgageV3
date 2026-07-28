@@ -79,15 +79,6 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
     }
   }
 
-  const lastYear = years[years.length - 1]!;
-  const lastYearData = yearlyData[lastYear];
-  if (years.length > 1 && lastYearData && lastYearData.count < periodsPerYear) {
-    const count = lastYearData.count;
-    if (count > 0) {
-      lastYearData.interest = (lastYearData.interest / count) * periodsPerYear;
-    }
-  }
-
   const annualTax = els.inputs.tax ? parseFloat(els.inputs.tax.value) || 0 : 0;
   const annualIns = els.inputs.ins ? parseFloat(els.inputs.ins.value) || 0 : 0;
 

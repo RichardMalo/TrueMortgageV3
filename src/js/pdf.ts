@@ -26,31 +26,36 @@ export const generateReportHtml = (
   const startingPrincipal = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
   const balanceVal = formatCurrency(startingPrincipal);
 
-  const yrs_paid = Math.floor(
-    actualData.summary.periodsToPayoff / actualData.summary.periodsPerYear
-  );
-  const rem_paid = actualData.summary.periodsToPayoff % actualData.summary.periodsPerYear;
+  const isPayoffFinite = Number.isFinite(actualData.summary.periodsToPayoff);
+  const periodsPerYr = actualData.summary.periodsPerYear || 12;
+  const yrs_paid = isPayoffFinite
+    ? Math.floor(actualData.summary.periodsToPayoff / periodsPerYr)
+    : 0;
+  const rem_paid = isPayoffFinite ? actualData.summary.periodsToPayoff % periodsPerYr : 0;
 
-  const yrsLabel = isFr ? (yrs_paid > 1 ? 'ans' : 'an') : yrs_paid > 1 ? 'Years' : 'Year';
-  let frequencyLabel: string;
-  if (isFr) {
-    frequencyLabel =
-      isMortgage && inputs.frequency !== 'monthly'
-        ? rem_paid > 1
-          ? 'périodes'
-          : 'période'
-        : 'mois';
-  } else {
-    frequencyLabel =
-      isMortgage && inputs.frequency !== 'monthly'
-        ? rem_paid > 1
-          ? 'Periods'
-          : 'Period'
-        : rem_paid > 1
-          ? 'Months'
-          : 'Month';
+  let payoffVal = isFr ? 'Non remboursé' : 'Unpaid';
+  if (isPayoffFinite) {
+    const yrsLabel = isFr ? (yrs_paid > 1 ? 'ans' : 'an') : yrs_paid > 1 ? 'Years' : 'Year';
+    let frequencyLabel: string;
+    if (isFr) {
+      frequencyLabel =
+        isMortgage && inputs.frequency !== 'monthly'
+          ? rem_paid > 1
+            ? 'périodes'
+            : 'période'
+          : 'mois';
+    } else {
+      frequencyLabel =
+        isMortgage && inputs.frequency !== 'monthly'
+          ? rem_paid > 1
+            ? 'Periods'
+            : 'Period'
+          : rem_paid > 1
+            ? 'Months'
+            : 'Month';
+    }
+    payoffVal = `${yrs_paid} ${yrsLabel}, ${rem_paid} ${frequencyLabel}`;
   }
-  const payoffVal = `${yrs_paid} ${yrsLabel}, ${rem_paid} ${frequencyLabel}`;
 
   const savedVal = formatCurrency(
     baseData.summary.totalInterest - actualData.summary.totalInterest
