@@ -756,30 +756,44 @@ input:focus-visible,
   align-items: center;
   position: relative;
   aspect-ratio: 1;
-  margin-bottom: 25px;
+  margin-bottom: 50px;
 }
 
 .blueprint-label {
   position: absolute;
-  left: -10px;
-  bottom: -25px;
+  left: -15px;
+  bottom: -45px;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
-  width: 100px;
+  width: 140px;
 }
+.blueprint-label #out-principal-val {
+  font-size: 1.35rem !important;
+  font-weight: 800;
+}
+
 .cost-label {
   position: absolute;
-  right: -10px;
-  bottom: -25px;
+  right: -15px;
+  bottom: -45px;
   font-weight: 800;
-  font-size: 0.7rem;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
-  width: 100px;
+  width: 140px;
+}
+.cost-label #out-markup-val {
+  font-size: 1.35rem !important;
+  font-weight: 800;
+}
+
+.concentric-lifetime-paid {
+  font-size: 1.45rem !important;
+  font-weight: 800;
 }
 
 .charts-grid {
@@ -1219,19 +1233,28 @@ body.mode-loan .cc-only {
   }
 
   .stack-wrapper {
-    margin-bottom: 25px;
+    margin-bottom: 45px;
   }
   .blueprint-label {
-    left: 0;
-    bottom: -20px;
-    font-size: 0.65rem;
-    width: 90px;
+    left: -5px;
+    bottom: -35px;
+    font-size: 0.82rem;
+    width: 115px;
+  }
+  .blueprint-label #out-principal-val {
+    font-size: 1.15rem !important;
   }
   .cost-label {
-    right: 0;
-    bottom: -20px;
-    font-size: 0.65rem;
-    width: 90px;
+    right: -5px;
+    bottom: -35px;
+    font-size: 0.82rem;
+    width: 115px;
+  }
+  .cost-label #out-markup-val {
+    font-size: 1.15rem !important;
+  }
+  .concentric-lifetime-paid {
+    font-size: 1.2rem !important;
   }
 
   .chart-wrapper {
