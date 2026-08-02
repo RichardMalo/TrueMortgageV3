@@ -306,7 +306,7 @@ const calculate = (e?: Event) => {
 
   const totalActualLifetimePaidToBank = actData.summary.totalInterest + principalBorrowAmount;
 
-  const blueprintRadius = 20;
+  const blueprintRadius = 31;
   const costPowerFactor =
     principalBorrowAmount > 0 ? totalActualLifetimePaidToBank / principalBorrowAmount : 1;
   const maxAllowedRadius = 48;

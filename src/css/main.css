@@ -744,8 +744,8 @@ input:focus-visible,
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 360px;
-  margin-top: -30px;
+  max-width: 440px;
+  margin-top: -10px;
   margin-bottom: 10px;
 }
 
@@ -1214,8 +1214,8 @@ body.mode-loan .cc-only {
     max-width: 200px;
   }
   .dynamic-concentric-stack {
-    max-width: 310px;
-    margin-top: -20px;
+    max-width: 360px;
+    margin-top: -10px;
   }
 
   .stack-wrapper {
