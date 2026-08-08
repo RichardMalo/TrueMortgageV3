@@ -107,7 +107,9 @@ export const isCryptoSupported = (): boolean => {
  */
 export const encryptData = async (plainText: string, passcode: string): Promise<string> => {
   if (!isCryptoSupported()) {
-    throw new Error('Web Cryptography API is not supported in this browser environment.');
+    throw new Error(
+      'Web Cryptography API (AES-GCM) is unavailable in this browser environment or non-secure HTTP context.'
+    );
   }
   if (!passcode || passcode.trim() === '') {
     throw new Error('Passcode cannot be empty');
@@ -211,7 +213,9 @@ const decryptDataWithIterations = async (
  */
 export const decryptData = async (cipherTextBase64: string, passcode: string): Promise<string> => {
   if (!isCryptoSupported()) {
-    throw new Error('Web Cryptography API is not supported in this browser environment.');
+    throw new Error(
+      'Web Cryptography API (AES-GCM) is unavailable in this browser environment or non-secure HTTP context.'
+    );
   }
   if (!passcode || passcode.trim() === '') {
     throw new Error('Passcode cannot be empty');

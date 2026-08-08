@@ -76,7 +76,8 @@ export const setupShareFunctionality = (
     const { actualData, baseData } = getLatestSchedules();
     const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData);
     const modeName = isMortgage ? 'Mortgage' : 'CreditCard';
-    const localDate = new Date().toLocaleDateString('sv-SE');
+    const now = new Date();
+    const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const filename = `Debt_Strategy_Report_${modeName}_${localDate}.pdf`;
     const opt = {
       margin: [10, 10, 10, 10],
@@ -87,9 +88,12 @@ export const setupShareFunctionality = (
     };
 
     const tempContainer = document.createElement('div');
-    tempContainer.style.position = 'absolute';
-    tempContainer.style.left = '-9999px';
-    tempContainer.style.top = '-9999px';
+    tempContainer.style.position = 'fixed';
+    tempContainer.style.left = '0';
+    tempContainer.style.top = '0';
+    tempContainer.style.opacity = '0';
+    tempContainer.style.zIndex = '-9999';
+    tempContainer.style.pointerEvents = 'none';
     tempContainer.innerHTML = reportHtml;
     document.body.appendChild(tempContainer);
 
@@ -200,7 +204,15 @@ export const setupShareFunctionality = (
           if (!res || !res.blob) return;
           const file = new File([res.blob], res.filename, { type: 'application/pdf' });
           const isFr = currentLanguage() === 'fr';
-          if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          let canShareFiles = false;
+          try {
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+              canShareFiles = true;
+            }
+          } catch {
+            canShareFiles = false;
+          }
+          if (canShareFiles) {
             if (statusEl) statusEl.textContent = t('Opening share sheet...');
             navigator
               .share({

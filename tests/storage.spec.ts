@@ -100,11 +100,11 @@ describe('Storage & Cryptography (storage.ts)', () => {
         expect(isCryptoSupported()).toBe(false);
 
         await expect(encryptData('plaintext', 'pass')).rejects.toThrow(
-          'Web Cryptography API is not supported in this browser environment.'
+          'Web Cryptography API (AES-GCM) is unavailable in this browser environment or non-secure HTTP context.'
         );
 
         await expect(decryptData('ciphertext', 'pass')).rejects.toThrow(
-          'Web Cryptography API is not supported in this browser environment.'
+          'Web Cryptography API (AES-GCM) is unavailable in this browser environment or non-secure HTTP context.'
         );
       } finally {
         // Restore

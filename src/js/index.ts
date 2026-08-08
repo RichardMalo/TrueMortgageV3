@@ -501,7 +501,13 @@ const updateScheduledLumpSumDatesInPlace = () => {
 
   const start = els.inputs.date?.value || '';
   const freq = els.inputs.frequency?.value || 'monthly';
-  const parsedDate = start ? new Date(start + 'T00:00:00') : null;
+  let parsedDate: Date | null = null;
+  if (start) {
+    const d = new Date(start + 'T00:00:00');
+    if (!isNaN(d.getTime())) {
+      parsedDate = d;
+    }
+  }
 
   const freqMap: Record<string, number> = {
     monthly: 12,

@@ -11,13 +11,14 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('plotly.js-basic-dist')) {
+          const normalizedId = id.replace(/\\/g, '/');
+          if (normalizedId.includes('plotly.js-basic-dist')) {
             return 'plotly';
           }
-          if (id.includes('html2pdf.js')) {
+          if (normalizedId.includes('html2pdf.js')) {
             return 'html2pdf';
           }
-          if (id.includes('gsap')) {
+          if (normalizedId.includes('gsap')) {
             return 'gsap';
           }
         }
