@@ -75,14 +75,14 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(300 + 1);
   });
 
-  it('should return 0 when target payoff period is mathematically unreachable', () => {
+  it('should return Infinity when target payoff period is mathematically unreachable', () => {
     const baseData = generateMortgageSchedule(mortgageInputs, true);
     // Target of 0 periods is impossible for any loan
     const resultMonthly = solveRequiredMonthly(0, mortgageInputs, 'mortgage', baseData);
-    expect(resultMonthly).toBe(0);
+    expect(resultMonthly).toBe(Infinity);
 
     const resultLumpSum = solveRequiredLumpSum(0, mortgageInputs, 'mortgage', baseData);
-    expect(resultLumpSum).toBe(0);
+    expect(resultLumpSum).toBe(Infinity);
   });
 
   it('should solve for required monthly extra payment in Personal Loan mode', () => {

@@ -55,11 +55,11 @@ export const solveRequiredMonthly = (
   let max = getStartingBalanceForMode(inputs, mode);
   if (max <= 0) return 0;
 
-  // Feasibility check: if maximum extra payment cannot achieve target, return 0
+  // Feasibility check: if maximum extra payment cannot achieve target, return Infinity (infeasible)
   const testMax = { ...inputs, extraPayment: max };
   const resMax = runScheduleForMode(testMax, mode, false, true);
   if (resMax.summary.periodsToPayoff > targetPeriods) {
-    return 0;
+    return Infinity;
   }
 
   let result = max;
@@ -107,11 +107,11 @@ export const solveRequiredLumpSum = (
   let max = getStartingBalanceForMode(inputs, mode);
   if (max <= 0) return 0;
 
-  // Feasibility check: if maximum lump sum cannot achieve target, return 0
+  // Feasibility check: if maximum lump sum cannot achieve target, return Infinity (infeasible)
   const testMax = { ...inputs, lumpSums: cleanLumpSums, lumpSum: max };
   const resMax = runScheduleForMode(testMax, mode, false, true);
   if (resMax.summary.periodsToPayoff > targetPeriods) {
-    return 0;
+    return Infinity;
   }
 
   let result = max;
@@ -238,8 +238,12 @@ export const renderGoalSolver = (
     solvedMonthly = solveRequiredMonthly(targetPeriods, inputs, mode, baseData);
     solvedLumpSum = solveRequiredLumpSum(targetPeriods, inputs, mode, baseData);
 
-    const displayMonthly = Math.max(0, solvedMonthly - (inputs.extraPayment || 0));
-    const displayLumpSum = Math.max(0, solvedLumpSum - (inputs.lumpSum || 0));
+    const displayMonthly = isFinite(solvedMonthly)
+      ? Math.max(0, solvedMonthly - (inputs.extraPayment || 0))
+      : 0;
+    const displayLumpSum = isFinite(solvedLumpSum)
+      ? Math.max(0, solvedLumpSum - (inputs.lumpSum || 0))
+      : 0;
 
     if (monthlyLabelEl) {
       monthlyLabelEl.textContent = freqLabel;
@@ -258,10 +262,11 @@ export const renderGoalSolver = (
       lumpSumValEl.textContent = `+${formatCurrency(displayLumpSum)}`;
     }
 
-    // Show/hide error only if solver fails to meet target and current actual inputs do not already achieve it
+    // Show/hide error when solver determines the target is infeasible
     const actualPayoff = actData.summary.periodsToPayoff;
     const isAlreadyAchieved = actualPayoff <= targetPeriods;
-    if (solvedMonthly === 0 && !isAlreadyAchieved && targetPeriods < baselinePayoff - 1) {
+    const isInfeasible = !isFinite(solvedMonthly) || !isFinite(solvedLumpSum);
+    if (isInfeasible && !isAlreadyAchieved) {
       errorEl.classList.remove('hidden');
     } else {
       errorEl.classList.add('hidden');

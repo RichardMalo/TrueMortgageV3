@@ -126,7 +126,6 @@ export interface ProfileInputs {
   ccCompounding?: string;
   lumpSum?: string;
   lumpSums?: LumpSumItem[];
-  [key: string]: string | boolean | LumpSumItem[] | undefined;
 }
 
 export interface Profile {

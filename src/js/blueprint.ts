@@ -294,6 +294,28 @@ export const setupBlueprintSync = (
         return;
       }
 
+      // Validate imported numeric fields are within reasonable ranges
+      const warnings: string[] = [];
+      if (isValidV2 && settingsObj.profiles) {
+        const profiles = settingsObj.profiles as Record<string, Record<string, unknown>>;
+        for (const [, profile] of Object.entries(profiles)) {
+          const pInputs = profile.inputs as Record<string, unknown> | undefined;
+          if (!pInputs) continue;
+          const rate = parseFloat(String(pInputs.rate ?? pInputs.annualRate ?? '0'));
+          if (rate > 100) warnings.push(`Interest rate ${rate}% exceeds 100%`);
+          const amort = parseFloat(
+            String(pInputs.amortization ?? pInputs.amortizationYears ?? '0')
+          );
+          if (amort > 100) warnings.push(`Amortization ${amort} years exceeds 100 years`);
+          const price = parseFloat(String(pInputs.homePrice ?? '0'));
+          if (price > 100_000_000)
+            warnings.push(`Home price $${price.toLocaleString()} exceeds $100M`);
+        }
+      }
+      if (warnings.length > 0) {
+        showFeedback(`Warning: ${warnings[0]}. Values imported as-is.`, true);
+      }
+
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedSettings));
         loadSettingsFromStorage(state, defaultInputs);

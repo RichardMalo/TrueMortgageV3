@@ -292,7 +292,7 @@ const calculate = (e?: Event) => {
   ) {
     const compProfile = state.profiles[state.comparisonProfileId]!;
     const compInputs = profileToInputs(
-      compProfile.inputs as Record<string, string | boolean | number | undefined>,
+      compProfile.inputs as unknown as Record<string, string | boolean | number | undefined>,
       compProfile.termRates || {},
       compProfile.currentMode || 'mortgage'
     );

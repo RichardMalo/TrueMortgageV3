@@ -29,6 +29,58 @@ export const getMonthlyPayment = (principal: number, rate: number, periods: numb
 };
 
 /**
+ * Converts an annual interest rate to a standard monthly rate based on the
+ * compounding method. Uses an exhaustive switch for compile-time safety
+ * when adding new compounding methods.
+ *
+ * @param annualRate - The annual interest rate as a percentage (e.g., 5 for 5%).
+ * @param compounding - The compounding method ('semi' for Canadian semi-annual, 'monthly' for standard).
+ * @returns The effective monthly interest rate as a decimal.
+ */
+export const toMonthlyRate = (annualRate: number, compounding: 'semi' | 'monthly'): number => {
+  const safeRate = Math.max(0, annualRate);
+  switch (compounding) {
+    case 'semi':
+      // Canadian semi-annual compounding: (1 + r/2)^(1/6) - 1
+      return Math.pow(1 + safeRate / 100 / 2, 1 / 6) - 1;
+    case 'monthly':
+      // Standard monthly compounding: r / 12
+      return safeRate / 100 / 12;
+    default: {
+      const _exhaustive: never = compounding;
+      throw new Error(`Unsupported compounding method: ${_exhaustive}`);
+    }
+  }
+};
+
+/**
+ * Converts an annual interest rate to a periodic rate for a given frequency
+ * and compounding method. Uses an exhaustive switch for compile-time safety.
+ *
+ * @param annualRate - The annual interest rate as a percentage.
+ * @param compounding - The compounding method.
+ * @param periodsPerYear - The number of payment periods per year.
+ * @returns The effective periodic interest rate as a decimal.
+ */
+export const toPeriodicRate = (
+  annualRate: number,
+  compounding: 'semi' | 'monthly',
+  periodsPerYear: number
+): number => {
+  const safeRate = Math.max(0, annualRate);
+  switch (compounding) {
+    case 'semi':
+      return Math.pow(1 + safeRate / 100 / 2, 2 / periodsPerYear) - 1;
+    case 'monthly':
+      return safeRate / 100 / periodsPerYear;
+    default: {
+      const _exhaustive: never = compounding;
+      throw new Error(`Unsupported compounding method: ${_exhaustive}`);
+    }
+  }
+};
+
+/**
  * Generates a complete amortization schedule for a mortgage loan, calculating
  * periodic interest, principal paydown, and escrow items. Supports accelerated
  * payment frequencies and term rate renewals (rate shocks).
@@ -62,10 +114,7 @@ export const generateMortgageSchedule = (
   }
 
   // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
-  const standardMonthlyRate =
-    inputs.compounding === 'semi'
-      ? Math.pow(1 + safeRate / 100 / 2, 1 / 6) - 1
-      : safeRate / 100 / 12;
+  const standardMonthlyRate = toMonthlyRate(safeRate, inputs.compounding);
 
   const baselineMonthlyPayment = getMonthlyPayment(principal, standardMonthlyRate, safeAmort * 12);
   const userExtra = isBaseline ? 0 : Math.max(0, inputs.extraPayment || 0);

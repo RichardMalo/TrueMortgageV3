@@ -392,15 +392,19 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     const domKey = KEY_MAP[key] || key;
     const srcVal = sourceInputs[domKey] !== undefined ? sourceInputs[domKey] : sourceInputs[key];
     const defInputsObj = defaultInputs as unknown as Record<string, unknown>;
+    const inputsRec = sanitized.inputs as unknown as Record<
+      string,
+      string | boolean | LumpSumItem[] | undefined
+    >;
     if (srcVal !== undefined) {
       if (typeof defInputsObj[key] === 'boolean') {
-        sanitized.inputs[domKey] = srcVal === true || srcVal === 'true';
+        inputsRec[domKey] = srcVal === true || srcVal === 'true';
       } else {
-        sanitized.inputs[domKey] = String(srcVal);
+        inputsRec[domKey] = String(srcVal);
       }
     } else {
       const defVal = defInputsObj[key];
-      sanitized.inputs[domKey] = typeof defVal === 'boolean' ? defVal : String(defVal);
+      inputsRec[domKey] = typeof defVal === 'boolean' ? defVal : String(defVal);
     }
   });
 
@@ -418,22 +422,26 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     'loanTerm',
     'countrySelect'
   ];
+  const inputsRecExtra = sanitized.inputs as unknown as Record<
+    string,
+    string | boolean | LumpSumItem[] | undefined
+  >;
   extraKeys.forEach((k) => {
     if (sourceInputs[k] !== undefined) {
-      sanitized.inputs[k] = String(sourceInputs[k]);
+      inputsRecExtra[k] = String(sourceInputs[k]);
     } else {
-      if (k === 'mortgageRate') sanitized.inputs[k] = '4.39';
-      if (k === 'mortgageExtra') sanitized.inputs[k] = '0';
-      if (k === 'mortgageAmortization') sanitized.inputs[k] = '30';
-      if (k === 'mortgageTerm') sanitized.inputs[k] = '5';
-      if (k === 'ccRate') sanitized.inputs[k] = '19.99';
-      if (k === 'ccExtra') sanitized.inputs[k] = '0';
-      if (k === 'loanRate') sanitized.inputs[k] = '8.99';
-      if (k === 'loanExtra') sanitized.inputs[k] = '0';
-      if (k === 'loanAmortization') sanitized.inputs[k] = '5';
-      if (k === 'loanTerm') sanitized.inputs[k] = '5';
+      if (k === 'mortgageRate') inputsRecExtra[k] = '4.39';
+      if (k === 'mortgageExtra') inputsRecExtra[k] = '0';
+      if (k === 'mortgageAmortization') inputsRecExtra[k] = '30';
+      if (k === 'mortgageTerm') inputsRecExtra[k] = '5';
+      if (k === 'ccRate') inputsRecExtra[k] = '19.99';
+      if (k === 'ccExtra') inputsRecExtra[k] = '0';
+      if (k === 'loanRate') inputsRecExtra[k] = '8.99';
+      if (k === 'loanExtra') inputsRecExtra[k] = '0';
+      if (k === 'loanAmortization') inputsRecExtra[k] = '5';
+      if (k === 'loanTerm') inputsRecExtra[k] = '5';
       if (k === 'countrySelect') {
-        sanitized.inputs[k] = getCountryCompoundingFromTimezone().country;
+        inputsRecExtra[k] = getCountryCompoundingFromTimezone().country;
       }
     }
   });
@@ -487,9 +495,13 @@ export const saveSettingsToStorage = (
       activeProfile.customizedYears = JSON.parse(JSON.stringify(state.customizedYears || {}));
       activeProfile.bankWagesView = state.bankWagesView || 'wages';
 
+      const profileInputsRec = activeProfile.inputs as unknown as Record<
+        string,
+        string | boolean | LumpSumItem[] | undefined
+      >;
       Object.entries(inputsMap).forEach(([key, el]) => {
         if (el) {
-          activeProfile.inputs[key] =
+          profileInputsRec[key] =
             el.type === 'checkbox' ? (el as HTMLInputElement).checked : el.value;
         }
       });
