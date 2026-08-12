@@ -165,12 +165,12 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     const firstDaily = dailyResult.schedule[0]!;
 
     // Simple compounding monthly rate is: 19.99 / 100 / 12 = 0.0166583
-    // Interest portion: 15000 * 0.0166583 = 249.875 -> ~249.9
-    expect(firstSimple.interest).toBeCloseTo(249.875, 3);
+    // Interest portion: 15000 * 0.0166583 = 249.875 -> ~249.88 cents
+    expect(firstSimple.interest).toBeCloseTo(249.88, 2);
 
     // Daily compounding monthly rate is: (1 + 0.1999 / 365) ^ (365 / 12) - 1 = 0.0167932
-    // Interest portion: 15000 * 0.0167932 = 251.898
-    expect(firstDaily.interest).toBeCloseTo(251.898, 3);
+    // Interest portion: 15000 * 0.0167932 = 251.898 -> ~251.90 cents
+    expect(firstDaily.interest).toBeCloseTo(251.9, 2);
     expect(firstDaily.interest).toBeGreaterThan(firstSimple.interest);
   });
 
@@ -304,8 +304,9 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     };
 
     const clampedResult = generateMortgageSchedule(invalidInputs, false);
-    const lastRow = clampedResult.schedule[clampedResult.schedule.length - 1]!;
-    expect(lastRow.totalPrincipal + lastRow.balance).toBeCloseTo(500000 - 500000 * 0.999, 1);
+    expect(clampedResult.summary.paidOff).toBe(true);
+    expect(clampedResult.summary.periodsToPayoff).toBe(0);
+    expect(clampedResult.schedule.length).toBe(0);
   });
 
   it('should safely calculate getMonthlyPayment with near-zero interest rates without division by zero', () => {

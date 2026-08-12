@@ -97,10 +97,8 @@ export const generateMortgageSchedule = (
   // Clamp parameters to safe ranges to ensure main thread safety and prevent infinite loops
   const safeAmort = Math.min(100, Math.max(0.1, inputs.amortizationYears || 0));
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
-  const principal = safeHomePrice - safeDownPayment;
-  const safeRate = Math.min(100, Math.max(0, inputs.annualRate || 0));
-  const safeTerm = Math.min(safeAmort, Math.max(0.1, inputs.termYears || 0));
+  const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
+  const rawPrincipal = safeHomePrice - safeDownPayment;
 
   // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
   const freq = isBaseline ? 'monthly' : inputs.frequency;
@@ -112,6 +110,40 @@ export const generateMortgageSchedule = (
   } else if (freq === 'weekly' || freq === 'accelerated-weekly') {
     periodsPerYear = 52;
   }
+
+  // Canadian high-ratio CMHC/Sagen mortgage insurance premium handling (< 20% down)
+  let cmhcPremium = 0;
+  if (inputs.compounding === 'semi' && safeHomePrice > 0 && safeDownPayment < safeHomePrice * 0.2) {
+    const dpPct = safeDownPayment / safeHomePrice;
+    let cmhcRate = 0;
+    if (dpPct < 0.1) {
+      cmhcRate = 0.04; // 4.00% for 5.0% - 9.99% down
+    } else if (dpPct < 0.15) {
+      cmhcRate = 0.031; // 3.10% for 10.0% - 14.99% down
+    } else if (dpPct < 0.2) {
+      cmhcRate = 0.028; // 2.80% for 15.0% - 19.99% down
+    }
+    cmhcPremium = Math.round(rawPrincipal * cmhcRate * 100) / 100;
+  }
+
+  const principal = rawPrincipal + cmhcPremium;
+
+  if (principal <= 0) {
+    return {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 0,
+        periodsPerYear,
+        totalInterest: 0,
+        totalPrincipal: 0,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
+  }
+
+  const safeRate = Math.min(100, Math.max(0, inputs.annualRate || 0));
+  const safeTerm = Math.min(safeAmort, Math.max(0.1, inputs.termYears || 0));
 
   // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
   const standardMonthlyRate = toMonthlyRate(safeRate, inputs.compounding);
@@ -213,8 +245,8 @@ export const generateMortgageSchedule = (
         ? (principal * (Math.min(100, Math.max(0, annualPmiRate)) / 100)) / periodsPerYear
         : 0;
     const periodicEscrow = periodicTax + periodicInsurance + periodicHOA + periodicPMI;
-    const interestPortion = balance * activePeriodicRate;
-    let principalPortion = periodicPayment - interestPortion;
+    const interestPortion = Math.round(balance * activePeriodicRate * 100) / 100;
+    let principalPortion = Math.max(0, periodicPayment - interestPortion);
     let currentExtraPayment = userExtra;
     const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
     if (i === 1 && !isBaseline && !hasLumpSumInArray) {
@@ -347,7 +379,7 @@ export const generateCCSchedule = (
     if (balance <= 0.01) break;
     periodsToPayoff = i;
 
-    const interestPortion = balance * monthlyRate;
+    const interestPortion = Math.round(balance * monthlyRate * 100) / 100;
 
     let calculatedMinimumPayment =
       inputs.province === 'CUSTOM' && inputs.ccMinPrincipalPct === 0
@@ -733,7 +765,7 @@ export const generateLoanSchedule = (
     ? Math.max(0, inputs.loanOriginationFee || 0)
     : 0;
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
   const rawLoan =
     inputs.loanAmount !== undefined ? inputs.loanAmount : safeHomePrice - safeDownPayment;
   const loanAmount = Math.max(0, (rawLoan || 0) + originationFee);
@@ -748,6 +780,20 @@ export const generateLoanSchedule = (
     periodsPerYear = 26;
   } else if (freq === 'weekly') {
     periodsPerYear = 52;
+  }
+
+  if (loanAmount <= 0) {
+    return {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 0,
+        periodsPerYear,
+        totalInterest: 0,
+        totalPrincipal: 0,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
   }
 
   const periodicRate = safeRate / 100 / periodsPerYear;
@@ -780,8 +826,11 @@ export const generateLoanSchedule = (
   let period = 1;
 
   while (balance > 0.001 && period <= maxPeriods) {
-    const interest = balance * periodicRate;
+    const interest = Math.round(balance * periodicRate * 100) / 100;
     let scheduledPrincipal = Math.min(balance, periodicPayment - interest);
+    if (period === totalPeriods || balance <= periodicPayment) {
+      scheduledPrincipal = balance;
+    }
     if (scheduledPrincipal < 0) scheduledPrincipal = 0;
 
     let extra = userExtra;

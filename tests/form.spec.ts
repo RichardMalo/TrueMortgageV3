@@ -67,12 +67,12 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(errorContainer.textContent).toBe('Down Payment must be a valid non-negative number.');
     });
 
-    it('should fail with down payment >= home price', () => {
+    it('should fail with down payment > home price', () => {
       inputs.homePrice!.value = '500000';
-      inputs.downPayment!.value = '500000';
+      inputs.downPayment!.value = '500001';
       const isValid = validateForm('mortgage', inputs, errorContainer);
       expect(isValid).toBe(false);
-      expect(errorContainer.textContent).toBe('Down Payment must be less than the Home Price.');
+      expect(errorContainer.textContent).toBe('Down Payment cannot exceed the Home Price.');
     });
 
     it('should fail with invalid amortization', () => {

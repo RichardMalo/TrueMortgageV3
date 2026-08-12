@@ -114,10 +114,7 @@ describe('Math Edge Cases & Logic Corrections', () => {
 
     const baseData = generateMortgageSchedule(invalidInputs, true);
     const result = solveRequiredMonthly(60, invalidInputs, 'mortgage', baseData);
-    expect(result).toBeGreaterThan(0);
-
-    const solvedInputs = { ...invalidInputs, extraPayment: result };
-    const solvedSchedule = generateMortgageSchedule(solvedInputs, false);
-    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(60 + 1);
+    expect(result).toBe(0);
+    expect(baseData.summary.periodsToPayoff).toBe(0);
   });
 });

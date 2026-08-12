@@ -17,13 +17,13 @@ const runScheduleForMode = (
 const getStartingBalanceForMode = (inputs: Inputs, mode: 'mortgage' | 'cc' | 'loan'): number => {
   if (mode === 'mortgage') {
     const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-    const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+    const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
     return safeHomePrice - safeDownPayment;
   }
   if (mode === 'loan') {
     const fee = inputs.loanOriginationFeeEnabled ? Math.max(0, inputs.loanOriginationFee || 0) : 0;
     const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-    const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+    const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
     const rawLoan =
       inputs.loanAmount !== undefined ? inputs.loanAmount : safeHomePrice - safeDownPayment;
     return Math.max(0, (rawLoan || 0) + fee);
@@ -277,8 +277,13 @@ export const renderGoalSolver = (
   runSolver();
 
   // Attach event handlers cleanly
+  let sliderFrameId: number | null = null;
   slider.oninput = () => {
-    runSolver();
+    if (sliderFrameId !== null) cancelAnimationFrame(sliderFrameId);
+    sliderFrameId = requestAnimationFrame(() => {
+      runSolver();
+      sliderFrameId = null;
+    });
   };
 
   if (applyMonthlyBtn) {

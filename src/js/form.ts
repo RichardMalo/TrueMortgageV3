@@ -9,9 +9,22 @@ export const validateForm = (
   inputs: Record<string, HTMLInputElement | HTMLSelectElement | null>,
   errorContainer: HTMLElement | null
 ): boolean => {
+  // Clear any existing aria-invalid attributes
+  Object.values(inputs).forEach((input) => {
+    if (input) {
+      input.removeAttribute('aria-invalid');
+    }
+  });
+
   if (errorContainer) errorContainer.style.display = 'none';
 
-  const showError = (msg: string) => {
+  const showError = (msg: string, targetInput?: HTMLInputElement | HTMLSelectElement | null) => {
+    if (targetInput) {
+      targetInput.setAttribute('aria-invalid', 'true');
+      if (errorContainer?.id) {
+        targetInput.setAttribute('aria-describedby', errorContainer.id);
+      }
+    }
     if (errorContainer) {
       errorContainer.textContent = msg;
       errorContainer.style.display = 'block';
@@ -26,23 +39,29 @@ export const validateForm = (
     const origination = parseFloat(inputs.loanOriginationFee?.value || '0');
 
     if (isNaN(loanAmt) || loanAmt <= 0) {
-      showError('Loan Amount must be a valid positive number.');
+      showError(
+        'Loan Amount must be a valid positive number.',
+        inputs.loanAmount || inputs.homePrice
+      );
       return false;
     }
     if (isNaN(term) || term <= 0 || term > 50) {
-      showError('Loan Term must be a valid number between 0.1 and 50 years.');
+      showError(
+        'Loan Term must be a valid number between 0.1 and 50 years.',
+        inputs.term || inputs.amortization
+      );
       return false;
     }
     if (isNaN(rate) || rate < 0 || rate > 100) {
-      showError('Interest Rate must be a valid number between 0% and 100%.');
+      showError('Interest Rate must be a valid number between 0% and 100%.', inputs.rate);
       return false;
     }
     if (isNaN(extra) || extra < 0) {
-      showError('Extra Payment must be a valid non-negative number.');
+      showError('Extra Payment must be a valid non-negative number.', inputs.extra);
       return false;
     }
     if (isNaN(origination) || origination < 0) {
-      showError('Origination Fee must be a valid non-negative number.');
+      showError('Origination Fee must be a valid non-negative number.', inputs.loanOriginationFee);
       return false;
     }
     return true;
@@ -57,15 +76,15 @@ export const validateForm = (
     const extra = parseFloat(inputs.extra?.value || '0');
 
     if (isNaN(hp) || hp <= 0) {
-      showError('Home Price must be a valid positive number.');
+      showError('Home Price must be a valid positive number.', inputs.homePrice);
       return false;
     }
     if (isNaN(dp) || dp < 0) {
-      showError('Down Payment must be a valid non-negative number.');
+      showError('Down Payment must be a valid non-negative number.', inputs.downPayment);
       return false;
     }
-    if (dp >= hp) {
-      showError('Down Payment must be less than the Home Price.');
+    if (dp > hp) {
+      showError('Down Payment cannot exceed the Home Price.', inputs.downPayment);
       return false;
     }
     if (isNaN(amort) || amort <= 0 || amort > 100) {

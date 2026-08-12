@@ -252,6 +252,12 @@ export const renderHeatmap = (
     row.forEach((cell) => {
       const td = document.createElement('td');
       td.className = 'heatmap-cell';
+      td.setAttribute('tabindex', '0');
+      td.setAttribute('role', 'button');
+      const ariaLabelText = isFr
+        ? `Extra mensuel ${cell.monthly} $, Lump sum ${cell.lumpSum} $, Économie ${cell.yearsSaved.toFixed(1)} ans`
+        : `Monthly extra $${cell.monthly}, Lump sum $${cell.lumpSum}, Saves ${cell.yearsSaved.toFixed(1)} years`;
+      td.setAttribute('aria-label', ariaLabelText);
       cellTds.push(td);
 
       const ratio = maxSaved > 0 ? cell.yearsSaved / maxSaved : 0;
@@ -292,7 +298,7 @@ export const renderHeatmap = (
         td.classList.add('selected');
       }
 
-      // Interactive hover & click behavior
+      // Interactive hover, focus, click, and keyboard behavior
       td.addEventListener('mouseenter', () => {
         showDetails(cell, false);
       });
@@ -301,11 +307,29 @@ export const renderHeatmap = (
         showDetails(selectedCell, true);
       });
 
+      td.addEventListener('focus', () => {
+        showDetails(cell, false);
+      });
+
+      td.addEventListener('blur', () => {
+        showDetails(selectedCell, true);
+      });
+
       td.addEventListener('click', () => {
         cellTds.forEach((t) => t.classList.remove('selected'));
         td.classList.add('selected');
         selectedCell = cell;
         showDetails(selectedCell, true);
+      });
+
+      td.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          cellTds.forEach((t) => t.classList.remove('selected'));
+          td.classList.add('selected');
+          selectedCell = cell;
+          showDetails(selectedCell, true);
+        }
       });
 
       tr.appendChild(td);
