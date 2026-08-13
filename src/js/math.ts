@@ -98,7 +98,7 @@ export const generateMortgageSchedule = (
   const safeAmort = Math.min(100, Math.max(0.1, inputs.amortizationYears || 0));
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
   const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
-  const rawPrincipal = safeHomePrice - safeDownPayment;
+  const principal = safeHomePrice - safeDownPayment;
 
   // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
   const freq = isBaseline ? 'monthly' : inputs.frequency;
@@ -110,23 +110,6 @@ export const generateMortgageSchedule = (
   } else if (freq === 'weekly' || freq === 'accelerated-weekly') {
     periodsPerYear = 52;
   }
-
-  // Canadian high-ratio CMHC/Sagen mortgage insurance premium handling (< 20% down)
-  let cmhcPremium = 0;
-  if (inputs.compounding === 'semi' && safeHomePrice > 0 && safeDownPayment < safeHomePrice * 0.2) {
-    const dpPct = safeDownPayment / safeHomePrice;
-    let cmhcRate = 0;
-    if (dpPct < 0.1) {
-      cmhcRate = 0.04; // 4.00% for 5.0% - 9.99% down
-    } else if (dpPct < 0.15) {
-      cmhcRate = 0.031; // 3.10% for 10.0% - 14.99% down
-    } else if (dpPct < 0.2) {
-      cmhcRate = 0.028; // 2.80% for 15.0% - 19.99% down
-    }
-    cmhcPremium = Math.round(rawPrincipal * cmhcRate * 100) / 100;
-  }
-
-  const principal = rawPrincipal + cmhcPremium;
 
   if (principal <= 0) {
     return {
