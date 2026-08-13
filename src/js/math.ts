@@ -232,7 +232,7 @@ export const generateMortgageSchedule = (
         : 0;
     const periodicEscrow = periodicTax + periodicInsurance + periodicHOA + periodicPMI;
     const interestPortion = Math.round(balance * activePeriodicRate * 100) / 100;
-    let principalPortion = periodicPayment - interestPortion;
+    let principalPortion = Math.round((periodicPayment - interestPortion) * 100) / 100;
     let currentExtraPayment = userExtra;
     const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
     if (i === 1 && !isBaseline && !hasLumpSumInArray) {
@@ -246,8 +246,12 @@ export const generateMortgageSchedule = (
       });
     }
 
-    if (principalPortion + currentExtraPayment > balance) {
-      if (principalPortion >= balance) {
+    if (
+      principalPortion + currentExtraPayment > balance ||
+      (i === Math.ceil(safeAmort * periodsPerYear) &&
+        Math.abs(balance - (principalPortion + currentExtraPayment)) < 2.0)
+    ) {
+      if (principalPortion >= balance || i === Math.ceil(safeAmort * periodsPerYear)) {
         principalPortion = balance;
         currentExtraPayment = 0;
       } else {

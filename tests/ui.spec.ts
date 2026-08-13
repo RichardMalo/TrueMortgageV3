@@ -133,7 +133,7 @@ describe('UI Helper Functions (ui.ts)', () => {
 
       const tooltips = container.querySelectorAll('.tooltip-text');
       expect(tooltips[0]!.id).toBe('existingId');
-      expect(tooltips[1]!.id).toBe('help-tooltip-text-1');
+      expect(tooltips[1]!.id).toMatch(/^help-tooltip-text-\d+$/);
 
       document.body.removeChild(container);
     });

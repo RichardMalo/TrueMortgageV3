@@ -540,11 +540,19 @@ export const setupTableExpandButton = () => {
   });
 };
 
+let lastAppliedSymbol = '';
+let lastAppliedFreq = '';
+
 /**
- * Dynamically updates currency label symbols (e.g. $, £) on form fields and limits modal.
+ * Sweeps form labels and modals to update active currency symbols ($, £, etc.)
  */
 export const updateLabelCurrencySymbols = () => {
   const sym = getCurrencySymbol();
+  const freqEl = document.getElementById('paymentFrequency') as HTMLSelectElement | null;
+  const currentFreq = freqEl?.value || '';
+  if (sym === lastAppliedSymbol && currentFreq === lastAppliedFreq) return;
+  lastAppliedSymbol = sym;
+  lastAppliedFreq = currentFreq;
 
   // Sweep all labels in the mortgage form
   const form = document.getElementById('mortgageForm');
@@ -591,7 +599,6 @@ export const updateLabelCurrencySymbols = () => {
   }
 
   // Dynamically inject the payment frequency into the Extra Payment Surplus label
-  const freqEl = document.getElementById('paymentFrequency') as HTMLSelectElement | null;
   const extraLabel = document.querySelector(
     'label[for="extraPayment"].mortgage-only'
   ) as HTMLElement | null;
