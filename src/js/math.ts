@@ -224,12 +224,15 @@ export const generateMortgageSchedule = (
 
     const annualPmiRate = inputs.pmiRate || 0;
     const periodicPMI =
-      inputs.compounding !== 'semi' && balance > pmiDropThreshold && annualPmiRate > 0
+      inputs.compounding !== 'semi' &&
+      safeHomePrice > 0 &&
+      balance > pmiDropThreshold &&
+      annualPmiRate > 0
         ? (principal * (Math.min(100, Math.max(0, annualPmiRate)) / 100)) / periodsPerYear
         : 0;
     const periodicEscrow = periodicTax + periodicInsurance + periodicHOA + periodicPMI;
     const interestPortion = Math.round(balance * activePeriodicRate * 100) / 100;
-    let principalPortion = Math.max(0, periodicPayment - interestPortion);
+    let principalPortion = periodicPayment - interestPortion;
     let currentExtraPayment = userExtra;
     const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
     if (i === 1 && !isBaseline && !hasLumpSumInArray) {
@@ -520,7 +523,7 @@ export const calculateMilestones = (
       case 'PMI':
         return sched.findIndex((row) => row.ltv <= PMI_LTV_THRESHOLD * 100);
       case 'EQUITY_MASTERY':
-        return sched.findIndex((row) => row.principal > row.interest);
+        return sched.findIndex((row) => row.principal + row.extra > row.interest);
       case 'INTEREST_BREAK_EVEN':
         return sched.findIndex((row) => row.totalPrincipal > row.totalInterest);
       case 'HALFWAY':
@@ -761,7 +764,7 @@ export const generateLoanSchedule = (
     periodsPerYear = 24;
   } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
     periodsPerYear = 26;
-  } else if (freq === 'weekly') {
+  } else if (freq === 'weekly' || freq === 'accelerated-weekly') {
     periodsPerYear = 52;
   }
 
@@ -786,6 +789,8 @@ export const generateLoanSchedule = (
   let periodicPayment: number;
   if (freq === 'accelerated-bi-weekly') {
     periodicPayment = baselineMonthlyPayment / 2;
+  } else if (freq === 'accelerated-weekly') {
+    periodicPayment = baselineMonthlyPayment / 4;
   } else {
     periodicPayment = getMonthlyPayment(loanAmount, periodicRate, totalPeriods);
   }
@@ -810,11 +815,10 @@ export const generateLoanSchedule = (
 
   while (balance > 0.001 && period <= maxPeriods) {
     const interest = Math.round(balance * periodicRate * 100) / 100;
-    let scheduledPrincipal = Math.min(balance, periodicPayment - interest);
+    let scheduledPrincipal = periodicPayment - interest;
     if (period === totalPeriods || balance <= periodicPayment) {
       scheduledPrincipal = balance;
     }
-    if (scheduledPrincipal < 0) scheduledPrincipal = 0;
 
     let extra = userExtra;
     const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === period);

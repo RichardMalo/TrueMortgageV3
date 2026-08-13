@@ -209,6 +209,56 @@ export const dictionary: Record<string, string> = {
   'Discretionary Payment': 'Versement discrétionnaire',
   'Non-negative (>= $0)': 'Non négatif (supérieur ou égal à 0 $)',
 
+  // Form Validation Errors
+  'Loan Amount must be a valid positive number.':
+    'Le montant du prêt doit être un nombre positif valide.',
+  'Loan Term must be a valid number between 0.1 and 50 years.':
+    'La durée du prêt doit être un nombre valide entre 0,1 et 50 ans.',
+  'Interest Rate must be a valid number between 0% and 100%.':
+    "Le taux d'intérêt doit être un nombre valide entre 0 % et 100 %.",
+  'Extra Payment must be a valid non-negative number.':
+    'Le paiement supplémentaire doit être un nombre non négatif valide.',
+  'Origination Fee must be a valid non-negative number.':
+    'Les frais de dossier doivent être un nombre non négatif valide.',
+  'Home Price must be a valid positive number.':
+    'Le prix de la propriété doit être un nombre positif valide.',
+  'Down Payment must be a valid non-negative number.':
+    'La mise de fonds doit être un nombre non négatif valide.',
+  'Down Payment cannot exceed the Home Price.':
+    'La mise de fonds ne peut pas dépasser le prix de la propriété.',
+  'Amortization must be a valid number between 0.1 and 100 years.':
+    "L'amortissement doit être un nombre valide entre 0,1 et 100 ans.",
+  'Term Length must be positive and cannot exceed the Amortization period.':
+    "La durée du terme doit être positive et ne peut pas dépasser la période d'amortissement.",
+  'Lump Sum Payment must be a valid non-negative number.':
+    'Le versement forfaitaire doit être un nombre non négatif valide.',
+  'Scheduled Lump Sum amount must be a valid non-negative number.':
+    'Le montant du versement forfaitaire planifié doit être un nombre non négatif valide.',
+  'Scheduled Lump Sum Payment Number must be a valid positive integer (>= 1).':
+    'Le numéro de versement du versement forfaitaire planifié doit être un entier positif valide (>= 1).',
+  'Property Tax must be a valid non-negative number.':
+    'La taxe foncière doit être un nombre non négatif valide.',
+  'Home Insurance must be a valid non-negative number.':
+    "L'assurance habitation doit être un nombre non négatif valide.",
+  'HOA Fees must be a valid non-negative number.':
+    'Les frais de copropriété doivent être un nombre non négatif valide.',
+  'PMI Rate must be a valid number between 0% and 100%.':
+    'Le taux PMI doit être un nombre valide entre 0 % et 100 %.',
+  'Credit Card Balance must be a valid positive number.':
+    'Le solde de la carte de crédit doit être un nombre positif valide.',
+  'Interest Rate must be a valid number between 0% and 200%.':
+    "Le taux d'intérêt doit être un nombre valide entre 0 % et 200 %.",
+  'Monthly Surplus Payment must be a valid non-negative number.':
+    'Le versement mensuel supplémentaire doit être un nombre non négatif valide.',
+  'Minimum Payment % must be a valid number between 0% and 100%.':
+    'Le versement minimum % doit être un nombre valide entre 0 % et 100 %.',
+  'Interest + Principal % must be a valid number between 0% and 100%.':
+    'Intérêt + Principal % doit être un nombre valide entre 0 % et 100 %.',
+  'Flat Minimum Payment must be a valid non-negative number.':
+    'Le versement minimum fixe doit être un nombre non négatif valide.',
+  'Expected Investment Return must be a valid number between -99.9% and 100%.':
+    'Le rendement d’investissement attendu doit être un nombre valide entre -99,9 % et 100 %.',
+
   // Layout Modal
   'Customize which charts and visualizations are visible on your dashboard, and adjust their sizes.':
     'Personnalisez les graphiques et visualisations visibles sur votre tableau de bord et ajustez leur taille.',

@@ -920,6 +920,7 @@ input:focus-visible,
 .table-responsive {
   width: 100%;
   overflow-x: auto;
+  min-height: 250px;
   max-height: 500px;
   border-radius: 14px;
   border: 1px solid var(--border-color);

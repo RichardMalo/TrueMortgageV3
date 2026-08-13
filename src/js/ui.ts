@@ -20,6 +20,14 @@ export const escapeHtml = (str: string): string => {
     .replace(/'/g, '&#039;');
 };
 
+export const isPrefersReducedMotion = (): boolean => {
+  return (
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+};
+
 export const updateKineticText = (
   el: HTMLElement | null,
   val: number | string,
@@ -28,6 +36,22 @@ export const updateKineticText = (
 ) => {
   if (!el) return;
   gsap.killTweensOf(el);
+
+  if (isPrefersReducedMotion()) {
+    const numericVal = typeof val === 'number' ? val : parseFloat(val);
+    el.setAttribute('data-val', String(numericVal));
+    if (typeof val === 'string' && !isCurr) {
+      el.textContent = val;
+    } else {
+      el.textContent = isCurr
+        ? decimal
+          ? formatDecimal(numericVal)
+          : formatCurrency(numericVal)
+        : String(Math.round(numericVal));
+    }
+    return;
+  }
+
   if (typeof val === 'string' && !isCurr) {
     el.textContent = val;
     gsap.fromTo(

@@ -1,4 +1,5 @@
 import { Inputs, LumpSumItem } from './types.js';
+import { t } from './i18n.js';
 
 /**
  * Validates the mortgage and credit card form input values.
@@ -19,6 +20,7 @@ export const validateForm = (
   if (errorContainer) errorContainer.style.display = 'none';
 
   const showError = (msg: string, targetInput?: HTMLInputElement | HTMLSelectElement | null) => {
+    const translatedMsg = t(msg);
     if (targetInput) {
       targetInput.setAttribute('aria-invalid', 'true');
       if (errorContainer?.id) {
@@ -26,7 +28,7 @@ export const validateForm = (
       }
     }
     if (errorContainer) {
-      errorContainer.textContent = msg;
+      errorContainer.textContent = translatedMsg;
       errorContainer.style.display = 'block';
     }
   };

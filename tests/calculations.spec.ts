@@ -1144,5 +1144,181 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       // Period 31 is the start of Year 2.5 (30 months)
       expect(result.summary.paidOff).toBe(true);
     });
+
+    describe('Audit Bug Fixes & Edge Cases', () => {
+      it('should correctly calculate loan schedule under accelerated-weekly payment frequency', () => {
+        const inputs: Inputs = {
+          homePrice: 50000,
+          downPayment: 0,
+          loanAmount: 50000,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 6.0,
+          amortizationYears: 5,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'accelerated-weekly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 0,
+          extraPayment: 0,
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+
+        const result = generateLoanSchedule(inputs, false);
+        expect(result.summary.periodsPerYear).toBe(52);
+        // Accelerated weekly payment is baselineMonthlyPayment / 4
+        const baselinePayment = getMonthlyPayment(50000, 0.06 / 12, 60);
+        const expectedWeekly = baselinePayment / 4;
+        expect(result.schedule[0]!.payment).toBeCloseTo(expectedWeekly, 2);
+        expect(result.summary.paidOff).toBe(true);
+      });
+
+      it('should trigger Equity Mastery milestone earlier when extra principal payments are added', () => {
+        const inputs: Inputs = {
+          homePrice: 500000,
+          downPayment: 100000,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 6.0,
+          amortizationYears: 30,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 0,
+          extraPayment: 1000, // Massive extra payment
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+
+        const baseData = generateMortgageSchedule(inputs, true);
+        const actData = generateMortgageSchedule(inputs, false);
+        const milestones = calculateMilestones(baseData, actData, inputs, 'mortgage', 'en');
+
+        const equityMilestone = milestones.find((m) => m.id === 'equity-mastery');
+        expect(equityMilestone).toBeDefined();
+        // Baseline Equity Mastery is Month 228. With $1000 extra, Equity Mastery triggers much earlier at Month 41!
+        expect(equityMilestone?.period).toBe('Month 41');
+        expect(equityMilestone?.badge).toContain('Sooner');
+      });
+
+      it('should capitalize interest shortfall on negative amortization schedules', () => {
+        const inputs: Inputs = {
+          homePrice: 0,
+          downPayment: 0,
+          ccBalance: 10000, // $10,000 starting balance
+          province: 'CUSTOM',
+          annualRate: 24.0, // 2% per month = $200 interest in Month 1
+          amortizationYears: 30,
+          termYears: 5,
+          compounding: 'monthly',
+          ccCompounding: 'simple',
+          ccMinPercent: 1.0, // 1% minimum payment = $100 in Month 1 (less than $200 interest!)
+          ccMinPrincipalPct: 0,
+          ccMinFlat: 10,
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 0,
+          extraPayment: 0,
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+
+        const result = generateCCSchedule(inputs, false);
+        const row1 = result.schedule[0]!;
+        // Month 1 interest ($200) exceeds calculated minimum payment ($100)
+        expect(row1.interest).toBe(200);
+        expect(row1.payment).toBe(100);
+        // Unpaid $100 interest shortfall is capitalized onto balance, making balance grow from $10,000 to $10,100
+        expect(row1.balance).toBe(10100);
+        expect(result.summary.paidOff).toBe(false);
+      });
+
+      it('should omit PMI when home price is $0', () => {
+        const inputs: Inputs = {
+          homePrice: 0,
+          downPayment: 0,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 5.0,
+          amortizationYears: 5,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: true,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 1.0,
+          useOppCost: false,
+          investRate: 0,
+          extraPayment: 0,
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+
+        const result = generateMortgageSchedule(inputs, false);
+        expect(result.schedule.length).toBe(0);
+        expect(result.summary.totalEscrow).toBe(0);
+      });
+
+      it('should calculate opportunity cost data with direct numerical assertions', () => {
+        const inputs: Inputs = {
+          homePrice: 400000,
+          downPayment: 80000,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 4.0,
+          amortizationYears: 25,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: true,
+          investRate: 7.0,
+          extraPayment: 300,
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+
+        const state = { currentMode: 'mortgage' as const, comparisonProfileId: null };
+        const baseData = generateMortgageSchedule(inputs, true);
+        const actData = generateMortgageSchedule(inputs, false);
+        const oppCostData = calculateOpportunityCostData(state, baseData, actData, null, inputs);
+
+        expect(oppCostData.p1X.length).toBeGreaterThan(0);
+        expect(oppCostData.p1Y.length).toBe(oppCostData.p1X.length);
+        expect(oppCostData.p2X.length).toBe(oppCostData.p1X.length);
+        expect(oppCostData.p2Y.length).toBe(oppCostData.p1X.length);
+        // Portfolio yield values in p1Y should grow over time
+        const finalPortfolioVal = oppCostData.p1Y[oppCostData.p1Y.length - 1]!;
+        expect(finalPortfolioVal).toBeGreaterThan(0);
+      });
+    });
   });
 });
