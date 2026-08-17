@@ -166,14 +166,14 @@ const calculate = (e?: Event) => {
 
   // visibility updates on toggles
   if (els.containers.pitiSection) {
-    els.containers.pitiSection.style.display = inputs.usePiti ? 'block' : 'none';
+    els.containers.pitiSection.classList.toggle('hidden', !inputs.usePiti);
   }
 
   const ccCustomMinEl = document.getElementById('ccCustomMinPaymentSection');
   if (ccCustomMinEl) {
     const showCustom =
       !isMortgage && state.complexity === 'advanced' && inputs.province === 'CUSTOM';
-    ccCustomMinEl.style.display = showCustom ? 'flex' : 'none';
+    ccCustomMinEl.classList.toggle('hidden', !showCustom);
   }
 
   const rentTaxInsBtn = document.querySelector(
@@ -181,9 +181,9 @@ const calculate = (e?: Event) => {
   ) as HTMLElement | null;
   if (rentTaxInsBtn) {
     if (inputs.usePiti) {
-      rentTaxInsBtn.style.display = '';
+      rentTaxInsBtn.classList.remove('hidden');
     } else {
-      rentTaxInsBtn.style.display = 'none';
+      rentTaxInsBtn.classList.add('hidden');
       if (state.bankWagesView === 'rent-tax-ins') {
         state.bankWagesView = 'rent';
         const container = document.getElementById('bankWagesToggle');
@@ -198,17 +198,17 @@ const calculate = (e?: Event) => {
   }
 
   if (els.containers.oppCostSection) {
-    els.containers.oppCostSection.style.display = inputs.useOppCost ? 'block' : 'none';
+    els.containers.oppCostSection.classList.toggle('hidden', !inputs.useOppCost);
   }
   if (inputs.rateShockEnabled) {
-    if (els.containers.rateShockSection) els.containers.rateShockSection.style.display = 'block';
+    if (els.containers.rateShockSection) els.containers.rateShockSection.classList.remove('hidden');
     syncRateShockTimeline(state, els, calculate);
   } else if (els.containers.rateShockSection) {
-    els.containers.rateShockSection.style.display = 'none';
+    els.containers.rateShockSection.classList.add('hidden');
   }
 
   if (els.containers.goalSolverSection) {
-    els.containers.goalSolverSection.style.display = inputs.goalSolverEnabled ? 'block' : 'none';
+    els.containers.goalSolverSection.classList.toggle('hidden', !inputs.goalSolverEnabled);
   }
 
   if (state.currentMode === 'cc') {
@@ -222,13 +222,13 @@ const calculate = (e?: Event) => {
     (isMortgage && inputs.frequency !== 'monthly');
 
   if (els.containers.comparison) {
-    els.containers.comparison.style.display = hasStrat ? 'block' : 'none';
+    els.containers.comparison.classList.toggle('hidden', !hasStrat);
   }
   if (els.containers.ltv) {
-    els.containers.ltv.style.display = inputs.usePiti ? 'block' : 'none';
+    els.containers.ltv.classList.toggle('hidden', !inputs.usePiti);
   }
   if (els.containers.oppCost) {
-    els.containers.oppCost.style.display = inputs.useOppCost ? 'block' : 'none';
+    els.containers.oppCost.classList.toggle('hidden', !inputs.useOppCost);
   }
 
   const baseData =
@@ -258,15 +258,17 @@ const calculate = (e?: Event) => {
   const cmhcAmount = actData.summary.cmhcInsuranceAmount || 0;
   if (cmhcStatBox) {
     if (isMortgage && inputs.includeCmhc && cmhcAmount > 0) {
-      cmhcStatBox.style.display = 'block';
+      cmhcStatBox.classList.remove('hidden');
       updateKineticText(document.getElementById('cmhcStatAmount'), cmhcAmount);
     } else {
-      cmhcStatBox.style.display = 'none';
+      cmhcStatBox.classList.add('hidden');
     }
   }
   if (cmhcProvinceWrapper) {
-    cmhcProvinceWrapper.style.display =
-      isMortgage && inputs.includeCmhc && state.complexity === 'advanced' ? 'block' : 'none';
+    cmhcProvinceWrapper.classList.toggle(
+      'hidden',
+      !(isMortgage && inputs.includeCmhc && state.complexity === 'advanced')
+    );
   }
 
   // Calculate savings specifically from the one-time lump sum payment
@@ -665,7 +667,7 @@ const handleProfileSwitch = (profileId: string) => {
   }
 
   if (els.containers.pitiSection) {
-    els.containers.pitiSection.style.display = els.inputs.pitiToggle?.checked ? 'block' : 'none';
+    els.containers.pitiSection.classList.toggle('hidden', !els.inputs.pitiToggle?.checked);
   }
   const ccCustomMinEl = document.getElementById('ccCustomMinPaymentSection');
   if (ccCustomMinEl) {
@@ -673,20 +675,22 @@ const handleProfileSwitch = (profileId: string) => {
       state.currentMode === 'cc' &&
       state.complexity === 'advanced' &&
       els.inputs.province?.value === 'CUSTOM';
-    ccCustomMinEl.style.display = showCustom ? 'flex' : 'none';
+    ccCustomMinEl.classList.toggle('hidden', !showCustom);
   }
   if (els.containers.oppCostSection) {
-    els.containers.oppCostSection.style.display = els.inputs.oppCostToggle?.checked
-      ? 'block'
-      : 'none';
+    els.containers.oppCostSection.classList.toggle('hidden', !els.inputs.oppCostToggle?.checked);
   }
   if (els.containers.rateShockSection) {
-    els.containers.rateShockSection.style.display =
-      els.inputs.rateShockToggle && els.inputs.rateShockToggle.checked ? 'block' : 'none';
+    els.containers.rateShockSection.classList.toggle(
+      'hidden',
+      !(els.inputs.rateShockToggle && els.inputs.rateShockToggle.checked)
+    );
   }
   if (els.containers.goalSolverSection) {
-    els.containers.goalSolverSection.style.display =
-      els.inputs.goalSolverToggle && els.inputs.goalSolverToggle.checked ? 'block' : 'none';
+    els.containers.goalSolverSection.classList.toggle(
+      'hidden',
+      !(els.inputs.goalSolverToggle && els.inputs.goalSolverToggle.checked)
+    );
   }
 
   const wageToggleBtns = document.querySelectorAll('.wage-toggle-btn');
@@ -1079,9 +1083,10 @@ const bootApp = () => {
   // Toggles bindings
   els.inputs.pitiToggle?.addEventListener('change', (e) => {
     if (els.containers.pitiSection) {
-      els.containers.pitiSection.style.display = (e.target as HTMLInputElement).checked
-        ? 'block'
-        : 'none';
+      els.containers.pitiSection.classList.toggle(
+        'hidden',
+        !(e.target as HTMLInputElement).checked
+      );
     }
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
@@ -1090,9 +1095,10 @@ const bootApp = () => {
 
   els.inputs.oppCostToggle?.addEventListener('change', (e) => {
     if (els.containers.oppCostSection) {
-      els.containers.oppCostSection.style.display = (e.target as HTMLInputElement).checked
-        ? 'block'
-        : 'none';
+      els.containers.oppCostSection.classList.toggle(
+        'hidden',
+        !(e.target as HTMLInputElement).checked
+      );
     }
     syncCheckboxARIALabels();
     clearVisibleChartsCache();

@@ -508,9 +508,9 @@
 
               <!-- Custom Credit Card Minimum Payment Fields (Dynamic) -->
               <div
-                class="input-group-row cc-only cc-custom-min-payment-row advanced-only"
+                class="input-group-row cc-only cc-custom-min-payment-row advanced-only hidden"
                 id="ccCustomMinPaymentSection"
-                style="display: none; gap: 12px"
+                style="gap: 12px"
               >
                 <div class="input-group" style="flex: 1">
                   <label for="ccMinPercent"
@@ -663,8 +663,8 @@
                   </div>
                   <div
                     id="cmhcProvinceWrapper"
-                    class="advanced-only mt-2"
-                    style="display: none; margin-top: 8px"
+                    class="advanced-only mt-2 hidden"
+                    style="margin-top: 8px"
                   >
                     <label for="cmhcProvince" style="font-size: 0.825rem"
                       >Province (PST on Insurance at Closing)
@@ -1217,11 +1217,7 @@
                 <label id="summaryBalLabel">Original Debt</label>
                 <div class="kinetic-text" id="mortgageAmountDisplay" data-val="0">$0.00</div>
               </div>
-              <div
-                class="stat-box squishy-interactive mortgage-only"
-                id="cmhcStatBox"
-                style="display: none"
-              >
+              <div class="stat-box squishy-interactive mortgage-only hidden" id="cmhcStatBox">
                 <label id="cmhcStatLabel">CMHC Insurance (Capitalized)</label>
                 <div class="kinetic-text text-primary" id="cmhcStatAmount" data-val="0">$0.00</div>
               </div>

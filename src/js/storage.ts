@@ -467,7 +467,7 @@ export const saveSettingsToStorage = (
   skipDomSync = false
 ) => {
   // Create a deep copy of profiles to do atomic modifications
-  const profilesClone = JSON.parse(JSON.stringify(state.profiles || {}));
+  const profilesClone = structuredClone(state.profiles || {});
   let activeId = state.activeProfileId;
 
   try {
@@ -480,21 +480,21 @@ export const saveSettingsToStorage = (
         complexity: state.complexity,
         isDark: state.isDark,
         language: state.language || 'en',
-        termRates: JSON.parse(JSON.stringify(state.termRates || {})),
-        customizedYears: JSON.parse(JSON.stringify(state.customizedYears || {})),
+        termRates: structuredClone(state.termRates || {}),
+        customizedYears: structuredClone(state.customizedYears || {}),
         bankWagesView: state.bankWagesView || 'wages',
         inputs: {} as ProfileInputs
       };
     }
 
     if (!skipDomSync) {
-      const activeProfile = profilesClone[activeId];
+      const activeProfile = profilesClone[activeId]!;
       activeProfile.currentMode = state.currentMode;
       activeProfile.complexity = state.complexity;
       activeProfile.isDark = state.isDark;
       activeProfile.language = state.language || 'en';
-      activeProfile.termRates = JSON.parse(JSON.stringify(state.termRates || {}));
-      activeProfile.customizedYears = JSON.parse(JSON.stringify(state.customizedYears || {}));
+      activeProfile.termRates = structuredClone(state.termRates || {});
+      activeProfile.customizedYears = structuredClone(state.customizedYears || {});
       activeProfile.bankWagesView = state.bankWagesView || 'wages';
 
       const profileInputsRec = activeProfile.inputs as unknown as Record<

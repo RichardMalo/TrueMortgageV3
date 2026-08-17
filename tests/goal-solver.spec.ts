@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { solveRequiredMonthly, solveRequiredLumpSum } from '../src/js/goal-solver.js';
 import { generateMortgageSchedule, generateLoanSchedule } from '../src/js/math.js';
-import { Inputs } from '../src/js/types.js';
+import { Inputs, ScheduleResult } from '../src/js/types.js';
 
 describe('Goal Solver logic (goal-solver.ts)', () => {
   const mortgageInputs: Inputs = {
@@ -162,5 +162,27 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const testLumpInputs = { ...cmhcInputs, lumpSum: solvedLumpSum };
     const resultLumpSchedule = generateMortgageSchedule(testLumpInputs, false);
     expect(resultLumpSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(241);
+  });
+
+  it('should return 0 when baseData is already paid off (0 periods remaining)', () => {
+    const emptyBaseData: ScheduleResult = {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 0,
+        periodsPerYear: 12,
+        totalInterest: 0,
+        totalPrincipal: 0,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
+    expect(solveRequiredMonthly(100, mortgageInputs, 'mortgage', emptyBaseData)).toBe(0);
+    expect(solveRequiredLumpSum(100, mortgageInputs, 'mortgage', emptyBaseData)).toBe(0);
+  });
+
+  it('should return 0 when targetPeriods matches current periods exactly', () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    expect(solveRequiredMonthly(360, mortgageInputs, 'mortgage', baseData)).toBe(0);
+    expect(solveRequiredLumpSum(360, mortgageInputs, 'mortgage', baseData)).toBe(0);
   });
 });

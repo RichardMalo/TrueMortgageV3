@@ -99,7 +99,11 @@ export const setupShareFunctionality = (
 
     try {
       const html2pdf = await loadHtml2Pdf();
-      const worker = html2pdf()
+      if (!html2pdf) {
+        throw new Error('PDF generator library failed to initialize');
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const worker = (html2pdf as any)()
         .from(tempContainer.firstElementChild || tempContainer)
         .set(opt);
 

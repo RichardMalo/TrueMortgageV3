@@ -248,3 +248,26 @@ export interface AppElements {
   modeSwitch: HTMLInputElement | null;
   masterBtns: NodeListOf<Element>;
 }
+
+export interface PlotlyLayoutOption {
+  yaxis?: {
+    tickprefix?: string;
+    [key: string]: unknown;
+  };
+  xaxis?: {
+    title?: {
+      text?: string;
+    };
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
+export interface PlotlyTraceOption {
+  type?: string;
+  name?: string;
+  hovertemplate?: string;
+  x?: unknown[];
+  y?: unknown[];
+  [key: string]: unknown;
+}

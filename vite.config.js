@@ -33,10 +33,10 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/**', 'dist/**', 'tests/**', 'eslint.config.js', 'vite.config.js'],
       thresholds: {
-        statements: 61,
-        branches: 49,
-        functions: 47,
-        lines: 62
+        statements: 61.9,
+        branches: 50.5,
+        functions: 48,
+        lines: 63
       }
     }
   }

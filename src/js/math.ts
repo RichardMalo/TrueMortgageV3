@@ -386,10 +386,11 @@ export const generateMortgageSchedule = (
       });
     }
 
+    const terminalTolerance = Math.min(2.0, Math.max(0.01, 0.05 * periodicPayment));
     if (
       principalPortion + currentExtraPayment > balance ||
       (i === Math.ceil(safeAmort * periodsPerYear) &&
-        Math.abs(balance - (principalPortion + currentExtraPayment)) < 2.0)
+        Math.abs(balance - (principalPortion + currentExtraPayment)) < terminalTolerance)
     ) {
       if (principalPortion >= balance || i === Math.ceil(safeAmort * periodsPerYear)) {
         principalPortion = balance;

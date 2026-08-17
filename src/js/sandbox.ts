@@ -141,7 +141,7 @@ export const renderSandboxList = (
         return;
       }
       const newId = generateProfileId();
-      const newProfile = JSON.parse(JSON.stringify(p));
+      const newProfile = structuredClone(p);
       newProfile.id = newId;
       newProfile.name = isFr ? `${p.name} (Copie)` : `${p.name} (Copy)`;
       state.profiles[newId] = newProfile;

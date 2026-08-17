@@ -1,4 +1,11 @@
-import { AppState, Inputs, ScheduleResult, ScheduleRow } from './types.js';
+import {
+  AppState,
+  Inputs,
+  ScheduleResult,
+  ScheduleRow,
+  PlotlyLayoutOption,
+  PlotlyTraceOption
+} from './types.js';
 import { MOBILE_BREAKPOINT } from './constants.js';
 import { t, currentLanguage } from './i18n.js';
 
@@ -146,16 +153,13 @@ export const queueChartRender = (
   layout: unknown,
   config: unknown
 ) => {
-  // Postprocess data to add currency formatting to tooltips if it is a currency layout
   const sym = getCurrencySymbol();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lay = layout as any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const dat = data as any[];
-  const isCurrency = lay && lay.yaxis && lay.yaxis.tickprefix === sym;
+  const lay = layout as PlotlyLayoutOption | null;
+  const dat = data as PlotlyTraceOption[];
+  const isCurrency = lay?.yaxis?.tickprefix === sym;
 
   if (isCurrency && Array.isArray(dat)) {
-    const xTitle = lay.xaxis?.title?.text || '';
+    const xTitle = lay?.xaxis?.title?.text || '';
     const xLabel = xTitle ? `${xTitle} ` : '';
     dat.forEach((trace) => {
       if (trace && typeof trace === 'object') {
