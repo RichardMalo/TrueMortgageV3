@@ -17,11 +17,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-and-deploy:
+  lint-and-test:
+    name: Lint, Type Check & Unit Tests
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -41,28 +39,11 @@ jobs:
       - name: Type Check
         run: npm run type-check
 
-      - name: Unit Tests
-        run: npm run test
-
-      - name: Build Project
-        run: npm run build
-
-      - name: Setup Pages
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        uses: actions/configure-pages@v5
-
-      - name: Upload Artifact
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './dist'
-
-      - name: Deploy to GitHub Pages
-        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Unit Tests & Coverage
+        run: npm run test:coverage
 
   e2e-tests:
+    name: Playwright E2E Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -95,3 +76,39 @@ jobs:
 
       - name: Run E2E Tests
         run: npm run test:e2e
+
+  deploy:
+    name: Build & Deploy to GitHub Pages
+    needs: [lint-and-test, e2e-tests]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Project
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

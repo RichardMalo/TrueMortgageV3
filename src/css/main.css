@@ -209,6 +209,18 @@ h3 {
     transform 0.2s ease;
 }
 
+/* WCAG 2.1 AAA (SC 2.5.5) / WCAG 2.2 AA (SC 2.5.8) 44x44px minimum touch hit target */
+.help-tip::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  pointer-events: auto;
+}
+
 .help-tip:hover,
 .help-tip:focus,
 .help-tip:focus-visible,
@@ -3095,6 +3107,19 @@ body.dark-mode .goal-result-box:hover {
   user-select: none;
   margin-top: 0;
   flex-shrink: 0;
+  position: relative;
+}
+
+/* WCAG 2.1 AAA (SC 2.5.5) / WCAG 2.2 AA (SC 2.5.8) 44x44px touch target hitbox */
+.lump-sum-delete-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
+  pointer-events: auto;
 }
 
 .lump-sum-delete-btn:hover {

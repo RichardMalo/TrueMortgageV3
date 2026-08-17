@@ -255,7 +255,7 @@ export const generateReportHtml = (
             `
             }
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-              <span>${t('Opportunity Cost Plan:')}</span><strong>${t(inputs.useOppCost ? `Enabled` : 'Disabled')}${inputs.useOppCost ? ` (${inputs.investRate}%)` : ''}</strong>
+              <span>${t('Opportunity Cost Plan:')}</span><strong>${t(inputs.useOppCost ? 'Enabled' : 'Disabled')}${inputs.useOppCost ? ` (${escapeHtml(String(inputs.investRate))}%)` : ''}</strong>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
               <span>${t('Taxes & Escrow Plan:')}</span><strong>${t(inputs.usePiti ? 'Active' : 'Inactive')}</strong>
