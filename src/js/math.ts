@@ -1149,3 +1149,126 @@ export const getRowDateLabel = (
 
   return { dateLabel, yearVal, calendarYear };
 };
+
+export interface CanadianLttResult {
+  provincialLtt: number;
+  municipalLtt: number;
+  firstTimeRebate: number;
+  totalLtt: number;
+  effectiveRatePct: number;
+}
+
+/**
+ * Calculates Canadian Land Transfer Tax (LTT) across Ontario, Toronto (MLTT), and British Columbia (PTT).
+ *
+ * @param homePrice - Property purchase price.
+ * @param province - Province code ('ON', 'BC', 'OTHER').
+ * @param isToronto - Whether the property is located in the City of Toronto (subject to MLTT).
+ * @param isFirstTimeBuyer - Whether the buyer is eligible for first-time homebuyer rebates/exemptions.
+ * @returns Breakdown of provincial tax, municipal tax, rebates, and net total closing tax.
+ */
+export const calculateCanadianLandTransferTax = (
+  homePrice: number,
+  province = 'ON',
+  isToronto = false,
+  isFirstTimeBuyer = false
+): CanadianLttResult => {
+  const price = Math.max(0, homePrice || 0);
+  if (price <= 0) {
+    return {
+      provincialLtt: 0,
+      municipalLtt: 0,
+      firstTimeRebate: 0,
+      totalLtt: 0,
+      effectiveRatePct: 0
+    };
+  }
+
+  const provUpper = (province || 'ON').toUpperCase();
+
+  if (provUpper === 'BC') {
+    // British Columbia Property Transfer Tax (PTT)
+    let ptt = 0;
+    ptt += Math.min(price, 200000) * 0.01;
+    if (price > 200000) {
+      ptt += Math.min(price - 200000, 1800000) * 0.02;
+    }
+    if (price > 2000000) {
+      ptt += Math.min(price - 2000000, 1000000) * 0.03;
+    }
+    if (price > 3000000) {
+      ptt += (price - 3000000) * 0.05;
+    }
+
+    let rebate = 0;
+    if (isFirstTimeBuyer) {
+      if (price <= 500000) {
+        rebate = ptt; // Full exemption up to $500,000
+      } else if (price <= 525000) {
+        // Pro-rated phase-out between $500,000 and $525,000
+        const factor = (525000 - price) / 25000;
+        rebate = ptt * Math.max(0, factor);
+      }
+    }
+
+    const netTax = Math.round(Math.max(0, ptt - rebate) * 100) / 100;
+    return {
+      provincialLtt: Math.round(ptt * 100) / 100,
+      municipalLtt: 0,
+      firstTimeRebate: Math.round(rebate * 100) / 100,
+      totalLtt: netTax,
+      effectiveRatePct: Math.round((netTax / price) * 10000) / 100
+    };
+  }
+
+  // Ontario Provincial Land Transfer Tax (PLTT)
+  let provLtt = 0;
+  provLtt += Math.min(price, 55000) * 0.005;
+  if (price > 55000) {
+    provLtt += Math.min(price - 55000, 195000) * 0.01;
+  }
+  if (price > 250000) {
+    provLtt += Math.min(price - 250000, 150000) * 0.015;
+  }
+  if (price > 400000) {
+    provLtt += Math.min(price - 400000, 1600000) * 0.02;
+  }
+  if (price > 2000000) {
+    provLtt += (price - 2000000) * 0.025;
+  }
+
+  let municipalLtt = 0;
+  if (isToronto && provUpper === 'ON') {
+    municipalLtt += Math.min(price, 55000) * 0.005;
+    if (price > 55000) {
+      municipalLtt += Math.min(price - 55000, 195000) * 0.01;
+    }
+    if (price > 250000) {
+      municipalLtt += Math.min(price - 250000, 150000) * 0.015;
+    }
+    if (price > 400000) {
+      municipalLtt += Math.min(price - 400000, 1600000) * 0.02;
+    }
+    if (price > 2000000) {
+      municipalLtt += (price - 2000000) * 0.025;
+    }
+  }
+
+  const provRebate = isFirstTimeBuyer ? Math.min(provLtt, 4000) : 0;
+  const torontoRebate =
+    isFirstTimeBuyer && isToronto && provUpper === 'ON' ? Math.min(municipalLtt, 4475) : 0;
+  const totalRebate = provRebate + torontoRebate;
+
+  const roundedProv = Math.round(provLtt * 100) / 100;
+  const roundedMuni = Math.round(municipalLtt * 100) / 100;
+  const roundedRebate = Math.round(totalRebate * 100) / 100;
+  const netTotal = Math.round(Math.max(0, roundedProv + roundedMuni - roundedRebate) * 100) / 100;
+
+  return {
+    provincialLtt: roundedProv,
+    municipalLtt: roundedMuni,
+    firstTimeRebate: roundedRebate,
+    totalLtt: netTotal,
+    effectiveRatePct: Math.round((netTotal / price) * 10000) / 100
+  };
+};

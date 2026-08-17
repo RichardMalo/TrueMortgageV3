@@ -7,7 +7,8 @@ import {
   getMonthlyPayment,
   calculateCmhcInsurance,
   calculateCanadianMinDownPayment,
-  calculateOsfiStressTestRate
+  calculateOsfiStressTestRate,
+  calculateCanadianLandTransferTax
 } from '../src/js/math.js';
 import { Inputs, Milestone } from '../src/js/types.js';
 import { calculateOpportunityCostData } from '../src/js/charts.js';
@@ -1527,6 +1528,62 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(calculateOsfiStressTestRate(0)).toBe(5.25);
         expect(calculateOsfiStressTestRate(-2.5)).toBe(5.25);
         expect(calculateOsfiStressTestRate(NaN)).toBe(5.25);
+      });
+    });
+
+    describe('calculateCanadianLandTransferTax()', () => {
+      it('should return 0 when home price is zero or negative', () => {
+        const res = calculateCanadianLandTransferTax(0, 'ON', false, false);
+        expect(res.totalLtt).toBe(0);
+        expect(res.provincialLtt).toBe(0);
+        expect(res.municipalLtt).toBe(0);
+      });
+
+      it('should calculate Ontario provincial LTT correctly for an $800k home', () => {
+        // Price: $800k
+        // 0 - $55k @ 0.5% = $275
+        // $55k - $250k ($195k) @ 1.0% = $1,950
+        // $250k - $400k ($150k) @ 1.5% = $2,250
+        // $400k - $800k ($400k) @ 2.0% = $8,000
+        // Total PLTT = $275 + $1,950 + $2,250 + $8,000 = $12,475
+        const res = calculateCanadianLandTransferTax(800000, 'ON', false, false);
+        expect(res.provincialLtt).toBe(12475);
+        expect(res.municipalLtt).toBe(0);
+        expect(res.firstTimeRebate).toBe(0);
+        expect(res.totalLtt).toBe(12475);
+      });
+
+      it('should apply Ontario first-time homebuyer rebate ($4,000 max)', () => {
+        const res = calculateCanadianLandTransferTax(800000, 'ON', false, true);
+        expect(res.provincialLtt).toBe(12475);
+        expect(res.firstTimeRebate).toBe(4000);
+        expect(res.totalLtt).toBe(8475);
+      });
+
+      it('should calculate Toronto double LTT (Provincial + Municipal) and double first-time rebates', () => {
+        const resNonFtb = calculateCanadianLandTransferTax(800000, 'ON', true, false);
+        expect(resNonFtb.provincialLtt).toBe(12475);
+        expect(resNonFtb.municipalLtt).toBe(12475);
+        expect(resNonFtb.totalLtt).toBe(24950);
+
+        const resFtb = calculateCanadianLandTransferTax(800000, 'ON', true, true);
+        expect(resFtb.provincialLtt).toBe(12475);
+        expect(resFtb.municipalLtt).toBe(12475);
+        // Rebates: PLTT max $4,000 + MLTT max $4,475 = $8,475
+        expect(resFtb.firstTimeRebate).toBe(8475);
+        expect(resFtb.totalLtt).toBe(16475);
+      });
+
+      it('should calculate BC Property Transfer Tax and first-time exemption', () => {
+        // BC $400k home: 1% on 200k ($2,000) + 2% on 200k ($4,000) = $6,000
+        const resStandard = calculateCanadianLandTransferTax(400000, 'BC', false, false);
+        expect(resStandard.provincialLtt).toBe(6000);
+        expect(resStandard.totalLtt).toBe(6000);
+
+        // First-time buyer with price <= $500,000 gets 100% exemption
+        const resFtb = calculateCanadianLandTransferTax(400000, 'BC', false, true);
+        expect(resFtb.firstTimeRebate).toBe(6000);
+        expect(resFtb.totalLtt).toBe(0);
       });
     });
   });

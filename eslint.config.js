@@ -65,5 +65,21 @@ export default [
       }
     }
   },
+  {
+    files: ['public/sw.js', '**/sw.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: {
+        self: 'readonly',
+        caches: 'readonly',
+        fetch: 'readonly',
+        Promise: 'readonly',
+        URL: 'readonly',
+        Response: 'readonly',
+        Request: 'readonly'
+      }
+    }
+  },
   eslintConfigPrettier
 ];

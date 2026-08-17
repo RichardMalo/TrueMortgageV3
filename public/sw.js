@@ -1,0 +1,75 @@
+// TrueMortgageV3 Service Worker for Offline PWA Capabilities
+const CACHE_NAME = 'truemortgage-v3-cache-v1';
+const STATIC_ASSETS = [
+  './',
+  './index.html',
+  './manifest.json',
+  './favicon.ico',
+  './favicon-16x16.png',
+  './favicon-32x32.png',
+  './apple-touch-icon.png',
+  './robots.txt',
+  './sitemap.xml',
+  './flags/ca.svg',
+  './flags/us.svg',
+  './flags/gb.svg',
+  './flags/au.svg',
+  './flags/nz.svg'
+];
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(STATIC_ASSETS);
+    })
+  );
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((cacheName) => cacheName !== CACHE_NAME)
+          .map((cacheName) => caches.delete(cacheName))
+      );
+    })
+  );
+  self.clients.claim();
+});
+
+self.addEventListener('fetch', (event) => {
+  // Only handle GET requests and http/https schemes
+  if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (!url.protocol.startsWith('http')) return;
+
+  event.respondWith(
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      return fetch(event.request)
+        .then((networkResponse) => {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            (networkResponse.type === 'basic' || networkResponse.type === 'cors')
+          ) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // Fallback to offline index.html if navigation request fails
+          if (event.request.mode === 'navigate') {
+            return caches.match('./index.html') || caches.match('./');
+          }
+        });
+    })
+  );
+});

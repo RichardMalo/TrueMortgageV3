@@ -1296,6 +1296,15 @@ const bootApp = () => {
   setTimeout(() => {
     handleProfileSwitch(state.activeProfileId as string);
   }, 250);
+
+  // Register Service Worker for offline PWA caching
+  if ('serviceWorker' in navigator && !import.meta.env.DEV) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js').catch((err) => {
+        console.warn('Service worker registration failed:', err);
+      });
+    });
+  }
 };
 
 // Auto boot on window load (if not in Vitest checks context)
