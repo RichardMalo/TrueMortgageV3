@@ -270,7 +270,7 @@ export const setupShareFunctionality = (
     whatsappBtn.addEventListener('click', () => {
       const text = getReportSummaryText(true);
       const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-      window.open(url, '_blank');
+      window.open(url, '_blank', 'noopener,noreferrer');
     });
   }
 

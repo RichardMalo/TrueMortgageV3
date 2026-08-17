@@ -113,7 +113,9 @@ const els = {
     date: document.getElementById('firstPaymentDate') as HTMLInputElement | null,
     rateShockToggle: document.getElementById('rateShockToggle') as HTMLInputElement | null,
     goalSolverToggle: document.getElementById('goalSolverToggle') as HTMLInputElement | null,
-    lumpSum: document.getElementById('lumpSumPayment') as HTMLInputElement | null
+    lumpSum: document.getElementById('lumpSumPayment') as HTMLInputElement | null,
+    includeCmhc: document.getElementById('includeCmhc') as HTMLInputElement | null,
+    cmhcProvince: document.getElementById('cmhcProvince') as HTMLSelectElement | null
   },
   results: {
     mortgageDisplay: document.getElementById('mortgageAmountDisplay'),
@@ -209,15 +211,8 @@ const calculate = (e?: Event) => {
     els.containers.goalSolverSection.style.display = inputs.goalSolverEnabled ? 'block' : 'none';
   }
 
-  const principalBorrowAmount =
-    state.currentMode === 'mortgage'
-      ? inputs.homePrice - inputs.downPayment
-      : state.currentMode === 'loan'
-        ? inputs.loanAmount || inputs.homePrice - inputs.downPayment
-        : inputs.ccBalance;
-
   if (state.currentMode === 'cc') {
-    const dailyVampireCost = principalBorrowAmount * (inputs.annualRate / 100 / 365);
+    const dailyVampireCost = inputs.ccBalance * (inputs.annualRate / 100 / 365);
     updateKineticText(els.results.vampireDrain, dailyVampireCost, true, true);
   }
 
@@ -249,6 +244,30 @@ const calculate = (e?: Event) => {
       : state.currentMode === 'loan'
         ? generateLoanSchedule(inputs, false)
         : generateCCSchedule(inputs, false);
+
+  const principalBorrowAmount =
+    state.currentMode === 'mortgage'
+      ? inputs.homePrice - inputs.downPayment + (actData.summary.cmhcInsuranceAmount || 0)
+      : state.currentMode === 'loan'
+        ? inputs.loanAmount || inputs.homePrice - inputs.downPayment
+        : inputs.ccBalance;
+
+  // CMHC summary stat card update
+  const cmhcStatBox = document.getElementById('cmhcStatBox');
+  const cmhcProvinceWrapper = document.getElementById('cmhcProvinceWrapper');
+  const cmhcAmount = actData.summary.cmhcInsuranceAmount || 0;
+  if (cmhcStatBox) {
+    if (isMortgage && inputs.includeCmhc && cmhcAmount > 0) {
+      cmhcStatBox.style.display = 'block';
+      updateKineticText(document.getElementById('cmhcStatAmount'), cmhcAmount);
+    } else {
+      cmhcStatBox.style.display = 'none';
+    }
+  }
+  if (cmhcProvinceWrapper) {
+    cmhcProvinceWrapper.style.display =
+      isMortgage && inputs.includeCmhc && state.complexity === 'advanced' ? 'block' : 'none';
+  }
 
   // Calculate savings specifically from the one-time lump sum payment
   const inputsWithoutLumpSum = {
@@ -1093,6 +1112,15 @@ const bootApp = () => {
 
   els.inputs.loanOriginationFeeEnabled?.addEventListener('change', () => {
     syncCheckboxARIALabels();
+    calculate();
+  });
+
+  els.inputs.includeCmhc?.addEventListener('change', () => {
+    syncCheckboxARIALabels();
+    calculate();
+  });
+
+  els.inputs.cmhcProvince?.addEventListener('change', () => {
     calculate();
   });
 

@@ -105,7 +105,8 @@ describe('Share Functionality (share.ts)', () => {
 
     expect(windowOpenSpy).toHaveBeenCalledWith(
       expect.stringContaining('https://api.whatsapp.com/send?text='),
-      '_blank'
+      '_blank',
+      'noopener,noreferrer'
     );
     windowOpenSpy.mockRestore();
   });

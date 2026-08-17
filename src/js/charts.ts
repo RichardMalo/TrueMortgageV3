@@ -159,8 +159,12 @@ export const cancelPendingChartRenders = () => {
 };
 
 let lastRenderedCurrency = '';
+let isFlushingQueue = false;
 
 const flushRenderQueue = async () => {
+  if (isFlushingQueue) return;
+  isFlushingQueue = true;
+
   const queueSnapshot = new Map(renderQueue);
   renderQueue.clear();
   renderFrameId = null;
@@ -226,6 +230,11 @@ const flushRenderQueue = async () => {
     }
   } catch (err) {
     console.error('Error flushing chart render queue:', err);
+  } finally {
+    isFlushingQueue = false;
+    if (renderQueue.size > 0 && !renderFrameId) {
+      scheduleFlush();
+    }
   }
 };
 

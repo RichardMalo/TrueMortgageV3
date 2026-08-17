@@ -372,7 +372,9 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     ccMinPercent: 'ccMinPercent',
     ccMinPrincipalPct: 'ccMinPrincipalPct',
     ccMinFlat: 'ccMinFlat',
-    ccCompounding: 'ccCompounding'
+    ccCompounding: 'ccCompounding',
+    includeCmhc: 'includeCmhc',
+    cmhcProvince: 'cmhcProvince'
   };
 
   Object.keys(defaultInputs).forEach((key) => {
@@ -721,11 +723,11 @@ export const loadSettingsFromStorage = (
     const errMsg = err instanceof Error ? err.message : String(err);
     console.warn('State engine hydration halted. Emergency reset:', errMsg);
 
-    // Backup corrupted data before overwriting
+    // Backup corrupted data before overwriting (bounded to single key to prevent quota exhaustion)
     try {
       const corruptedVal = localStorage.getItem(STORAGE_KEY);
       if (corruptedVal) {
-        localStorage.setItem(`${STORAGE_KEY}_corrupted_${Date.now()}`, corruptedVal);
+        localStorage.setItem(`${STORAGE_KEY}_corrupted_last`, corruptedVal);
       }
     } catch (backupErr) {
       console.error('Failed to backup corrupted settings:', backupErr);

@@ -45,6 +45,8 @@ export interface Inputs {
   lumpSum?: number;
   lumpSums?: LumpSumItem[];
   lang?: 'en' | 'fr';
+  includeCmhc?: boolean;
+  cmhcProvince?: string;
 }
 
 export interface ScheduleRow {
@@ -75,6 +77,10 @@ export interface ScheduleSummary {
   totalInterest: number;
   totalPrincipal: number;
   totalEscrow: number;
+  cmhcInsuranceAmount?: number;
+  cmhcPstAmount?: number;
+  cmhcPstRate?: number;
+  basePrincipalWithoutCmhc?: number;
   /** Whether the debt was fully paid off within max periods limit */
   paidOff?: boolean;
   /** Whether the schedule reached the max period limit without full payoff */
@@ -126,6 +132,8 @@ export interface ProfileInputs {
   ccCompounding?: string;
   lumpSum?: string;
   lumpSums?: LumpSumItem[];
+  includeCmhc?: boolean;
+  cmhcProvince?: string;
 }
 
 export interface Profile {
@@ -204,6 +212,8 @@ export interface AppElements {
     rateShockToggle: HTMLInputElement | null;
     goalSolverToggle: HTMLInputElement | null;
     lumpSum: HTMLInputElement | null;
+    includeCmhc?: HTMLInputElement | null;
+    cmhcProvince?: HTMLSelectElement | null;
   };
   results: {
     mortgageDisplay: HTMLElement | null;

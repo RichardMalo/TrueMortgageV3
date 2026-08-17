@@ -409,13 +409,28 @@ export const dictionary: Record<string, string> = {
   // Nested Label text nodes
   'Interest Saved ': 'Intérêts économisés ',
   '(vs Minimums)': '(vs les minimums)',
-  'Interest Saved': 'Intérêts économisés'
+  'Interest Saved': 'Intérêts économisés',
+
+  // CMHC Insurance
+  'Include CMHC Insurance': "Inclure l'assurance SCHL",
+  'CMHC Insurance': 'Assurance SCHL',
+  'CMHC Default Insurance': 'Assurance prêt hypothécaire SCHL',
+  'Calculate with CMHC Insurance?': 'Calculer avec assurance SCHL ?',
+  'CMHC Premium': 'Prime SCHL',
+  'Provincial Tax (PST) on Insurance': 'Taxe provinciale (TVP) sur assurance',
+  'PST on CMHC (Paid at Closing)': 'TVP sur SCHL (Payable à la clôture)'
 };
 
 export const t = (key: string): string => {
   if (activeLanguage === 'en') return key;
   return dictionary[key] || key;
 };
+
+const originalTextMap = new WeakMap<Node, string>();
+const originalAttrMap = new WeakMap<
+  Element,
+  { originalPlaceholder?: string; originalTitle?: string; originalAriaLabel?: string }
+>();
 
 const walkTextNodes = (root: Node, callback: (node: Text) => void) => {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
@@ -442,9 +457,9 @@ export const applyTranslations = (lang: 'en' | 'fr') => {
   if (lang === 'en') {
     // Restore all text nodes
     walkTextNodes(document.body, (node) => {
-      const nodeRecord = node as unknown as Record<string, string>;
-      if (nodeRecord.originalText !== undefined) {
-        node.nodeValue = nodeRecord.originalText;
+      const orig = originalTextMap.get(node);
+      if (orig !== undefined) {
+        node.nodeValue = orig;
       }
     });
 
@@ -452,15 +467,17 @@ export const applyTranslations = (lang: 'en' | 'fr') => {
     const elementsWithAttrs = document.querySelectorAll('[placeholder], [title], [aria-label]');
     elementsWithAttrs.forEach((el) => {
       const htmlEl = el as HTMLElement;
-      const elRecord = htmlEl as unknown as Record<string, string>;
-      if (elRecord.originalPlaceholder !== undefined) {
-        htmlEl.setAttribute('placeholder', elRecord.originalPlaceholder);
-      }
-      if (elRecord.originalTitle !== undefined) {
-        htmlEl.setAttribute('title', elRecord.originalTitle);
-      }
-      if (elRecord.originalAriaLabel !== undefined) {
-        htmlEl.setAttribute('aria-label', elRecord.originalAriaLabel);
+      const cached = originalAttrMap.get(htmlEl);
+      if (cached) {
+        if (cached.originalPlaceholder !== undefined) {
+          htmlEl.setAttribute('placeholder', cached.originalPlaceholder);
+        }
+        if (cached.originalTitle !== undefined) {
+          htmlEl.setAttribute('title', cached.originalTitle);
+        }
+        if (cached.originalAriaLabel !== undefined) {
+          htmlEl.setAttribute('aria-label', cached.originalAriaLabel);
+        }
       }
     });
   } else {
@@ -470,9 +487,8 @@ export const applyTranslations = (lang: 'en' | 'fr') => {
       const normalizedKey = trimmed.replace(/\s+/g, ' ');
       const translation = dictionary[normalizedKey];
       if (translation) {
-        const nodeRecord = node as unknown as Record<string, string>;
-        if (nodeRecord.originalText === undefined) {
-          nodeRecord.originalText = node.nodeValue!;
+        if (!originalTextMap.has(node)) {
+          originalTextMap.set(node, node.nodeValue!);
         }
         node.nodeValue = node.nodeValue!.replace(trimmed, translation);
       }
@@ -482,25 +498,30 @@ export const applyTranslations = (lang: 'en' | 'fr') => {
     const elementsWithAttrs = document.querySelectorAll('[placeholder], [title], [aria-label]');
     elementsWithAttrs.forEach((el) => {
       const htmlEl = el as HTMLElement;
-      const elRecord = htmlEl as unknown as Record<string, string>;
+      let cached = originalAttrMap.get(htmlEl);
+      if (!cached) {
+        cached = {};
+        originalAttrMap.set(htmlEl, cached);
+      }
+
       const placeholder = htmlEl.getAttribute('placeholder');
       if (placeholder && dictionary[placeholder]) {
-        if (elRecord.originalPlaceholder === undefined) {
-          elRecord.originalPlaceholder = placeholder;
+        if (cached.originalPlaceholder === undefined) {
+          cached.originalPlaceholder = placeholder;
         }
         htmlEl.setAttribute('placeholder', dictionary[placeholder]);
       }
       const title = htmlEl.getAttribute('title');
       if (title && dictionary[title]) {
-        if (elRecord.originalTitle === undefined) {
-          elRecord.originalTitle = title;
+        if (cached.originalTitle === undefined) {
+          cached.originalTitle = title;
         }
         htmlEl.setAttribute('title', dictionary[title]);
       }
       const ariaLabel = htmlEl.getAttribute('aria-label');
       if (ariaLabel && dictionary[ariaLabel]) {
-        if (elRecord.originalAriaLabel === undefined) {
-          elRecord.originalAriaLabel = ariaLabel;
+        if (cached.originalAriaLabel === undefined) {
+          cached.originalAriaLabel = ariaLabel;
         }
         htmlEl.setAttribute('aria-label', dictionary[ariaLabel]);
       }

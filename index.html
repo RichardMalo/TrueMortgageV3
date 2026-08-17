@@ -23,6 +23,11 @@
       name="description"
       content="Algorithmic mortgage & credit card optimizer featuring US/Canadian compounding, refinancing rate shocks, opportunity cost analytics, and bento dashboards."
     />
+    <!-- Theme Color & Mobile App Capabilities -->
+    <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1121" media="(prefers-color-scheme: dark)" />
+    <link rel="manifest" href="./manifest.json" />
+
     <!-- Open Graph Metadata -->
     <meta property="og:site_name" content="Debt Elimination Engine" />
     <meta property="og:locale" content="en_US" />
@@ -36,6 +41,12 @@
     <meta
       property="og:image"
       content="https://richardmalo.github.io/TrueMortgageV3/assets/og-image.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Debt Elimination Engine Algorithmic Mortgage Optimizer"
     />
     <!-- Twitter Card Metadata -->
     <meta name="twitter:card" content="summary_large_image" />
@@ -618,6 +629,60 @@
                     <option value="semi">Canadian (Semi-Annual)</option>
                     <option value="monthly">US / UK / AU / NZ (Monthly/Daily)</option>
                   </select>
+                </div>
+              </div>
+
+              <!-- CMHC Default Mortgage Insurance Toggle Row -->
+              <div class="input-group-row mortgage-only" id="cmhcSection">
+                <div class="input-group" style="width: 100%">
+                  <div
+                    class="flex items-center justify-between mb-1"
+                    style="display: flex; align-items: center; justify-content: space-between"
+                  >
+                    <label for="includeCmhc" style="margin-bottom: 0; cursor: pointer"
+                      >Calculate with CMHC Insurance?
+                      <span class="help-tip"
+                        >?<span class="tooltip-text"
+                          >Canadian high-ratio mortgages (down payment &lt; 20%, LTV &gt; 80%)
+                          legally require mortgage default insurance (CMHC/Sagen/Canada Guaranty).
+                          When enabled, the insurance premium (2.80%–4.00%) is capitalized directly
+                          into the mortgage loan principal.</span
+                        ></span
+                      ></label
+                    >
+                    <label class="switch" title="Toggle CMHC Mortgage Default Insurance">
+                      <input
+                        type="checkbox"
+                        id="includeCmhc"
+                        role="switch"
+                        aria-checked="false"
+                        aria-label="Calculate with CMHC Insurance?"
+                      />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div
+                    id="cmhcProvinceWrapper"
+                    class="advanced-only mt-2"
+                    style="display: none; margin-top: 8px"
+                  >
+                    <label for="cmhcProvince" style="font-size: 0.825rem"
+                      >Province (PST on Insurance at Closing)
+                      <span class="help-tip"
+                        >?<span class="tooltip-text"
+                          >Provincial sales tax on CMHC default insurance premiums (ON 8%, QC 9%, SK
+                          6%) cannot be financed into the loan and must be paid in cash at
+                          closing.</span
+                        ></span
+                      ></label
+                    >
+                    <select id="cmhcProvince" class="custom-select">
+                      <option value="ON">Ontario (8% PST)</option>
+                      <option value="QC">Quebec (9% QST)</option>
+                      <option value="SK">Saskatchewan (6% PST)</option>
+                      <option value="OTHER">Other Province / Territory (0% PST)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1285,17 +1350,20 @@
             </div>
           </div>
 
-          <div
-            class="bento-card"
-            aria-live="polite"
-            aria-atomic="true"
-            aria-label="Financial Summary Results"
-          >
+          <div class="bento-card" aria-label="Financial Summary Results">
             <h2 class="section-title">Financial Summary</h2>
             <div class="stats-grid">
               <div class="stat-box squishy-interactive">
                 <label id="summaryBalLabel">Original Debt</label>
                 <div class="kinetic-text" id="mortgageAmountDisplay" data-val="0">$0.00</div>
+              </div>
+              <div
+                class="stat-box squishy-interactive mortgage-only"
+                id="cmhcStatBox"
+                style="display: none"
+              >
+                <label id="cmhcStatLabel">CMHC Insurance (Capitalized)</label>
+                <div class="kinetic-text text-primary" id="cmhcStatAmount" data-val="0">$0.00</div>
               </div>
               <div class="stat-box danger-box squishy-interactive cc-only">
                 <label class="danger-text"
@@ -1478,7 +1546,7 @@
           <div class="bento-card mb-24" id="bank-wages-card">
             <div class="bank-wages-section">
               <div class="wage-toggle-container">
-                <h3 class="sub-section-title m-0 text-primary text-md font-bold flex items-center">
+                <h2 class="sub-section-title m-0 text-primary text-md font-bold flex items-center">
                   <span id="bankWagesTitleText"
                     >How much do you pay towards the banks wages per year</span
                   >
@@ -1490,7 +1558,7 @@
                       conventions.</span
                     ></span
                   >
-                </h3>
+                </h2>
                 <div
                   class="wage-toggle-selector"
                   id="bankWagesToggle"

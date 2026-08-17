@@ -4,7 +4,8 @@ import {
   generateCCSchedule,
   generateLoanSchedule,
   calculateMilestones,
-  getMonthlyPayment
+  getMonthlyPayment,
+  calculateCmhcInsurance
 } from '../src/js/math.js';
 import { Inputs, Milestone } from '../src/js/types.js';
 import { calculateOpportunityCostData } from '../src/js/charts.js';
@@ -1389,6 +1390,84 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
           expect(Number((row.balance * 100).toFixed(6)) % 1).toBeCloseTo(0, 5);
           expect(Number((row.extra * 100).toFixed(6)) % 1).toBeCloseTo(0, 5);
         });
+      });
+    });
+
+    describe('CMHC Mortgage Default Insurance & Provincial PST', () => {
+      it('should return zero premium for conventional mortgages (LTV <= 80%)', () => {
+        const res = calculateCmhcInsurance(500000, 100000, 25, 'ON', true); // 20% down
+        expect(res.insuranceRate).toBe(0);
+        expect(res.insuranceAmount).toBe(0);
+        expect(res.pstAmount).toBe(0);
+        expect(res.totalPrincipal).toBe(400000);
+      });
+
+      it('should calculate 4.00% CMHC premium for 5% down payment (95% LTV)', () => {
+        const res = calculateCmhcInsurance(500000, 25000, 25, 'ON', true); // 5% down
+        expect(res.insuranceRate).toBe(0.04);
+        expect(res.insuranceAmount).toBe(19000); // 475,000 * 0.04 = 19,000
+        expect(res.pstRate).toBe(0.08);
+        expect(res.pstAmount).toBe(1520); // 19,000 * 0.08 = 1,520
+        expect(res.totalPrincipal).toBe(494000); // 475,000 + 19,000
+      });
+
+      it('should calculate 3.10% CMHC premium for 10% down payment (90% LTV)', () => {
+        const res = calculateCmhcInsurance(600000, 60000, 25, 'QC', true); // 10% down
+        expect(res.insuranceRate).toBe(0.031);
+        expect(res.insuranceAmount).toBe(16740); // 540,000 * 0.031 = 16,740
+        expect(res.pstRate).toBe(0.09); // Quebec 9% QST
+        expect(res.pstAmount).toBe(1506.6); // 16,740 * 0.09 = 1,506.60
+        expect(res.totalPrincipal).toBe(556740);
+      });
+
+      it('should calculate 2.80% CMHC premium for 15% down payment (85% LTV)', () => {
+        const res = calculateCmhcInsurance(700000, 105000, 25, 'SK', true); // 15% down
+        expect(res.insuranceRate).toBe(0.028);
+        expect(res.insuranceAmount).toBe(16660); // 595,000 * 0.028 = 16,660
+        expect(res.pstRate).toBe(0.06); // Saskatchewan 6% PST
+        expect(res.pstAmount).toBe(999.6);
+        expect(res.totalPrincipal).toBe(611660);
+      });
+
+      it('should add +0.20% surcharge for 30-year amortization on insured loans', () => {
+        const res = calculateCmhcInsurance(500000, 25000, 30, 'ON', true); // 5% down, 30-yr
+        expect(res.insuranceRate).toBeCloseTo(0.042, 3); // 4.00% + 0.20% = 4.20%
+        expect(res.insuranceAmount).toBe(19950); // 475,000 * 0.042 = 19,950
+        expect(res.totalPrincipal).toBe(494950);
+      });
+
+      it('should capitalize CMHC premium into mortgage schedule when includeCmhc is true', () => {
+        const inputs: Inputs = {
+          homePrice: 500000,
+          downPayment: 25000, // 5% down -> $475,000 base principal
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 4.5,
+          amortizationYears: 25,
+          termYears: 5,
+          compounding: 'semi',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 0,
+          extraPayment: 0,
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {},
+          includeCmhc: true,
+          cmhcProvince: 'ON'
+        };
+
+        const result = generateMortgageSchedule(inputs, false);
+        // Total starting principal should be 475,000 + 19,000 = 494,000
+        expect(result.summary.basePrincipalWithoutCmhc).toBe(475000);
+        expect(result.summary.cmhcInsuranceAmount).toBe(19000);
+        expect(result.summary.cmhcPstAmount).toBe(1520);
+        expect(result.schedule[0]!.payment).toBeGreaterThan(2700);
       });
     });
   });

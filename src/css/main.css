@@ -1007,7 +1007,7 @@ th {
   display: none;
 }
 body.dark-mode #error-message {
-  color: #0f172a;
+  color: #ffffff;
 }
 
 /* Bank Wages Circle Chart Styles */
@@ -3229,16 +3229,34 @@ body.dark-mode .goal-result-box:hover {
   .master-mode-selector,
   .card-action-btn,
   .sidebar-close-btn,
-  .modal-overlay {
+  .modal-overlay,
+  .btn-group,
+  .help-tip,
+  .toggle-wrapper,
+  .wage-toggle-selector,
+  .table-expand-btn,
+  .dropdown-trigger,
+  .settings-dropdown-wrapper,
+  #clearBtn,
+  #shareBtn,
+  .scenario-sidebar,
+  .scenario-toggle-btn {
     display: none !important;
   }
-  .bento-grid {
+  .dashboard-layout {
     display: block !important;
+    max-width: 100% !important;
+  }
+  .column,
+  .full-width-section {
+    display: block !important;
+    width: 100% !important;
   }
   .chart-wrapper,
   .bento-card {
     box-shadow: none !important;
     border: 1px solid #ccc !important;
     page-break-inside: avoid;
+    margin-bottom: 16px !important;
   }
 }

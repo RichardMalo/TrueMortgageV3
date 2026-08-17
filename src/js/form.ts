@@ -90,24 +90,30 @@ export const validateForm = (
       return false;
     }
     if (isNaN(amort) || amort <= 0 || amort > 100) {
-      showError('Amortization must be a valid number between 0.1 and 100 years.');
+      showError(
+        'Amortization must be a valid number between 0.1 and 100 years.',
+        inputs.amortization
+      );
       return false;
     }
     if (isNaN(term) || term <= 0 || term > amort) {
-      showError('Term Length must be positive and cannot exceed the Amortization period.');
+      showError(
+        'Term Length must be positive and cannot exceed the Amortization period.',
+        inputs.term
+      );
       return false;
     }
     if (isNaN(rate) || rate < 0 || rate > 100) {
-      showError('Interest Rate must be a valid number between 0% and 100%.');
+      showError('Interest Rate must be a valid number between 0% and 100%.', inputs.rate);
       return false;
     }
     if (isNaN(extra) || extra < 0) {
-      showError('Extra Payment must be a valid non-negative number.');
+      showError('Extra Payment must be a valid non-negative number.', inputs.extra);
       return false;
     }
     const lump = parseFloat(inputs.lumpSum?.value || '0');
     if (isNaN(lump) || lump < 0) {
-      showError('Lump Sum Payment must be a valid non-negative number.');
+      showError('Lump Sum Payment must be a valid non-negative number.', inputs.lumpSum);
       return false;
     }
 
@@ -121,11 +127,14 @@ export const validateForm = (
         const amt = parseFloat(amountInput.value || '0');
         const pmt = parseInt(paymentInput.value || '0', 10);
         if (isNaN(amt) || amt < 0) {
-          showError('Scheduled Lump Sum amount must be a valid non-negative number.');
+          showError('Scheduled Lump Sum amount must be a valid non-negative number.', amountInput);
           return false;
         }
         if (isNaN(pmt) || pmt < 1) {
-          showError('Scheduled Lump Sum Payment Number must be a valid positive integer (>= 1).');
+          showError(
+            'Scheduled Lump Sum Payment Number must be a valid positive integer (>= 1).',
+            paymentInput
+          );
           return false;
         }
       }
@@ -138,19 +147,19 @@ export const validateForm = (
       const hoa = parseFloat(inputs.hoa?.value || '0');
       const pmi = parseFloat(inputs.pmi?.value || '0');
       if (isNaN(tax) || tax < 0) {
-        showError('Property Tax must be a valid non-negative number.');
+        showError('Property Tax must be a valid non-negative number.', inputs.tax);
         return false;
       }
       if (isNaN(ins) || ins < 0) {
-        showError('Home Insurance must be a valid non-negative number.');
+        showError('Home Insurance must be a valid non-negative number.', inputs.ins);
         return false;
       }
       if (isNaN(hoa) || hoa < 0) {
-        showError('HOA Fees must be a valid non-negative number.');
+        showError('HOA Fees must be a valid non-negative number.', inputs.hoa);
         return false;
       }
       if (isNaN(pmi) || pmi < 0 || pmi > 100) {
-        showError('PMI Rate must be a valid number between 0% and 100%.');
+        showError('PMI Rate must be a valid number between 0% and 100%.', inputs.pmi);
         return false;
       }
     }
@@ -160,15 +169,15 @@ export const validateForm = (
     const extra = parseFloat(inputs.extra?.value || '0');
 
     if (isNaN(bal) || bal <= 0) {
-      showError('Credit Card Balance must be a valid positive number.');
+      showError('Credit Card Balance must be a valid positive number.', inputs.ccBalance);
       return false;
     }
     if (isNaN(rate) || rate < 0 || rate > 200) {
-      showError('Interest Rate must be a valid number between 0% and 200%.');
+      showError('Interest Rate must be a valid number between 0% and 200%.', inputs.rate);
       return false;
     }
     if (isNaN(extra) || extra < 0) {
-      showError('Monthly Surplus Payment must be a valid non-negative number.');
+      showError('Monthly Surplus Payment must be a valid non-negative number.', inputs.extra);
       return false;
     }
 
@@ -180,15 +189,24 @@ export const validateForm = (
       const minFlat = parseFloat((inputs.ccMinFlat as HTMLInputElement | null)?.value || '0');
 
       if (isNaN(minPct) || minPct < 0 || minPct > 100) {
-        showError('Minimum Payment % must be a valid number between 0% and 100%.');
+        showError(
+          'Minimum Payment % must be a valid number between 0% and 100%.',
+          inputs.ccMinPercent as HTMLInputElement | null
+        );
         return false;
       }
       if (isNaN(minPrin) || minPrin < 0 || minPrin > 100) {
-        showError('Interest + Principal % must be a valid number between 0% and 100%.');
+        showError(
+          'Interest + Principal % must be a valid number between 0% and 100%.',
+          inputs.ccMinPrincipalPct as HTMLInputElement | null
+        );
         return false;
       }
       if (isNaN(minFlat) || minFlat < 0) {
-        showError('Flat Minimum Payment must be a valid non-negative number.');
+        showError(
+          'Flat Minimum Payment must be a valid non-negative number.',
+          inputs.ccMinFlat as HTMLInputElement | null
+        );
         return false;
       }
     }
@@ -198,7 +216,10 @@ export const validateForm = (
   if (oppCostToggle && oppCostToggle.checked) {
     const invRate = parseFloat(inputs.investRate?.value || '0');
     if (isNaN(invRate) || invRate < -99.9 || invRate > 100) {
-      showError('Expected Investment Return must be a valid number between -99.9% and 100%.');
+      showError(
+        'Expected Investment Return must be a valid number between -99.9% and 100%.',
+        inputs.investRate
+      );
       return false;
     }
   }
@@ -221,6 +242,7 @@ export const getCalculationsInputs = (
 ): Inputs => {
   const isMortgage = currentMode === 'mortgage';
   const pitiOn = isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked;
+  const cmhcOn = isMortgage && !!(inputs.includeCmhc as HTMLInputElement | null)?.checked;
 
   const lumpSums: LumpSumItem[] = [];
   const dynamicRowEls = document.querySelectorAll('.lump-sum-row');
@@ -272,7 +294,9 @@ export const getCalculationsInputs = (
     termRates,
     ccCompounding: (inputs.ccCompounding?.value || 'simple') as 'simple' | 'daily',
     lumpSum: parseNum(inputs.lumpSum?.value),
-    lumpSums
+    lumpSums,
+    includeCmhc: cmhcOn,
+    cmhcProvince: inputs.cmhcProvince?.value || inputs.province?.value || 'ON'
   };
 };
 
@@ -289,6 +313,7 @@ export const profileToInputs = (
   const isMortgage = currentMode === 'mortgage';
   const pitiOn = isMortgage && profileInputs.pitiToggle === true;
   const oppCostOn = profileInputs.oppCostToggle === true;
+  const cmhcOn = isMortgage && profileInputs.includeCmhc === true;
 
   return {
     homePrice: parseNum(profileInputs.homePrice),
@@ -339,6 +364,10 @@ export const profileToInputs = (
     termRates,
     ccCompounding: (profileInputs.ccCompounding || 'simple') as 'simple' | 'daily',
     lumpSum: parseNum(profileInputs.lumpSum),
-    lumpSums: Array.isArray(profileInputs.lumpSums) ? (profileInputs.lumpSums as LumpSumItem[]) : []
+    lumpSums: Array.isArray(profileInputs.lumpSums)
+      ? (profileInputs.lumpSums as LumpSumItem[])
+      : [],
+    includeCmhc: cmhcOn,
+    cmhcProvince: String(profileInputs.cmhcProvince || profileInputs.province || 'ON')
   };
 };

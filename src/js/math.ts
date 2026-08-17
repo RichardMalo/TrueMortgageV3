@@ -1,5 +1,94 @@
 import { Inputs, ScheduleResult, ScheduleRow, Milestone } from './types.js';
-import { PMI_LTV_THRESHOLD, MAX_CC_PAYOFF_MONTHS, MIN_CC_PAYMENT } from './constants.js';
+import {
+  PMI_LTV_THRESHOLD,
+  MAX_CC_PAYOFF_MONTHS,
+  MIN_CC_PAYMENT,
+  CMHC_TIERS,
+  CMHC_30_YEAR_SURCHARGE,
+  CMHC_PROVINCE_PST_RATES
+} from './constants.js';
+
+export interface CmhcCalculationResult {
+  insuranceRate: number;
+  insuranceAmount: number;
+  pstRate: number;
+  pstAmount: number;
+  totalPrincipal: number;
+}
+
+/**
+ * Calculates Canadian CMHC / Default Mortgage Insurance premium and provincial sales tax.
+ *
+ * @param homePrice - The total purchase price of the property.
+ * @param downPayment - The down payment amount.
+ * @param amortizationYears - Total amortization period in years.
+ * @param province - Canadian province code ('ON', 'QC', 'SK', 'OTHER').
+ * @param includeCmhc - Whether CMHC calculation is enabled.
+ * @returns Details of CMHC premium rate, premium dollar amount, closing PST, and total capitalized principal.
+ */
+export const calculateCmhcInsurance = (
+  homePrice: number,
+  downPayment: number,
+  amortizationYears: number,
+  province = 'ON',
+  includeCmhc = false
+): CmhcCalculationResult => {
+  const basePrincipal = Math.max(0, homePrice - downPayment);
+  if (!includeCmhc || homePrice <= 0 || basePrincipal <= 0) {
+    return {
+      insuranceRate: 0,
+      insuranceAmount: 0,
+      pstRate: 0,
+      pstAmount: 0,
+      totalPrincipal: basePrincipal
+    };
+  }
+
+  const downPaymentRatio = downPayment / homePrice;
+  const ltv = 1 - downPaymentRatio;
+
+  // Conventional mortgage (LTV <= 80%, down payment >= 20%) requires no CMHC default insurance
+  if (ltv <= 0.8) {
+    return {
+      insuranceRate: 0,
+      insuranceAmount: 0,
+      pstRate: 0,
+      pstAmount: 0,
+      totalPrincipal: basePrincipal
+    };
+  }
+
+  let rate = 0;
+  for (const tier of CMHC_TIERS) {
+    if (ltv > tier.minLtv - 1e-6) {
+      rate = tier.rate;
+      break;
+    }
+  }
+  if (rate === 0 && ltv > 0.8) {
+    rate = 0.04;
+  }
+
+  // 30-year amortization surcharge on insured mortgages (+0.20%)
+  if (amortizationYears > 25) {
+    rate += CMHC_30_YEAR_SURCHARGE;
+  }
+
+  const insuranceAmount = Math.round(basePrincipal * rate * 100) / 100;
+  const provUpper = (province || 'ON').toUpperCase();
+  const pstRate =
+    CMHC_PROVINCE_PST_RATES[provUpper] !== undefined ? CMHC_PROVINCE_PST_RATES[provUpper]! : 0;
+  const pstAmount = Math.round(insuranceAmount * pstRate * 100) / 100;
+  const totalPrincipal = Math.round((basePrincipal + insuranceAmount) * 100) / 100;
+
+  return {
+    insuranceRate: rate,
+    insuranceAmount,
+    pstRate,
+    pstAmount,
+    totalPrincipal
+  };
+};
 
 /**
  * Calculates the periodic installment payment (principal + interest)
@@ -98,7 +187,17 @@ export const generateMortgageSchedule = (
   const safeAmort = Math.min(100, Math.max(0.1, inputs.amortizationYears || 0));
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
   const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
-  const principal = safeHomePrice - safeDownPayment;
+  const basePrincipal = safeHomePrice - safeDownPayment;
+
+  // Calculate CMHC default insurance if enabled
+  const cmhcRes = calculateCmhcInsurance(
+    safeHomePrice,
+    safeDownPayment,
+    safeAmort,
+    inputs.cmhcProvince || inputs.province || 'ON',
+    !!inputs.includeCmhc
+  );
+  const principal = cmhcRes.totalPrincipal;
 
   // Canadian Mortgages compound SEMI-ANNUALLY (by law). US Mortgages compound MONTHLY.
   const freq = isBaseline ? 'monthly' : inputs.frequency;
@@ -120,6 +219,10 @@ export const generateMortgageSchedule = (
         totalInterest: 0,
         totalPrincipal: 0,
         totalEscrow: 0,
+        cmhcInsuranceAmount: 0,
+        cmhcPstAmount: 0,
+        cmhcPstRate: 0,
+        basePrincipalWithoutCmhc: 0,
         paidOff: true
       }
     };
@@ -260,6 +363,7 @@ export const generateMortgageSchedule = (
     }
 
     balance -= principalPortion + currentExtraPayment;
+    balance = Math.round(balance * 100) / 100;
     if (balance < 0.001) balance = 0;
 
     totalInterest += interestPortion;
@@ -304,9 +408,13 @@ export const generateMortgageSchedule = (
     summary: {
       periodsToPayoff: paidOff ? periodsToPayoff : Infinity,
       periodsPerYear: periodsPerYear,
-      totalInterest: totalInterest,
-      totalPrincipal: totalPrincipal,
-      totalEscrow: totalEscrow,
+      totalInterest: Math.round(totalInterest * 100) / 100,
+      totalPrincipal: Math.round(totalPrincipal * 100) / 100,
+      totalEscrow: Math.round(totalEscrow * 100) / 100,
+      cmhcInsuranceAmount: cmhcRes.insuranceAmount,
+      cmhcPstAmount: cmhcRes.pstAmount,
+      cmhcPstRate: cmhcRes.pstRate,
+      basePrincipalWithoutCmhc: basePrincipal,
       paidOff: paidOff
     }
   };

@@ -193,6 +193,12 @@ export const setupBlueprintSync = (
   dropzone.addEventListener('click', () => {
     fileInput.click();
   });
+  dropzone.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      fileInput.click();
+    }
+  });
   dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
     dropzone.classList.add('drag-over');
