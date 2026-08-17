@@ -5,7 +5,8 @@ import {
   generateLoanSchedule,
   calculateMilestones,
   getMonthlyPayment,
-  calculateCmhcInsurance
+  calculateCmhcInsurance,
+  calculateCanadianMinDownPayment
 } from '../src/js/math.js';
 import { Inputs, Milestone } from '../src/js/types.js';
 import { calculateOpportunityCostData } from '../src/js/charts.js';
@@ -1468,6 +1469,42 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(result.summary.cmhcInsuranceAmount).toBe(19000);
         expect(result.summary.cmhcPstAmount).toBe(1520);
         expect(result.schedule[0]!.payment).toBeGreaterThan(2700);
+      });
+    });
+
+    describe('Canadian Statutory Minimum Down Payment Calculations', () => {
+      it('should calculate 5% minimum for properties under $500k', () => {
+        const res = calculateCanadianMinDownPayment(400000);
+        expect(res.minDownPayment).toBe(20000);
+        expect(res.minDownPaymentPct).toBe(0.05);
+        expect(res.isCmhcEligible).toBe(true);
+      });
+
+      it('should calculate tiered 5% on first $500k + 10% on remainder for $500k-$1.5M', () => {
+        const res = calculateCanadianMinDownPayment(800000);
+        // 5% of 500,000 ($25,000) + 10% of 300,000 ($30,000) = $55,000 (6.875%)
+        expect(res.minDownPayment).toBe(55000);
+        expect(res.minDownPaymentPct).toBeCloseTo(0.06875, 5);
+        expect(res.isCmhcEligible).toBe(true);
+      });
+
+      it('should require 20% down and mark CMHC ineligible for properties >= $1.5M', () => {
+        const res = calculateCanadianMinDownPayment(1500000);
+        expect(res.minDownPayment).toBe(300000);
+        expect(res.minDownPaymentPct).toBe(0.2);
+        expect(res.isCmhcEligible).toBe(false);
+
+        const res2 = calculateCanadianMinDownPayment(2000000);
+        expect(res2.minDownPayment).toBe(400000);
+        expect(res2.minDownPaymentPct).toBe(0.2);
+        expect(res2.isCmhcEligible).toBe(false);
+      });
+
+      it('should handle zero or negative home price gracefully', () => {
+        const res = calculateCanadianMinDownPayment(0);
+        expect(res.minDownPayment).toBe(0);
+        expect(res.minDownPaymentPct).toBe(0);
+        expect(res.isCmhcEligible).toBe(true);
       });
     });
   });

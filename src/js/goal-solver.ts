@@ -1,5 +1,10 @@
 import { AppState, Inputs, ScheduleResult, AppElements } from './types.js';
-import { generateMortgageSchedule, generateCCSchedule, generateLoanSchedule } from './math.js';
+import {
+  generateMortgageSchedule,
+  generateCCSchedule,
+  generateLoanSchedule,
+  calculateCmhcInsurance
+} from './math.js';
 import { formatCurrency } from './charts.js';
 import { t, currentLanguage } from './i18n.js';
 
@@ -18,7 +23,15 @@ const getStartingBalanceForMode = (inputs: Inputs, mode: 'mortgage' | 'cc' | 'lo
   if (mode === 'mortgage') {
     const safeHomePrice = Math.max(0, inputs.homePrice || 0);
     const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
-    return safeHomePrice - safeDownPayment;
+    const safeAmort = Math.min(100, Math.max(0.1, inputs.amortizationYears || 0));
+    const cmhcResult = calculateCmhcInsurance(
+      safeHomePrice,
+      safeDownPayment,
+      safeAmort,
+      inputs.cmhcProvince || inputs.province || 'ON',
+      !!inputs.includeCmhc
+    );
+    return cmhcResult.totalPrincipal;
   }
   if (mode === 'loan') {
     const fee = inputs.loanOriginationFeeEnabled ? Math.max(0, inputs.loanOriginationFee || 0) : 0;

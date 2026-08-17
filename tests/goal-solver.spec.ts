@@ -137,4 +137,30 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const solvedSchedule = generateMortgageSchedule(solvedInputs, false);
     expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(201);
   });
+
+  it('should accurately factor in capitalized CMHC insurance premium when includeCmhc is true', () => {
+    const cmhcInputs: Inputs = {
+      ...mortgageInputs,
+      homePrice: 500000,
+      downPayment: 25000, // 5% down -> 95% LTV -> 4.00% CMHC premium
+      includeCmhc: true,
+      cmhcProvince: 'ON'
+    };
+    const baseData = generateMortgageSchedule(cmhcInputs, true);
+    expect(baseData.summary.periodsToPayoff).toBe(360);
+
+    // Target 20 years (240 months)
+    const solvedMonthly = solveRequiredMonthly(240, cmhcInputs, 'mortgage', baseData);
+    expect(solvedMonthly).toBeGreaterThan(0);
+
+    const testInputs = { ...cmhcInputs, extraPayment: solvedMonthly };
+    const resultSchedule = generateMortgageSchedule(testInputs, false);
+    expect(resultSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(241);
+
+    const solvedLumpSum = solveRequiredLumpSum(240, cmhcInputs, 'mortgage', baseData);
+    expect(solvedLumpSum).toBeGreaterThan(0);
+    const testLumpInputs = { ...cmhcInputs, lumpSum: solvedLumpSum };
+    const resultLumpSchedule = generateMortgageSchedule(testLumpInputs, false);
+    expect(resultLumpSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(241);
+  });
 });

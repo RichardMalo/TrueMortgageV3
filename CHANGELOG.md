@@ -4,6 +4,23 @@ All notable changes to the Debt Elimination Engine project will be documented in
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-08-17
+
+### Added
+
+- **Canadian Statutory Minimum Down Payment Engine**: Added `calculateCanadianMinDownPayment()` helper to calculate and enforce tiered down payments (5% on first $500k, 10% on remainder up to $1.5M, 20% minimum / CMHC ineligibility for properties $\ge \$1.5\text{M}$).
+- **Shared ResizeObserver for Charts**: Added `observeChartResize()` to automatically resize Plotly charts smoothly upon container dimension and layout modifications.
+
+### Changed
+
+- **CMHC Goal Solver Accuracy**: Updated `getStartingBalanceForMode()` in `goal-solver.ts` to include capitalized CMHC insurance premiums in the starting principal for high-LTV insured mortgages.
+- **Heatmap Event Delegation**: Migrated individual per-cell event listeners in `heatmap.ts` to a single table-level delegated event handler, eliminating garbage collection overhead during interactive slider drags.
+- **WCAG AA Sub-Text Contrast**: Replaced low-opacity inline styles with `.roadmap-node-period` token classes in `milestones-ui.ts` for guaranteed $\ge 4.5:1$ contrast ratio.
+- **Goal Solver CSS Modernization**: Extracted all inline styles in the Goal Solver component (`index.html`) into modular CSS utility classes in `main.css`.
+- **Quality Gates & Coverage**: Raised Vitest coverage thresholds and expanded test suite to 184 unit tests across 15 test files.
+
+---
+
 ## [3.0.0] - 2026-06-23
 
 ### Added

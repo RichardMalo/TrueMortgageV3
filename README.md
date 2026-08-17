@@ -62,7 +62,7 @@ The entire application executes **locally in your browser**—all financial calc
 - **Animations:** [GSAP 3.12](https://greensock.com/gsap/) (Micro-animations with `@media (prefers-reduced-motion)` support)
 - **Charting:** [Plotly.js Basic Dist](https://plotly.com/javascript/) (Asynchronous vendor chunk)
 - **PDF Generation:** [html2pdf.js](https://github.com/eKoopmans/html2pdf.js) (Client-side HTML5 canvas PDF exporter)
-- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (148 logic, math, modal focus trap, and cryptography tests across 12 test suites)
+- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (184 logic, math, modal focus trap, and cryptography tests across 15 test suites)
 - **E2E Testing:** [Playwright 1.61](https://playwright.dev/) (27 multi-browser E2E tests across Chromium, Firefox, and WebKit)
 - **Linting & Formatting:** ESLint 9/10 (Flat Config) + Prettier 3.3
 
@@ -87,18 +87,18 @@ npm ci
 
 ### NPM Scripts
 
-| Script                  | Command                 | Description                                                 |
-| :---------------------- | :---------------------- | :---------------------------------------------------------- |
-| `npm run dev`           | `vite`                  | Start local Vite development server with HMR.               |
-| `npm run build`         | `tsc && vite build`     | Compile TypeScript and bundle production assets to `/dist`. |
-| `npm run preview`       | `vite preview`          | Preview production build locally.                           |
-| `npm run type-check`    | `tsc --noEmit`          | Execute strict TypeScript compiler type check.              |
-| `npm run lint`          | `eslint .`              | Run ESLint checks across codebase.                          |
-| `npm run format`        | `prettier --write .`    | Format all files using Prettier.                            |
-| `npm run test`          | `vitest run`            | Run Vitest unit & integration test suite (148 tests across 12 suites). |
-| `npm run test:coverage` | `vitest run --coverage` | Run Vitest test suite with V8 coverage reports.             |
-| `npm run test:e2e`      | `playwright test`       | Run Playwright E2E tests across Chromium, Firefox, WebKit.  |
-| `npm run test:e2e:ui`   | `playwright test --ui`  | Run Playwright E2E tests in interactive UI mode.            |
+| Script                  | Command                 | Description                                                            |
+| :---------------------- | :---------------------- | :--------------------------------------------------------------------- |
+| `npm run dev`           | `vite`                  | Start local Vite development server with HMR.                          |
+| `npm run build`         | `tsc && vite build`     | Compile TypeScript and bundle production assets to `/dist`.            |
+| `npm run preview`       | `vite preview`          | Preview production build locally.                                      |
+| `npm run type-check`    | `tsc --noEmit`          | Execute strict TypeScript compiler type check.                         |
+| `npm run lint`          | `eslint .`              | Run ESLint checks across codebase.                                     |
+| `npm run format`        | `prettier --write .`    | Format all files using Prettier.                                       |
+| `npm run test`          | `vitest run`            | Run Vitest unit & integration test suite (184 tests across 15 suites). |
+| `npm run test:coverage` | `vitest run --coverage` | Run Vitest test suite with V8 coverage reports.                        |
+| `npm run test:e2e`      | `playwright test`       | Run Playwright E2E tests across Chromium, Firefox, WebKit.             |
+| `npm run test:e2e:ui`   | `playwright test --ui`  | Run Playwright E2E tests in interactive UI mode.                       |
 
 ---
 

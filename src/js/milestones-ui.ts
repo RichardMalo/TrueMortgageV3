@@ -35,7 +35,7 @@ export const renderMilestonesUI = (els: AppElements, milestones: Milestone[]) =>
       <div class="roadmap-node squishy-interactive" id="node-${escId}">
         <div class="roadmap-node-header">
           <span class="${badgeClass}">${badgeLabel}</span>
-          <span style="font-size: 0.72rem; opacity: 0.6; font-weight: 700;">${escapeHtml(m.period)}</span>
+          <span class="roadmap-node-period">${escapeHtml(m.period)}</span>
         </div>
         <h4 class="roadmap-node-title">${title}</h4>
         <div class="roadmap-node-date">${escapeHtml(m.date)}</div>

@@ -12,6 +12,41 @@ const loadPlotly = async () => {
   return plotlyInstance;
 };
 
+let sharedResizeObserver: ResizeObserver | null = null;
+const observedResizeElements = new WeakSet<HTMLElement>();
+
+export const observeChartResize = (chartDiv: HTMLElement) => {
+  if (typeof ResizeObserver === 'undefined' || !chartDiv) return;
+  if (observedResizeElements.has(chartDiv)) return;
+
+  if (!sharedResizeObserver) {
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const pendingElements = new Set<HTMLElement>();
+    sharedResizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (
+          entry.target instanceof HTMLElement &&
+          entry.target.classList.contains('plotly-container')
+        ) {
+          pendingElements.add(entry.target);
+        }
+      }
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        pendingElements.forEach((el) => {
+          if (el.offsetParent !== null && el.offsetWidth > 0 && el.offsetHeight > 0) {
+            resizeChart(el);
+          }
+        });
+        pendingElements.clear();
+      }, 100);
+    });
+  }
+
+  sharedResizeObserver.observe(chartDiv);
+  observedResizeElements.add(chartDiv);
+};
+
 export const resizeChart = async (chartDiv: HTMLElement) => {
   try {
     const Plotly = await loadPlotly();
@@ -218,6 +253,7 @@ const flushRenderQueue = async () => {
       try {
         Plotly.react(el, data, layout, config);
         visibleChartsMap[elementId] = true;
+        observeChartResize(el);
         const latest = latestChartConfigs.get(elementId);
         if (latest) {
           renderedVersions.set(elementId, latest._version || 0);

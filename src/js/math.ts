@@ -91,6 +91,43 @@ export const calculateCmhcInsurance = (
 };
 
 /**
+ * Calculates the statutory minimum down payment required in Canada
+ * based on tiered property purchase price thresholds.
+ * - Up to $500,000: 5% minimum
+ * - $500,000 to $1,500,000: 5% on first $500k ($25k) + 10% on remainder
+ * - $1,500,000+: 20% minimum (CMHC mortgage default insurance is legally prohibited)
+ *
+ * @param homePrice - Property purchase price.
+ * @returns Minimum dollar amount, effective percentage, and CMHC eligibility status.
+ */
+export const calculateCanadianMinDownPayment = (
+  homePrice: number
+): {
+  minDownPayment: number;
+  minDownPaymentPct: number;
+  isCmhcEligible: boolean;
+} => {
+  const safePrice = Math.max(0, homePrice || 0);
+  if (safePrice <= 0) {
+    return { minDownPayment: 0, minDownPaymentPct: 0, isCmhcEligible: true };
+  }
+  if (safePrice <= 500000) {
+    const minDown = Math.round(safePrice * 0.05 * 100) / 100;
+    return { minDownPayment: minDown, minDownPaymentPct: 0.05, isCmhcEligible: true };
+  }
+  if (safePrice < 1500000) {
+    const minDown = Math.round((25000 + (safePrice - 500000) * 0.1) * 100) / 100;
+    return {
+      minDownPayment: minDown,
+      minDownPaymentPct: minDown / safePrice,
+      isCmhcEligible: true
+    };
+  }
+  const minDown = Math.round(safePrice * 0.2 * 100) / 100;
+  return { minDownPayment: minDown, minDownPaymentPct: 0.2, isCmhcEligible: false };
+};
+
+/**
  * Calculates the periodic installment payment (principal + interest)
  * using the standard amortization formula.
  *

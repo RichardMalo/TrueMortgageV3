@@ -234,9 +234,8 @@ export const renderHeatmap = (
 
   // Table body
   const tbody = document.createElement('tbody');
-  const cellTds: HTMLTableCellElement[] = [];
 
-  grid.forEach((row) => {
+  grid.forEach((row, r) => {
     const tr = document.createElement('tr');
 
     // Row Header (Monthly Extra)
@@ -249,16 +248,17 @@ export const renderHeatmap = (
         : `+${formatCurrency(firstCell.monthly)}${isFr ? '/mois' : '/mo'}`;
     tr.appendChild(rowHeaderTd);
 
-    row.forEach((cell) => {
+    row.forEach((cell, c) => {
       const td = document.createElement('td');
       td.className = 'heatmap-cell';
       td.setAttribute('tabindex', '0');
       td.setAttribute('role', 'button');
+      td.dataset.r = String(r);
+      td.dataset.c = String(c);
       const ariaLabelText = isFr
         ? `Extra mensuel ${cell.monthly} $, Lump sum ${cell.lumpSum} $, Économie ${cell.yearsSaved.toFixed(1)} ans`
         : `Monthly extra $${cell.monthly}, Lump sum $${cell.lumpSum}, Saves ${cell.yearsSaved.toFixed(1)} years`;
       td.setAttribute('aria-label', ariaLabelText);
-      cellTds.push(td);
 
       const ratio = maxSaved > 0 ? cell.yearsSaved / maxSaved : 0;
       const bgOpacity = 0.05 + ratio * 0.75;
@@ -298,45 +298,76 @@ export const renderHeatmap = (
         td.classList.add('selected');
       }
 
-      // Interactive hover, focus, click, and keyboard behavior
-      td.addEventListener('mouseenter', () => {
-        showDetails(cell, false);
-      });
-
-      td.addEventListener('mouseleave', () => {
-        showDetails(selectedCell, true);
-      });
-
-      td.addEventListener('focus', () => {
-        showDetails(cell, false);
-      });
-
-      td.addEventListener('blur', () => {
-        showDetails(selectedCell, true);
-      });
-
-      td.addEventListener('click', () => {
-        cellTds.forEach((t) => t.classList.remove('selected'));
-        td.classList.add('selected');
-        selectedCell = cell;
-        showDetails(selectedCell, true);
-      });
-
-      td.addEventListener('keydown', (e: KeyboardEvent) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          cellTds.forEach((t) => t.classList.remove('selected'));
-          td.classList.add('selected');
-          selectedCell = cell;
-          showDetails(selectedCell, true);
-        }
-      });
-
       tr.appendChild(td);
     });
 
     tbody.appendChild(tr);
   });
   table.appendChild(tbody);
+
+  // Delegated event handling for interactive hover, focus, click, and keyboard activation
+  table.addEventListener('mouseover', (e: Event) => {
+    const target = (e.target as HTMLElement).closest<HTMLTableCellElement>('.heatmap-cell');
+    if (!target) return;
+    const r = parseInt(target.dataset.r || '-1', 10);
+    const c = parseInt(target.dataset.c || '-1', 10);
+    const cell = grid[r]?.[c];
+    if (cell) showDetails(cell, false);
+  });
+
+  table.addEventListener('mouseout', (e: MouseEvent) => {
+    const target = (e.target as HTMLElement).closest<HTMLTableCellElement>('.heatmap-cell');
+    if (!target) return;
+    const related = e.relatedTarget as HTMLElement | null;
+    if (related && related.closest('.heatmap-cell') === target) return;
+    showDetails(selectedCell, true);
+  });
+
+  table.addEventListener('focusin', (e: Event) => {
+    const target = (e.target as HTMLElement).closest<HTMLTableCellElement>('.heatmap-cell');
+    if (!target) return;
+    const r = parseInt(target.dataset.r || '-1', 10);
+    const c = parseInt(target.dataset.c || '-1', 10);
+    const cell = grid[r]?.[c];
+    if (cell) showDetails(cell, false);
+  });
+
+  table.addEventListener('focusout', () => {
+    showDetails(selectedCell, true);
+  });
+
+  table.addEventListener('click', (e: Event) => {
+    const target = (e.target as HTMLElement).closest<HTMLTableCellElement>('.heatmap-cell');
+    if (!target) return;
+    const r = parseInt(target.dataset.r || '-1', 10);
+    const c = parseInt(target.dataset.c || '-1', 10);
+    const cell = grid[r]?.[c];
+    if (!cell) return;
+    table
+      .querySelectorAll('.heatmap-cell.selected')
+      .forEach((el) => el.classList.remove('selected'));
+    target.classList.add('selected');
+    selectedCell = cell;
+    showDetails(selectedCell, true);
+  });
+
+  table.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      const target = (e.target as HTMLElement).closest<HTMLTableCellElement>('.heatmap-cell');
+      if (!target) return;
+      e.preventDefault();
+      const r = parseInt(target.dataset.r || '-1', 10);
+      const c = parseInt(target.dataset.c || '-1', 10);
+      const cell = grid[r]?.[c];
+      if (!cell) return;
+      table
+        .querySelectorAll('.heatmap-cell.selected')
+        .forEach((el) => el.classList.remove('selected'));
+      target.classList.add('selected');
+      selectedCell = cell;
+      showDetails(selectedCell, true);
+    }
+  });
+
   container.appendChild(table);
 };
