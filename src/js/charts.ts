@@ -847,7 +847,7 @@ export const calculateOpportunityCostData = (
 
   const ir = inputs.investRate / 100;
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
   const hp =
     state.currentMode === 'mortgage'
       ? safeHomePrice
@@ -860,6 +860,10 @@ export const calculateOpportunityCostData = (
       : state.currentMode === 'loan'
         ? Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment)
         : Math.max(0, inputs.ccBalance || 0);
+
+  if (initialBalance <= 0) {
+    return { p1X: [], p1Y: [], p2X: [], p2Y: [], compX: [], compY: [] };
+  }
 
   const lastBaseYear = baseData.schedule[baseData.schedule.length - 1]?.year ?? 0;
   const maxYear = Math.max(

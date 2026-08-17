@@ -503,7 +503,7 @@ export const calculateMilestones = (
   const baseSched = baseData.schedule;
   const actSched = actData.schedule;
   const safeHomePrice = Math.max(0, inputs.homePrice || 0);
-  const safeDownPayment = Math.min(safeHomePrice * 0.999, Math.max(0, inputs.downPayment || 0));
+  const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
   const originationFee = inputs.loanOriginationFeeEnabled
     ? Math.max(0, inputs.loanOriginationFee || 0)
     : 0;
@@ -819,7 +819,7 @@ export const generateLoanSchedule = (
 
   while (balance > 0.001 && period <= maxPeriods) {
     const interest = Math.round(balance * periodicRate * 100) / 100;
-    let scheduledPrincipal = periodicPayment - interest;
+    let scheduledPrincipal = Math.round((periodicPayment - interest) * 100) / 100;
     if (period === totalPeriods || balance <= periodicPayment) {
       scheduledPrincipal = balance;
     }
@@ -842,14 +842,14 @@ export const generateLoanSchedule = (
       extra = Math.max(0, balance - scheduledPrincipal);
     }
 
-    const principalPaid = Math.min(balance, scheduledPrincipal + extra);
-    const actualExtra = Math.max(0, principalPaid - scheduledPrincipal);
-    const actualPayment = scheduledPrincipal + interest + actualExtra;
+    const principalPaid = Math.round(Math.min(balance, scheduledPrincipal + extra) * 100) / 100;
+    const actualExtra = Math.round(Math.max(0, principalPaid - scheduledPrincipal) * 100) / 100;
+    const actualPayment = Math.round((scheduledPrincipal + interest + actualExtra) * 100) / 100;
 
-    balance -= principalPaid;
-    totalInterest += interest;
-    totalPrincipal += principalPaid;
-    totalExtraPaid += actualExtra;
+    balance = Math.round((balance - principalPaid) * 100) / 100;
+    totalInterest = Math.round((totalInterest + interest) * 100) / 100;
+    totalPrincipal = Math.round((totalPrincipal + principalPaid) * 100) / 100;
+    totalExtraPaid = Math.round((totalExtraPaid + actualExtra) * 100) / 100;
 
     if (!summaryOnly) {
       const dateInfo = getRowDateLabel(

@@ -851,7 +851,7 @@
 
             <div class="bento-card form-card mortgage-only advanced-only mt-24">
               <div class="section-header-with-toggle">
-                <h3 class="section-title m-0">
+                <h2 class="section-title m-0">
                   Taxes & Insurance
                   <span class="help-tip"
                     >?<span class="tooltip-text"
@@ -861,7 +861,7 @@
                       estimates.</span
                     ></span
                   >
-                </h3>
+                </h2>
                 <div class="toggle-wrapper" title="Include Escrow (PITI)">
                   <label class="switch small-switch">
                     <input
@@ -932,7 +932,7 @@
 
             <div class="bento-card form-card mortgage-only advanced-only mt-24">
               <div class="section-header-with-toggle">
-                <h3 class="section-title m-0">
+                <h2 class="section-title m-0">
                   Refinancing Rate Shock
                   <span class="help-tip"
                     >?<span class="tooltip-text"
@@ -942,7 +942,7 @@
                       unchanged at renewal; actual bank refinance terms may vary.</span
                     ></span
                   >
-                </h3>
+                </h2>
                 <div class="toggle-wrapper" title="Simulate refinancing shocks">
                   <label class="switch small-switch">
                     <input
@@ -967,7 +967,7 @@
 
             <div class="bento-card form-card advanced-only mt-24" id="goal-solver-card">
               <div class="section-header-with-toggle">
-                <h3 class="section-title m-0">
+                <h2 class="section-title m-0">
                   Target Payoff Goal Solver
                   <span class="help-tip"
                     >?<span class="tooltip-text"
@@ -976,7 +976,7 @@
                       required to reach your goal.</span
                     ></span
                   >
-                </h3>
+                </h2>
                 <div class="toggle-wrapper" title="Enable Goal Solver">
                   <label class="switch small-switch">
                     <input
@@ -1577,7 +1577,7 @@
     <div id="shareModal" class="modal-overlay">
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
         <div class="modal-header">
-          <h3 id="shareModalTitle">Share Your Strategy</h3>
+          <h2 id="shareModalTitle" class="m-0 text-md">Share Your Strategy</h2>
           <button id="closeModalBtn" class="close-btn" aria-label="Close Share Modal">
             &times;
           </button>
@@ -1625,9 +1625,9 @@
         aria-labelledby="syncModalTitle"
       >
         <div class="modal-header">
-          <h3 id="syncModalTitle" class="m-0 flex items-center text-md">
+          <h2 id="syncModalTitle" class="m-0 flex items-center text-md">
             <span class="mr-8">🔑</span> Secure Sync & Portability
-          </h3>
+          </h2>
           <button id="closeSyncModalBtn" class="close-btn" aria-label="Close Sync Modal">
             &times;
           </button>
@@ -1753,9 +1753,9 @@
         aria-labelledby="limitsModalTitle"
       >
         <div class="modal-header">
-          <h3 id="limitsModalTitle" class="m-0 flex items-center text-md">
+          <h2 id="limitsModalTitle" class="m-0 flex items-center text-md">
             <span class="mr-8">⚙️</span> Constraints & Limits
-          </h3>
+          </h2>
           <button id="closeLimitsModalBtn" class="close-btn" aria-label="Close Constraints Modal">
             &times;
           </button>
@@ -1819,9 +1819,9 @@
         aria-labelledby="layoutModalTitle"
       >
         <div class="modal-header">
-          <h3 id="layoutModalTitle" class="m-0 flex items-center text-md">
+          <h2 id="layoutModalTitle" class="m-0 flex items-center text-md">
             <span class="mr-8">📊</span> Dashboard Widgets
-          </h3>
+          </h2>
           <button id="closeLayoutModalBtn" class="close-btn" aria-label="Close Layout Modal">
             &times;
           </button>
@@ -1958,7 +1958,9 @@
       aria-labelledby="sandboxHeaderTitle"
     >
       <div class="sidebar-header">
-        <h3 id="sandboxHeaderTitle"><span>📂</span> Scenario Sandbox</h3>
+        <h2 id="sandboxHeaderTitle" class="m-0 flex items-center text-md">
+          <span>📂</span> Scenario Sandbox
+        </h2>
         <button
           type="button"
           class="sidebar-close-btn"

@@ -1319,6 +1319,77 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         const finalPortfolioVal = oppCostData.p1Y[oppCostData.p1Y.length - 1]!;
         expect(finalPortfolioVal).toBeGreaterThan(0);
       });
+
+      it('should handle 100% down payment cleanly with zero balance in opportunity cost and milestones', () => {
+        const inputs: Inputs = {
+          homePrice: 500000,
+          downPayment: 500000, // 100% down payment
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 5.0,
+          amortizationYears: 25,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: true,
+          investRate: 7.0,
+          extraPayment: 0,
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+
+        const state = { currentMode: 'mortgage' as const, comparisonProfileId: null };
+        const baseData = generateMortgageSchedule(inputs, true);
+        const actData = generateMortgageSchedule(inputs, false);
+        const oppCostData = calculateOpportunityCostData(state, baseData, actData, null, inputs);
+        expect(oppCostData.p1X.length).toBe(0);
+
+        const milestones = calculateMilestones(baseData, actData, inputs, 'mortgage');
+        expect(milestones.length).toBe(0);
+      });
+
+      it('should strictly round all scheduled principal, payment, and balance entries to 2 decimal places in generateLoanSchedule', () => {
+        const inputs: Inputs = {
+          loanAmount: 35000,
+          homePrice: 0,
+          downPayment: 0,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 6.99,
+          amortizationYears: 5,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 0,
+          extraPayment: 50,
+          startDate: '2026-07-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+
+        const result = generateLoanSchedule(inputs, false);
+        expect(result.schedule.length).toBeGreaterThan(0);
+        result.schedule.forEach((row) => {
+          // Check that values have at most 2 decimal places
+          expect(Number((row.principal * 100).toFixed(6)) % 1).toBeCloseTo(0, 5);
+          expect(Number((row.payment * 100).toFixed(6)) % 1).toBeCloseTo(0, 5);
+          expect(Number((row.interest * 100).toFixed(6)) % 1).toBeCloseTo(0, 5);
+          expect(Number((row.balance * 100).toFixed(6)) % 1).toBeCloseTo(0, 5);
+          expect(Number((row.extra * 100).toFixed(6)) % 1).toBeCloseTo(0, 5);
+        });
+      });
     });
   });
 });

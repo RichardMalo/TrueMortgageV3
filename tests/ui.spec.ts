@@ -1,9 +1,16 @@
 import { describe, it, expect } from 'vitest';
+import { AppState } from '../src/js/types.js';
 import {
   escapeHtml,
   setupTableExpandButton,
   updateLabelCurrencySymbols,
-  setupTouchAndKeyboardTooltips
+  setupTouchAndKeyboardTooltips,
+  updateKineticText,
+  syncCheckboxARIALabels,
+  adjustTooltip,
+  renderScheduledLumpSumRows,
+  applyCardCustomizationsToDOM,
+  isPrefersReducedMotion
 } from '../src/js/ui.js';
 
 describe('UI Helper Functions (ui.ts)', () => {
@@ -136,6 +143,113 @@ describe('UI Helper Functions (ui.ts)', () => {
       expect(tooltips[1]!.id).toMatch(/^help-tooltip-text-\d+$/);
 
       document.body.removeChild(container);
+    });
+  });
+
+  describe('isPrefersReducedMotion & updateKineticText', () => {
+    it('should update kinetic text attributes and content properly', () => {
+      const el = document.createElement('div');
+      el.id = 'testKinetic';
+      document.body.appendChild(el);
+
+      updateKineticText(el, 5000, true, false);
+      expect(el.getAttribute('data-val')).toBe('5000');
+
+      updateKineticText(el, '30 Years', false, false);
+      expect(el.textContent).toBe('30 Years');
+
+      expect(typeof isPrefersReducedMotion()).toBe('boolean');
+
+      document.body.removeChild(el);
+    });
+  });
+
+  describe('syncCheckboxARIALabels & adjustTooltip', () => {
+    it('should set switch role and aria-checked on checkboxes', () => {
+      const cb1 = document.createElement('input');
+      cb1.type = 'checkbox';
+      cb1.checked = true;
+
+      const cb2 = document.createElement('input');
+      cb2.type = 'checkbox';
+      cb2.checked = false;
+
+      document.body.appendChild(cb1);
+      document.body.appendChild(cb2);
+
+      syncCheckboxARIALabels();
+
+      expect(cb1.getAttribute('role')).toBe('switch');
+      expect(cb1.getAttribute('aria-checked')).toBe('true');
+      expect(cb2.getAttribute('role')).toBe('switch');
+      expect(cb2.getAttribute('aria-checked')).toBe('false');
+
+      // Test adjustTooltip
+      const tipWrapper = document.createElement('div');
+      tipWrapper.className = 'help-tip';
+      const tooltipText = document.createElement('span');
+      tooltipText.className = 'tooltip-text';
+      tipWrapper.appendChild(tooltipText);
+      document.body.appendChild(tipWrapper);
+
+      adjustTooltip(tipWrapper, false);
+      expect(tooltipText.classList.contains('tooltip-below')).toBe(false);
+
+      document.body.removeChild(cb1);
+      document.body.removeChild(cb2);
+      document.body.removeChild(tipWrapper);
+    });
+  });
+
+  describe('renderScheduledLumpSumRows & applyCardCustomizationsToDOM', () => {
+    it('should render scheduled lump sum rows into container', () => {
+      const container = document.createElement('div');
+      container.id = 'scheduledContainer';
+      document.body.appendChild(container);
+
+      const lumpSums = [
+        { id: 'ls-1', amount: 5000, paymentNumber: 12 },
+        { id: 'ls-2', amount: 10000, paymentNumber: 24 }
+      ];
+
+      renderScheduledLumpSumRows(
+        container,
+        lumpSums,
+        '2026-01-01',
+        'monthly',
+        () => {},
+        () => {}
+      );
+
+      const rows = container.querySelectorAll('.lump-sum-row');
+      expect(rows.length).toBe(2);
+
+      // Test applyCardCustomizationsToDOM
+      const mockState = {
+        hiddenCards: ['chart3'],
+        fullWidthCards: ['chart']
+      };
+
+      const chart3Card = document.createElement('div');
+      const chart3Div = document.createElement('div');
+      chart3Div.id = 'chart3';
+      chart3Card.appendChild(chart3Div);
+
+      const chartCard = document.createElement('div');
+      const chartDiv = document.createElement('div');
+      chartDiv.id = 'chart';
+      chartCard.appendChild(chartDiv);
+
+      document.body.appendChild(chart3Card);
+      document.body.appendChild(chartCard);
+
+      applyCardCustomizationsToDOM(mockState as unknown as AppState);
+      expect(chart3Card.classList.contains('custom-hidden')).toBe(true);
+      expect(chartCard.classList.contains('full-width')).toBe(true);
+
+      document.body.removeChild(container);
+      document.body.removeChild(chart3Card);
+      document.body.removeChild(chartCard);
     });
   });
 });
