@@ -374,7 +374,10 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     ccMinFlat: 'ccMinFlat',
     ccCompounding: 'ccCompounding',
     includeCmhc: 'includeCmhc',
-    cmhcProvince: 'cmhcProvince'
+    cmhcProvince: 'cmhcProvince',
+    includeLtt: 'includeLtt',
+    lttProvince: 'lttProvince',
+    lttFirstTimeBuyer: 'lttFirstTimeBuyer'
   };
 
   Object.keys(defaultInputs).forEach((key) => {

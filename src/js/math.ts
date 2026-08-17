@@ -453,6 +453,17 @@ export const generateMortgageSchedule = (
   }
 
   const paidOff = balance <= 0.009;
+  const isToronto = inputs.lttProvince === 'ON-TORONTO';
+  const lttProv = isToronto ? 'ON' : inputs.lttProvince || 'ON';
+  const lttResult = inputs.includeLtt
+    ? calculateCanadianLandTransferTax(
+        safeHomePrice,
+        lttProv,
+        isToronto,
+        !!inputs.lttFirstTimeBuyer
+      )
+    : undefined;
+
   return {
     schedule,
     summary: {
@@ -465,6 +476,7 @@ export const generateMortgageSchedule = (
       cmhcPstAmount: cmhcRes.pstAmount,
       cmhcPstRate: cmhcRes.pstRate,
       basePrincipalWithoutCmhc: basePrincipal,
+      lttResult,
       paidOff: paidOff
     }
   };

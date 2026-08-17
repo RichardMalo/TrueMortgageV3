@@ -296,7 +296,10 @@ export const getCalculationsInputs = (
     lumpSum: parseNum(inputs.lumpSum?.value),
     lumpSums,
     includeCmhc: cmhcOn,
-    cmhcProvince: inputs.cmhcProvince?.value || inputs.province?.value || 'ON'
+    cmhcProvince: inputs.cmhcProvince?.value || inputs.province?.value || 'ON',
+    includeLtt: isMortgage && !!(inputs.includeLtt as HTMLInputElement | null)?.checked,
+    lttProvince: inputs.lttProvince?.value || 'ON',
+    lttFirstTimeBuyer: !!(inputs.lttFirstTimeBuyer as HTMLInputElement | null)?.checked
   };
 };
 
@@ -314,6 +317,7 @@ export const profileToInputs = (
   const pitiOn = isMortgage && profileInputs.pitiToggle === true;
   const oppCostOn = profileInputs.oppCostToggle === true;
   const cmhcOn = isMortgage && profileInputs.includeCmhc === true;
+  const lttOn = isMortgage && profileInputs.includeLtt === true;
 
   return {
     homePrice: parseNum(profileInputs.homePrice),
@@ -368,6 +372,9 @@ export const profileToInputs = (
       ? (profileInputs.lumpSums as LumpSumItem[])
       : [],
     includeCmhc: cmhcOn,
-    cmhcProvince: String(profileInputs.cmhcProvince || profileInputs.province || 'ON')
+    cmhcProvince: String(profileInputs.cmhcProvince || profileInputs.province || 'ON'),
+    includeLtt: lttOn,
+    lttProvince: String(profileInputs.lttProvince || 'ON'),
+    lttFirstTimeBuyer: profileInputs.lttFirstTimeBuyer === true
   };
 };

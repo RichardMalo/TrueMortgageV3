@@ -418,7 +418,21 @@ export const dictionary: Record<string, string> = {
   'Calculate with CMHC Insurance?': 'Calculer avec assurance SCHL ?',
   'CMHC Premium': 'Prime SCHL',
   'Provincial Tax (PST) on Insurance': 'Taxe provinciale (TVP) sur assurance',
-  'PST on CMHC (Paid at Closing)': 'TVP sur SCHL (Payable à la clôture)'
+  'PST on CMHC (Paid at Closing)': 'TVP sur SCHL (Payable à la clôture)',
+
+  // Land Transfer Tax (LTT)
+  'Calculate Land Transfer Tax (LTT)?':
+    'Calculer la taxe de bienvenue / droits de mutation (LTT) ?',
+  'First-Time Buyer Rebate': 'Remboursement premier acheteur',
+  'Region / Municipality': 'Région / Municipalité',
+  'Ontario (General PLTT)': 'Ontario (PLTT général)',
+  'Ontario - City of Toronto (PLTT + MLTT)': 'Ontario - Ville de Toronto (PLTT + MLTT)',
+  'British Columbia (PTT)': 'Colombie-Britannique (PTT)',
+  'Estimated Closing Land Transfer Tax:': 'Droits de mutation estimés à la clôture :',
+  'Net Land Transfer Tax (Closing):': 'Taxe de mutation nette (à la clôture) :',
+  Rebate: 'Remboursement',
+  Provincial: 'Provincial',
+  Municipal: 'Municipal'
 };
 
 export const t = (key: string): string => {

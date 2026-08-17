@@ -18,7 +18,8 @@ import {
   renderCharts,
   clearVisibleChartsCache,
   resizeChart,
-  cancelPendingChartRenders
+  cancelPendingChartRenders,
+  formatCurrency
 } from './charts.js';
 import {
   saveSettingsToStorage,
@@ -115,7 +116,10 @@ const els = {
     goalSolverToggle: document.getElementById('goalSolverToggle') as HTMLInputElement | null,
     lumpSum: document.getElementById('lumpSumPayment') as HTMLInputElement | null,
     includeCmhc: document.getElementById('includeCmhc') as HTMLInputElement | null,
-    cmhcProvince: document.getElementById('cmhcProvince') as HTMLSelectElement | null
+    cmhcProvince: document.getElementById('cmhcProvince') as HTMLSelectElement | null,
+    includeLtt: document.getElementById('includeLtt') as HTMLInputElement | null,
+    lttProvince: document.getElementById('lttProvince') as HTMLSelectElement | null,
+    lttFirstTimeBuyer: document.getElementById('lttFirstTimeBuyer') as HTMLInputElement | null
   },
   results: {
     mortgageDisplay: document.getElementById('mortgageAmountDisplay'),
@@ -147,7 +151,10 @@ const els = {
     goalSolverSection: document.getElementById('goalSolverSection'),
     milestoneCard: document.getElementById('milestoneRoadmapCard'),
     milestoneTimeline: document.getElementById('milestoneTimelineContainer'),
-    lumpSumsContainer: document.getElementById('scheduledLumpSumsContainer')
+    lumpSumsContainer: document.getElementById('scheduledLumpSumsContainer'),
+    lttSection: document.getElementById('lttSection'),
+    lttConfigWrapper: document.getElementById('lttConfigWrapper'),
+    lttEstimateBadge: document.getElementById('lttEstimateBadge')
   },
   modeSwitch: document.getElementById('mode-switch') as HTMLInputElement | null,
   masterBtns: document.querySelectorAll('.mode-btn')
@@ -269,6 +276,36 @@ const calculate = (e?: Event) => {
       'hidden',
       !(isMortgage && inputs.includeCmhc && state.complexity === 'advanced')
     );
+  }
+
+  // Land Transfer Tax (LTT) update (Advanced Mortgage mode only)
+  const lttConfigWrapper = document.getElementById('lttConfigWrapper');
+  const lttEstimateBadge = document.getElementById('lttEstimateBadge');
+  const isLttActive = isMortgage && inputs.includeLtt && state.complexity === 'advanced';
+  if (lttConfigWrapper) {
+    lttConfigWrapper.classList.toggle('hidden', !isLttActive);
+  }
+  if (lttEstimateBadge) {
+    if (isLttActive && actData.summary.lttResult) {
+      const ltt = actData.summary.lttResult;
+      const netLttStr = formatCurrency(ltt.totalLtt);
+      const provStr = formatCurrency(ltt.provincialLtt);
+      const muniStr = formatCurrency(ltt.municipalLtt);
+      const rebateStr = formatCurrency(ltt.firstTimeRebate);
+
+      let details = `${t('Provincial')}: ${provStr}`;
+      if (ltt.municipalLtt > 0) {
+        details += ` | ${t('Municipal')}: ${muniStr}`;
+      }
+      if (ltt.firstTimeRebate > 0) {
+        details += ` | ${t('Rebate')}: -${rebateStr}`;
+      }
+
+      lttEstimateBadge.innerHTML = `<strong>${t('Estimated Closing Land Transfer Tax:')}</strong> <span style="color: var(--accent-color); font-weight: 700;">${netLttStr}</span> (${details})`;
+      lttEstimateBadge.style.display = 'block';
+    } else {
+      lttEstimateBadge.style.display = 'none';
+    }
   }
 
   // Calculate savings specifically from the one-time lump sum payment
@@ -1127,6 +1164,19 @@ const bootApp = () => {
   });
 
   els.inputs.cmhcProvince?.addEventListener('change', () => {
+    calculate();
+  });
+
+  els.inputs.includeLtt?.addEventListener('change', () => {
+    syncCheckboxARIALabels();
+    calculate();
+  });
+
+  els.inputs.lttProvince?.addEventListener('change', () => {
+    calculate();
+  });
+
+  els.inputs.lttFirstTimeBuyer?.addEventListener('change', () => {
     calculate();
   });
 

@@ -71,5 +71,8 @@ export const DEFAULT_INPUTS: Inputs = Object.freeze({
   lumpSum: 0,
   lumpSums: [],
   includeCmhc: false,
-  cmhcProvince: 'ON'
+  cmhcProvince: 'ON',
+  includeLtt: false,
+  lttProvince: 'ON',
+  lttFirstTimeBuyer: false
 });

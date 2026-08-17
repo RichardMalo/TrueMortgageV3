@@ -395,5 +395,24 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(resultInputs.loanOriginationFee).toBe(500);
       expect(resultInputs.annualRate).toBe(6.5);
     });
+
+    it('should correctly extract LTT fields when hydrating a mortgage profile', () => {
+      const rawProfileInputs = {
+        homePrice: '800000',
+        downPayment: '160000',
+        rate: '4.5',
+        amortization: '25',
+        term: '5',
+        frequency: 'monthly',
+        includeLtt: true,
+        lttProvince: 'ON-TORONTO',
+        lttFirstTimeBuyer: true
+      };
+
+      const resultInputs = profileToInputs(rawProfileInputs, {}, 'mortgage');
+      expect(resultInputs.includeLtt).toBe(true);
+      expect(resultInputs.lttProvince).toBe('ON-TORONTO');
+      expect(resultInputs.lttFirstTimeBuyer).toBe(true);
+    });
   });
 });

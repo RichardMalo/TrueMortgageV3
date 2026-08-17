@@ -47,6 +47,9 @@ export interface Inputs {
   lang?: 'en' | 'fr';
   includeCmhc?: boolean;
   cmhcProvince?: string;
+  includeLtt?: boolean;
+  lttProvince?: string;
+  lttFirstTimeBuyer?: boolean;
 }
 
 export interface ScheduleRow {
@@ -81,6 +84,13 @@ export interface ScheduleSummary {
   cmhcPstAmount?: number;
   cmhcPstRate?: number;
   basePrincipalWithoutCmhc?: number;
+  lttResult?: {
+    provincialLtt: number;
+    municipalLtt: number;
+    firstTimeRebate: number;
+    totalLtt: number;
+    effectiveRatePct: number;
+  };
   /** Whether the debt was fully paid off within max periods limit */
   paidOff?: boolean;
   /** Whether the schedule reached the max period limit without full payoff */
@@ -134,6 +144,9 @@ export interface ProfileInputs {
   lumpSums?: LumpSumItem[];
   includeCmhc?: boolean;
   cmhcProvince?: string;
+  includeLtt?: boolean;
+  lttProvince?: string;
+  lttFirstTimeBuyer?: boolean;
 }
 
 export interface Profile {
@@ -214,6 +227,9 @@ export interface AppElements {
     lumpSum: HTMLInputElement | null;
     includeCmhc?: HTMLInputElement | null;
     cmhcProvince?: HTMLSelectElement | null;
+    includeLtt?: HTMLInputElement | null;
+    lttProvince?: HTMLSelectElement | null;
+    lttFirstTimeBuyer?: HTMLInputElement | null;
   };
   results: {
     mortgageDisplay: HTMLElement | null;
@@ -244,6 +260,9 @@ export interface AppElements {
     milestoneCard: HTMLElement | null;
     milestoneTimeline: HTMLElement | null;
     lumpSumsContainer?: HTMLElement | null;
+    lttSection?: HTMLElement | null;
+    lttConfigWrapper?: HTMLElement | null;
+    lttEstimateBadge?: HTMLElement | null;
   };
   modeSwitch: HTMLInputElement | null;
   masterBtns: NodeListOf<Element>;

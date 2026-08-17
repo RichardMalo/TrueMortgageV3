@@ -242,6 +242,15 @@ export const generateReportHtml = (
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span>${t('Compounding Style:')}</span><strong>${t(inputs.compounding === 'semi' ? 'Canadian Semi-Annual' : 'US Monthly')}</strong>
               </div>
+              ${
+                actualData.summary.lttResult
+                  ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                  <span>${t('Net Land Transfer Tax (Closing):')}</span><strong style="color: #059669;">${formatCurrency(actualData.summary.lttResult.totalLtt)}</strong>
+                </div>
+              `
+                  : ''
+              }
             `
                 : `
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">

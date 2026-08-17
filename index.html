@@ -687,6 +687,78 @@
                   </div>
                 </div>
               </div>
+
+              <!-- Canadian Land Transfer Tax (LTT) Toggle Row (Advanced Mode Only) -->
+              <div class="input-group-row mortgage-only advanced-only" id="lttSection">
+                <div class="input-group" style="width: 100%">
+                  <div
+                    class="flex items-center justify-between mb-1"
+                    style="display: flex; align-items: center; justify-content: space-between"
+                  >
+                    <label for="includeLtt" style="margin-bottom: 0; cursor: pointer"
+                      >Calculate Land Transfer Tax (LTT)?
+                      <span class="help-tip"
+                        >?<span class="tooltip-text"
+                          >Estimates closing land transfer taxes for property purchases in Ontario
+                          (including Toronto municipal double-LTT) and British Columbia (PTT),
+                          including first-time homebuyer rebates.</span
+                        ></span
+                      ></label
+                    >
+                    <label class="switch" title="Toggle Land Transfer Tax Calculation">
+                      <input
+                        type="checkbox"
+                        id="includeLtt"
+                        role="switch"
+                        aria-checked="false"
+                        aria-label="Calculate Land Transfer Tax (LTT)?"
+                      />
+                      <span class="slider"></span>
+                    </label>
+                  </div>
+                  <div id="lttConfigWrapper" class="mt-2 hidden" style="margin-top: 8px">
+                    <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap">
+                      <div style="flex: 1; min-width: 180px">
+                        <label for="lttProvince" style="font-size: 0.825rem; margin-bottom: 4px"
+                          >Region / Municipality</label
+                        >
+                        <select id="lttProvince" class="custom-select">
+                          <option value="ON">Ontario (General PLTT)</option>
+                          <option value="ON-TORONTO">
+                            Ontario - City of Toronto (PLTT + MLTT)
+                          </option>
+                          <option value="BC">British Columbia (PTT)</option>
+                        </select>
+                      </div>
+                      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
+                        <input
+                          type="checkbox"
+                          id="lttFirstTimeBuyer"
+                          style="cursor: pointer; width: 16px; height: 16px"
+                        />
+                        <label
+                          for="lttFirstTimeBuyer"
+                          style="font-size: 0.825rem; margin-bottom: 0; cursor: pointer"
+                          >First-Time Buyer Rebate</label
+                        >
+                      </div>
+                    </div>
+                    <div
+                      id="lttEstimateBadge"
+                      class="mt-2"
+                      style="
+                        font-size: 0.825rem;
+                        background: var(--bg-hover);
+                        border-radius: var(--radius-sm);
+                        border: 1px solid var(--border-color);
+                        padding: 8px 12px;
+                        margin-top: 8px;
+                        display: none;
+                      "
+                    ></div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="bento-card form-card mt-24">
