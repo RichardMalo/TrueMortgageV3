@@ -128,6 +128,18 @@ export const calculateCanadianMinDownPayment = (
 };
 
 /**
+ * Computes the OSFI B-20 qualifying interest rate for Canadian residential mortgages.
+ * Statutory rule: Maximum of (Contract Rate + 2.00%) or the 5.25% floor.
+ *
+ * @param contractAnnualRate - The contract interest rate in percentage points (e.g., 4.5 for 4.5%).
+ * @returns The qualifying interest rate in percentage points rounded to 2 decimal places.
+ */
+export const calculateOsfiStressTestRate = (contractAnnualRate: number): number => {
+  const safeRate = Number.isNaN(contractAnnualRate) ? 0 : Math.max(0, contractAnnualRate);
+  return Math.round(Math.max(safeRate + 2.0, 5.25) * 100) / 100;
+};
+
+/**
  * Calculates the periodic installment payment (principal + interest)
  * using the standard amortization formula.
  *

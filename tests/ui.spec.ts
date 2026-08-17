@@ -10,7 +10,8 @@ import {
   adjustTooltip,
   renderScheduledLumpSumRows,
   applyCardCustomizationsToDOM,
-  isPrefersReducedMotion
+  isPrefersReducedMotion,
+  announceA11y
 } from '../src/js/ui.js';
 
 describe('UI Helper Functions (ui.ts)', () => {
@@ -250,6 +251,25 @@ describe('UI Helper Functions (ui.ts)', () => {
       document.body.removeChild(container);
       document.body.removeChild(chart3Card);
       document.body.removeChild(chartCard);
+    });
+  });
+
+  describe('announceA11y', () => {
+    it('should create an aria-live container and announce messages', async () => {
+      announceA11y('Card moved to position 2');
+      const announcer = document.getElementById('a11y-live-announcer');
+      expect(announcer).not.toBeNull();
+      expect(announcer?.getAttribute('aria-live')).toBe('polite');
+
+      // Wait for the timeout update
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      expect(announcer?.textContent).toBe('Card moved to position 2');
+
+      // Assertive announcement
+      announceA11y('Critical error encountered', true);
+      expect(announcer?.getAttribute('aria-live')).toBe('assertive');
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      expect(announcer?.textContent).toBe('Critical error encountered');
     });
   });
 });

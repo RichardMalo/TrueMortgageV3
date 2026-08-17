@@ -6,7 +6,8 @@ import {
   calculateMilestones,
   getMonthlyPayment,
   calculateCmhcInsurance,
-  calculateCanadianMinDownPayment
+  calculateCanadianMinDownPayment,
+  calculateOsfiStressTestRate
 } from '../src/js/math.js';
 import { Inputs, Milestone } from '../src/js/types.js';
 import { calculateOpportunityCostData } from '../src/js/charts.js';
@@ -1505,6 +1506,27 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(res.minDownPayment).toBe(0);
         expect(res.minDownPaymentPct).toBe(0);
         expect(res.isCmhcEligible).toBe(true);
+      });
+    });
+
+    describe('OSFI B-20 Stress Test Qualifying Rate', () => {
+      it('should enforce the 5.25% floor when contract rate + 2.0% is below 5.25%', () => {
+        expect(calculateOsfiStressTestRate(2.5)).toBe(5.25);
+        expect(calculateOsfiStressTestRate(3.0)).toBe(5.25);
+        expect(calculateOsfiStressTestRate(3.24)).toBe(5.25);
+      });
+
+      it('should use contract rate + 2.00% when it exceeds the 5.25% floor', () => {
+        expect(calculateOsfiStressTestRate(3.25)).toBe(5.25);
+        expect(calculateOsfiStressTestRate(4.39)).toBe(6.39);
+        expect(calculateOsfiStressTestRate(5.0)).toBe(7.0);
+        expect(calculateOsfiStressTestRate(6.25)).toBe(8.25);
+      });
+
+      it('should handle zero, negative, or NaN input gracefully', () => {
+        expect(calculateOsfiStressTestRate(0)).toBe(5.25);
+        expect(calculateOsfiStressTestRate(-2.5)).toBe(5.25);
+        expect(calculateOsfiStressTestRate(NaN)).toBe(5.25);
       });
     });
   });

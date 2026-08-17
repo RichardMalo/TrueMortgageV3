@@ -99,6 +99,29 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.skip-link {
+  position: absolute;
+  top: -120px;
+  left: 1rem;
+  z-index: 10000;
+  padding: 0.75rem 1.25rem;
+  background: var(--primary-color, #2563eb);
+  color: #ffffff;
+  border: 2px solid #ffffff;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-decoration: none;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  transition: top 0.2s var(--spring-easing);
+}
+
+.skip-link:focus-visible {
+  top: 1rem;
+  outline: 3px solid var(--accent-color, #34d399);
+  outline-offset: 3px;
+}
+
 .container {
   width: 100%;
   max-width: 1400px;

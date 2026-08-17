@@ -255,6 +255,36 @@ export const setupTouchAndKeyboardTooltips = () => {
   document.addEventListener('touchstart', activeTooltipTouchListener, { passive: true });
 };
 
+let liveAnnouncerEl: HTMLElement | null = null;
+
+/**
+ * Dispatches an accessible live region announcement for screen readers.
+ *
+ * @param message - The announcement text.
+ * @param assertive - Whether the announcement should interrupt immediately.
+ */
+export const announceA11y = (message: string, assertive = false) => {
+  if (typeof document === 'undefined') return;
+  if (!liveAnnouncerEl) {
+    liveAnnouncerEl = document.getElementById('a11y-live-announcer');
+    if (!liveAnnouncerEl) {
+      liveAnnouncerEl = document.createElement('div');
+      liveAnnouncerEl.id = 'a11y-live-announcer';
+      liveAnnouncerEl.className = 'sr-only';
+      liveAnnouncerEl.setAttribute('aria-live', assertive ? 'assertive' : 'polite');
+      liveAnnouncerEl.setAttribute('aria-atomic', 'true');
+      document.body.appendChild(liveAnnouncerEl);
+    }
+  }
+  liveAnnouncerEl.setAttribute('aria-live', assertive ? 'assertive' : 'polite');
+  liveAnnouncerEl.textContent = '';
+  setTimeout(() => {
+    if (liveAnnouncerEl) {
+      liveAnnouncerEl.textContent = message;
+    }
+  }, 50);
+};
+
 export const swapDOMNodes = (node1: HTMLElement, node2: HTMLElement, onSwap?: () => void) => {
   const parent1 = node1.parentNode;
   const parent2 = node2.parentNode;
@@ -276,6 +306,16 @@ export const swapDOMNodes = (node1: HTMLElement, node2: HTMLElement, onSwap?: ()
     parent2.insertBefore(node1, next2);
     parent1.insertBefore(node2, next1);
   }
+
+  const title1 =
+    node1.querySelector('.section-title')?.textContent?.trim() ||
+    node1.querySelector('.plotly-container')?.id ||
+    'Card 1';
+  const title2 =
+    node2.querySelector('.section-title')?.textContent?.trim() ||
+    node2.querySelector('.plotly-container')?.id ||
+    'Card 2';
+  announceA11y(`Swapped layout position of ${title1} with ${title2}.`);
 
   if (onSwap) onSwap();
 };
@@ -337,9 +377,15 @@ export const setupDragAndDrop = (onReorder: () => void) => {
       return;
     }
 
+    const cardTitle =
+      card.querySelector('.section-title')?.textContent?.trim() ||
+      card.querySelector('.plotly-container')?.id ||
+      'Dashboard Card';
+
     if (selectedEl === card) {
       card.classList.remove('selected-card');
       selectedEl = null;
+      announceA11y(`Deselected card: ${cardTitle}.`);
     } else if (selectedEl) {
       const prevSelected = selectedEl;
       prevSelected.classList.remove('selected-card');
@@ -348,6 +394,7 @@ export const setupDragAndDrop = (onReorder: () => void) => {
     } else {
       card.classList.add('selected-card');
       selectedEl = card;
+      announceA11y(`Selected card: ${cardTitle}. Activate another card to swap positions.`);
     }
   };
 

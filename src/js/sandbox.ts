@@ -51,7 +51,7 @@ export const renderSandboxList = (
 
     card.innerHTML = `
       <div class="profile-card-header">
-        <h4 class="profile-card-title" id="title-text-${escId}"></h4>
+        <h3 class="profile-card-title" id="title-text-${escId}"></h3>
         <div class="profile-card-actions">
           <button type="button" class="profile-btn rename-btn" title="${renameTitle}" data-id="${escId}" aria-label="${renameTitle} ${escName}">✏️</button>
           <button type="button" class="profile-btn clone-btn" title="${cloneTitle}" data-id="${escId}" aria-label="${cloneTitle} ${escName}">📋</button>

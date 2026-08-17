@@ -37,7 +37,7 @@ export const renderMilestonesUI = (els: AppElements, milestones: Milestone[]) =>
           <span class="${badgeClass}">${badgeLabel}</span>
           <span class="roadmap-node-period">${escapeHtml(m.period)}</span>
         </div>
-        <h4 class="roadmap-node-title">${title}</h4>
+        <h3 class="roadmap-node-title">${title}</h3>
         <div class="roadmap-node-date">${escapeHtml(m.date)}</div>
         <div class="roadmap-node-desc">${desc}</div>
         <div class="roadmap-node-sowhat">${sowhat}</div>
