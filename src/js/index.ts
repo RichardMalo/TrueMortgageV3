@@ -263,8 +263,9 @@ const calculate = (e?: Event) => {
   const cmhcStatBox = document.getElementById('cmhcStatBox');
   const cmhcProvinceWrapper = document.getElementById('cmhcProvinceWrapper');
   const cmhcAmount = actData.summary.cmhcInsuranceAmount || 0;
+  const isCmhcActive = isMortgage && inputs.includeCmhc && state.complexity === 'advanced';
   if (cmhcStatBox) {
-    if (isMortgage && inputs.includeCmhc && cmhcAmount > 0) {
+    if (isCmhcActive && cmhcAmount > 0) {
       cmhcStatBox.classList.remove('hidden');
       updateKineticText(document.getElementById('cmhcStatAmount'), cmhcAmount);
     } else {
@@ -272,16 +273,13 @@ const calculate = (e?: Event) => {
     }
   }
   if (cmhcProvinceWrapper) {
-    cmhcProvinceWrapper.classList.toggle(
-      'hidden',
-      !(isMortgage && inputs.includeCmhc && state.complexity === 'advanced')
-    );
+    cmhcProvinceWrapper.classList.toggle('hidden', !isCmhcActive);
   }
 
-  // Land Transfer Tax (LTT) update
+  // Land Transfer Tax (LTT) update (Advanced Mode Only)
   const lttConfigWrapper = document.getElementById('lttConfigWrapper');
   const lttEstimateBadge = document.getElementById('lttEstimateBadge');
-  const isLttActive = isMortgage && !!inputs.includeLtt;
+  const isLttActive = isMortgage && !!inputs.includeLtt && state.complexity === 'advanced';
   if (lttConfigWrapper) {
     lttConfigWrapper.classList.toggle('hidden', !isLttActive);
   }
