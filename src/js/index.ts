@@ -278,10 +278,10 @@ const calculate = (e?: Event) => {
     );
   }
 
-  // Land Transfer Tax (LTT) update (Advanced Mortgage mode only)
+  // Land Transfer Tax (LTT) update
   const lttConfigWrapper = document.getElementById('lttConfigWrapper');
   const lttEstimateBadge = document.getElementById('lttEstimateBadge');
-  const isLttActive = isMortgage && inputs.includeLtt && state.complexity === 'advanced';
+  const isLttActive = isMortgage && !!inputs.includeLtt;
   if (lttConfigWrapper) {
     lttConfigWrapper.classList.toggle('hidden', !isLttActive);
   }
