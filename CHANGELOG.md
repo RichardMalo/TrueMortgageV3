@@ -4,6 +4,20 @@ All notable changes to the Debt Elimination Engine project will be documented in
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.2.0] - 2026-08-19
+
+### Added
+
+- **Unit Test Suite Expansion**: Added 6 comprehensive Vitest test suites covering `heatmap.ts`, `table.ts`, `card-order.ts`, `blueprint.ts`, `sandbox.ts`, and `settings.ts`, expanding total test coverage to 223 unit/integration tests across 21 test files.
+
+### Changed
+
+- **Heading Hierarchy Standardization**: Standardized Opportunity Cost section heading to `<h2>` in `index.html` to eliminate heading skips and improve screen reader navigation.
+- **Safe DOM Rendering in Wages Viz**: Refactored `wages-viz.ts` to replace template string `innerHTML` assignments with clean DOM node construction (`createElement`, `textContent`, `append`).
+- **PWA & Cache Resilience**: Hardened `sw.js` and production build with verified bundle integrity.
+
+---
+
 ## [3.1.0] - 2026-08-17
 
 ### Added

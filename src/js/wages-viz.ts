@@ -133,24 +133,51 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
       const rentAlone = Math.ceil(interest / 12);
       const taxAlone = Math.ceil(annualTax / 12);
       const insAlone = Math.ceil(annualIns / 12);
-      circle.innerHTML = `
-        <span class="wage-circle-default-val">${formatCurrency(displayVal)}</span>
-        <div class="wage-circle-hover-val">
-          <span class="breakdown-rent">${formatCurrency(rentAlone)}</span>
-          <span class="breakdown-tax">+${formatCurrency(taxAlone)}</span>
-          <span class="breakdown-ins">+${formatCurrency(insAlone)}</span>
-        </div>
-      `;
+
+      const defaultValSpan = document.createElement('span');
+      defaultValSpan.className = 'wage-circle-default-val';
+      defaultValSpan.textContent = formatCurrency(displayVal);
+
+      const hoverDiv = document.createElement('div');
+      hoverDiv.className = 'wage-circle-hover-val';
+
+      const spanRent = document.createElement('span');
+      spanRent.className = 'breakdown-rent';
+      spanRent.textContent = formatCurrency(rentAlone);
+
+      const spanTax = document.createElement('span');
+      spanTax.className = 'breakdown-tax';
+      spanTax.textContent = `+${formatCurrency(taxAlone)}`;
+
+      const spanIns = document.createElement('span');
+      spanIns.className = 'breakdown-ins';
+      spanIns.textContent = `+${formatCurrency(insAlone)}`;
+
+      hoverDiv.appendChild(spanRent);
+      hoverDiv.appendChild(spanTax);
+      hoverDiv.appendChild(spanIns);
+
+      circle.appendChild(defaultValSpan);
+      circle.appendChild(hoverDiv);
+
       circle.title = isFr
         ? `Année : ${yr}\nLoyer + Taxe et assurance : ${formatCurrency(displayVal)}/mois\n(Loyer : ${formatCurrency(rentAlone)} + Taxe : ${formatCurrency(taxAlone)} + Assurance : ${formatCurrency(insAlone)})`
         : `Year: ${yr}\nRent + Tax & Insurance: ${formatCurrency(displayVal)}/Month\n(Rent: ${formatCurrency(rentAlone)} + Tax: ${formatCurrency(taxAlone)} + Insurance: ${formatCurrency(insAlone)})`;
     } else if (isRent) {
-      circle.innerHTML = `<span class="wage-circle-value">${formatCurrency(displayVal)}</span>`;
+      const valSpan = document.createElement('span');
+      valSpan.className = 'wage-circle-value';
+      valSpan.textContent = formatCurrency(displayVal);
+      circle.appendChild(valSpan);
+
       circle.title = isFr
         ? `Année : ${yr}\nÉquivalent loyer : ${formatCurrency(displayVal)}/mois`
         : `Year: ${yr}\nRent Equivalent: ${formatCurrency(displayVal)}/Month`;
     } else {
-      circle.innerHTML = `<span class="wage-circle-value">${formatCurrency(displayVal)}</span>`;
+      const valSpan = document.createElement('span');
+      valSpan.className = 'wage-circle-value';
+      valSpan.textContent = formatCurrency(displayVal);
+      circle.appendChild(valSpan);
+
       circle.title = isFr
         ? `Année : ${yr}\nIntérêt : ${formatCurrency(displayVal)}`
         : `Year: ${yr}\nInterest: ${formatCurrency(displayVal)}`;
