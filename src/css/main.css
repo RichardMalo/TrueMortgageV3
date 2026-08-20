@@ -1362,6 +1362,7 @@ body.mode-loan .cc-only {
   height: 100%;
   background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -2336,6 +2337,7 @@ body:not(.dark-mode) .scenario-sidebar {
   height: 100vh;
   background-color: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;

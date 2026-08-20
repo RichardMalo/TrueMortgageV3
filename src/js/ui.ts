@@ -402,9 +402,9 @@ export const setupDragAndDrop = (onReorder: () => void) => {
   wrappers.forEach((item) => {
     const el = item as HTMLElement;
 
-    // Accessibility: programmatically establish keyboard focus and semantic button roles
+    // Accessibility: programmatically establish keyboard focus and draggable semantics
     el.setAttribute('tabindex', '0');
-    el.setAttribute('role', 'button');
+    el.setAttribute('aria-roledescription', 'draggable card');
     const cardTitle =
       el.querySelector('.section-title')?.textContent ||
       el.querySelector('.plotly-container')?.id ||

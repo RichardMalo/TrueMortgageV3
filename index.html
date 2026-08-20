@@ -121,13 +121,17 @@
 
           <div class="header-controls-right">
             <!-- Mortgage/CC selector -->
-            <div class="master-mode-selector" role="group" aria-label="Calculator Mode Selector">
-              <button class="mode-btn active" data-mode="mortgage" aria-pressed="true">
-                Mortgage
-              </button>
-              <button class="mode-btn" data-mode="cc" aria-pressed="false">Credit Card</button>
-              <button class="mode-btn" data-mode="loan" aria-pressed="false">Personal Loan</button>
-            </div>
+            <nav class="master-mode-selector-nav" aria-label="Calculator Mode Navigation">
+              <div class="master-mode-selector" role="group" aria-label="Calculator Mode Selector">
+                <button class="mode-btn active" data-mode="mortgage" aria-pressed="true">
+                  Mortgage
+                </button>
+                <button class="mode-btn" data-mode="cc" aria-pressed="false">Credit Card</button>
+                <button class="mode-btn" data-mode="loan" aria-pressed="false">
+                  Personal Loan
+                </button>
+              </div>
+            </nav>
 
             <!-- Sandbox button -->
             <button
@@ -945,7 +949,7 @@
               </div>
 
               <div class="section-header-with-toggle advanced-only mt-20">
-                <h2 class="section-title m-0 text-md-sm">
+                <h3 class="section-title m-0 text-md-sm">
                   Opportunity Cost
                   <span class="help-tip"
                     >?<span class="tooltip-text"
@@ -956,7 +960,7 @@
                       performance.</span
                     ></span
                   >
-                </h2>
+                </h3>
                 <div class="toggle-wrapper" title="Compare paying off vs investing">
                   <label class="switch small-switch">
                     <input
@@ -990,7 +994,7 @@
 
             <div class="bento-card form-card mortgage-only advanced-only mt-24">
               <div class="section-header-with-toggle">
-                <h2 class="section-title m-0">
+                <h3 class="section-title m-0">
                   Taxes & Insurance
                   <span class="help-tip"
                     >?<span class="tooltip-text"
@@ -1000,7 +1004,7 @@
                       estimates.</span
                     ></span
                   >
-                </h2>
+                </h3>
                 <div class="toggle-wrapper" title="Include Escrow (PITI)">
                   <label class="switch small-switch">
                     <input
@@ -1071,7 +1075,7 @@
 
             <div class="bento-card form-card mortgage-only advanced-only mt-24">
               <div class="section-header-with-toggle">
-                <h2 class="section-title m-0">
+                <h3 class="section-title m-0">
                   Refinancing Rate Shock
                   <span class="help-tip"
                     >?<span class="tooltip-text"
@@ -1081,7 +1085,7 @@
                       unchanged at renewal; actual bank refinance terms may vary.</span
                     ></span
                   >
-                </h2>
+                </h3>
                 <div class="toggle-wrapper" title="Simulate refinancing shocks">
                   <label class="switch small-switch">
                     <input
@@ -1106,7 +1110,7 @@
 
             <div class="bento-card form-card advanced-only mt-24" id="goal-solver-card">
               <div class="section-header-with-toggle">
-                <h2 class="section-title m-0">
+                <h3 class="section-title m-0">
                   Target Payoff Goal Solver
                   <span class="help-tip"
                     >?<span class="tooltip-text"
@@ -1115,7 +1119,7 @@
                       required to reach your goal.</span
                     ></span
                   >
-                </h2>
+                </h3>
                 <div class="toggle-wrapper" title="Enable Goal Solver">
                   <label class="switch small-switch">
                     <input
@@ -1476,7 +1480,7 @@
           <div class="bento-card mb-24" id="bank-wages-card">
             <div class="bank-wages-section">
               <div class="wage-toggle-container">
-                <h2 class="sub-section-title m-0 text-primary text-md font-bold flex items-center">
+                <h3 class="sub-section-title m-0 text-primary text-md font-bold flex items-center">
                   <span id="bankWagesTitleText"
                     >How much do you pay towards the banks wages per year</span
                   >
@@ -1488,7 +1492,7 @@
                       conventions.</span
                     ></span
                   >
-                </h2>
+                </h3>
                 <div
                   class="wage-toggle-selector"
                   id="bankWagesToggle"
@@ -1948,7 +1952,7 @@
     </div>
 
     <!-- Scenario Sandbox Sidebar & Backdrop -->
-    <div
+    <aside
       id="scenarioSidebar"
       class="scenario-sidebar"
       role="dialog"
@@ -1993,7 +1997,7 @@
           <!-- Profile items will be injected dynamically -->
         </div>
       </div>
-    </div>
+    </aside>
     <div id="sidebarOverlay" class="sidebar-overlay"></div>
   </body>
 </html>
