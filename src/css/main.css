@@ -1019,6 +1019,64 @@ th {
   z-index: var(--z-sticky);
 }
 
+/* Amortization Table Red Term End Indicator */
+#amortization-table tr.term-end-row td {
+  border-bottom: 2px solid var(--danger-color, #dc2626) !important;
+}
+
+#amortization-table tr.term-divider-row td {
+  padding: 0 !important;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+.term-divider-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: rgba(220, 38, 38, 0.08);
+  border-top: 1.5px solid var(--danger-color, #dc2626);
+  border-bottom: 1.5px solid var(--danger-color, #dc2626);
+  color: var(--danger-color, #dc2626);
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+
+body.dark-mode .term-divider-banner {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.term-divider-line {
+  flex: 1;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.45;
+}
+
+.term-divider-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+  background: var(--danger-color, #dc2626);
+  color: #ffffff !important;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.25);
+}
+
+body.dark-mode .term-divider-badge {
+  background: #f87171;
+  color: #0b1121 !important;
+  box-shadow: 0 2px 8px rgba(248, 113, 113, 0.3);
+}
+
 #error-message {
   background-color: var(--danger-color);
   color: white;

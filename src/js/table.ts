@@ -1,6 +1,7 @@
 import { ScheduleRow } from './types.js';
 import { formatCurrency } from './charts.js';
 import { TABLE_RENDER_CHUNK_SIZE } from './constants.js';
+import { currentLanguage } from './i18n.js';
 
 let tableAnimationFrameId: number | null = null;
 
@@ -12,7 +13,9 @@ export const updateTable = (
   usePiti: boolean,
   labelFormat: 'date' | 'period',
   escrowTh: HTMLElement | null,
-  compSchedule: ScheduleRow[] | null = null
+  compSchedule: ScheduleRow[] | null = null,
+  termYears = 0,
+  periodsPerYear = 12
 ) => {
   const tbody = document.querySelector('#amortization-table tbody');
   if (!tbody) return;
@@ -33,6 +36,8 @@ export const updateTable = (
 
   const isPeriod = labelFormat === 'period';
   const chunkSize = TABLE_RENDER_CHUNK_SIZE;
+  const termPeriod = termYears > 0 ? Math.round(termYears * periodsPerYear) : 0;
+  const isFr = currentLanguage() === 'fr';
 
   const renderChunk = (start: number) => {
     const frag = document.createDocumentFragment();
@@ -42,6 +47,10 @@ export const updateTable = (
       const row = schedule[index];
       if (!row) continue;
       const tr = document.createElement('tr');
+      const isTermEnd = termPeriod > 0 && row.period === termPeriod;
+      if (isTermEnd) {
+        tr.classList.add('term-end-row');
+      }
 
       // Date / Period label
       const tdLabel = document.createElement('td');
@@ -105,6 +114,41 @@ export const updateTable = (
 
       tr.appendChild(tdBalance);
       frag.appendChild(tr);
+
+      // If this row is the end of the term, insert the red separator row
+      if (isTermEnd) {
+        const dividerTr = document.createElement('tr');
+        dividerTr.className = 'term-divider-row';
+        const dividerTd = document.createElement('td');
+        dividerTd.colSpan = usePiti ? 7 : 6;
+
+        const banner = document.createElement('div');
+        banner.className = 'term-divider-banner';
+
+        const lineLeft = document.createElement('div');
+        lineLeft.className = 'term-divider-line';
+
+        const badge = document.createElement('span');
+        badge.className = 'term-divider-badge';
+        badge.textContent = isFr
+          ? `🚩 Fin du terme (${termYears} ans)`
+          : `🚩 End of Term (${termYears} ${termYears > 1 ? 'Years' : 'Year'})`;
+
+        const label = document.createElement('span');
+        label.textContent = isFr ? '— Échéance de renouvellement' : '— Term Renewal Milestone';
+
+        const lineRight = document.createElement('div');
+        lineRight.className = 'term-divider-line';
+
+        banner.appendChild(lineLeft);
+        banner.appendChild(badge);
+        banner.appendChild(label);
+        banner.appendChild(lineRight);
+
+        dividerTd.appendChild(banner);
+        dividerTr.appendChild(dividerTd);
+        frag.appendChild(dividerTr);
+      }
     }
 
     tbody.appendChild(frag);

@@ -439,12 +439,16 @@ const calculate = (e?: Event) => {
   }
 
   renderCharts(state, baseData, actData, inputs, hasStrat, compData);
+  const termYearsVal =
+    state.currentMode === 'mortgage' || state.currentMode === 'loan' ? inputs.termYears || 0 : 0;
   updateTable(
     actData.schedule,
     isMortgage && inputs.usePiti,
     state.labelFormat,
     els.containers.escrowTh,
-    compData ? compData.schedule : null
+    compData ? compData.schedule : null,
+    termYearsVal,
+    actData.summary.periodsPerYear || 12
   );
 
   const milestones = calculateMilestones(

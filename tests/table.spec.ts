@@ -88,4 +88,17 @@ describe('Table Module (updateTable)', () => {
     // 95000 is lower balance than 98000 => better
     expect(deltaBadge!.classList.contains('better')).toBe(true);
   });
+
+  it('should render term-end-row and term-divider-banner at term boundary', () => {
+    const schedule: ScheduleRow[] = [createMockRow(1), createMockRow(2), createMockRow(3)];
+    // 3 periods with termYears = 0.25 (3 months / 0.25 yrs at 12 periods/yr => period 3)
+    updateTable(schedule, false, 'date', escrowTh, null, 0.25, 12);
+
+    const termEndRow = tableBody.querySelector('tr.term-end-row');
+    expect(termEndRow).not.toBeNull();
+
+    const dividerRow = tableBody.querySelector('tr.term-divider-row');
+    expect(dividerRow).not.toBeNull();
+    expect(dividerRow!.querySelector('.term-divider-badge')?.textContent).toContain('End of Term');
+  });
 });
