@@ -5,6 +5,7 @@ import { getCalculationsInputs } from './form.js';
 import { trapFocus } from './modals.js';
 import { generateReportHtml, loadHtml2Pdf } from './pdf.js';
 import { t, currentLanguage } from './i18n.js';
+import { isPrefersReducedMotion } from './ui.js';
 
 export const setupShareFunctionality = (
   state: AppState,
@@ -32,11 +33,13 @@ export const setupShareFunctionality = (
   shareBtn.addEventListener('click', () => {
     calculate(); // Sync latest form adjustments
     shareModal.classList.add('active');
-    gsap.fromTo(
-      '#shareModal .modal-card',
-      { scale: 0.9, y: 20 },
-      { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
-    );
+    if (!isPrefersReducedMotion()) {
+      gsap.fromTo(
+        '#shareModal .modal-card',
+        { scale: 0.9, y: 20 },
+        { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+      );
+    }
     cleanupShareTrap = trapFocus(shareModal, shareBtn, closeShare);
   });
 
@@ -102,8 +105,7 @@ export const setupShareFunctionality = (
       if (!html2pdf) {
         throw new Error('PDF generator library failed to initialize');
       }
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const worker = (html2pdf as any)()
+      const worker = html2pdf()
         .from(tempContainer.firstElementChild || tempContainer)
         .set(opt);
 

@@ -1,5 +1,5 @@
 import gsap from 'gsap';
-import { showConfirmModal, showAlertModal, trapFocus } from './ui.js';
+import { showConfirmModal, showAlertModal, trapFocus, isPrefersReducedMotion } from './ui.js';
 import { AppState } from './types.js';
 
 /**
@@ -141,11 +141,13 @@ export const setupSettingsMenu = (
   optSync.addEventListener('click', () => {
     dropdown.classList.remove('active');
     syncModal.classList.add('active');
-    gsap.fromTo(
-      '#syncModal .modal-card',
-      { scale: 0.9, y: 20 },
-      { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
-    );
+    if (!isPrefersReducedMotion()) {
+      gsap.fromTo(
+        '#syncModal .modal-card',
+        { scale: 0.9, y: 20 },
+        { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+      );
+    }
     cleanupSyncTrap = trapFocus(
       (syncModal.querySelector('.modal-card') as HTMLElement) ?? syncModal,
       trigger as HTMLElement,
@@ -184,11 +186,13 @@ export const setupSettingsMenu = (
     });
 
     layoutModal.classList.add('active');
-    gsap.fromTo(
-      '#layoutModal .modal-card',
-      { scale: 0.9, y: 20 },
-      { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
-    );
+    if (!isPrefersReducedMotion()) {
+      gsap.fromTo(
+        '#layoutModal .modal-card',
+        { scale: 0.9, y: 20 },
+        { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+      );
+    }
     cleanupLayoutTrap = trapFocus(
       (layoutModal.querySelector('.modal-card') as HTMLElement) ?? layoutModal,
       trigger as HTMLElement,
@@ -233,11 +237,13 @@ export const setupSettingsMenu = (
   optLimits.addEventListener('click', () => {
     dropdown.classList.remove('active');
     limitsModal.classList.add('active');
-    gsap.fromTo(
-      '#limitsModal .modal-card',
-      { scale: 0.9, y: 20 },
-      { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
-    );
+    if (!isPrefersReducedMotion()) {
+      gsap.fromTo(
+        '#limitsModal .modal-card',
+        { scale: 0.9, y: 20 },
+        { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+      );
+    }
     cleanupLimitsTrap = trapFocus(
       (limitsModal.querySelector('.modal-card') as HTMLElement) ?? limitsModal,
       trigger as HTMLElement,

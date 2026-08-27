@@ -152,10 +152,17 @@
                 id="settingsTrigger"
                 title="Engine Tools & Settings"
                 aria-label="Open Engine Tools and Settings Menu"
+                aria-haspopup="true"
+                aria-expanded="false"
               >
                 <span class="gear-icon text-lg inline-block">⚙️</span>
               </button>
-              <div class="dropdown-menu settings-menu" id="settingsMenu">
+              <div
+                class="dropdown-menu settings-menu"
+                id="settingsMenu"
+                role="menu"
+                aria-labelledby="settingsTrigger"
+              >
                 <div class="settings-menu-header">Portability & Sync</div>
                 <button type="button" class="settings-item" id="settingsOptSync">
                   <span>🔑</span> Secure Sync & Portability

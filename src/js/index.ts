@@ -41,7 +41,8 @@ import {
   setupTableExpandButton,
   updateLabelCurrencySymbols,
   applyCardCustomizationsToDOM,
-  renderScheduledLumpSumRows
+  renderScheduledLumpSumRows,
+  isPrefersReducedMotion
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
@@ -1331,14 +1332,16 @@ const bootApp = () => {
   setupScenarioSandbox(state, DEFAULT_INPUTS, els.inputs, handleProfileSwitch, calculate);
 
   // GSAP Entrance Animations (run immediately on boot)
-  gsap.from('.gsap-fade-in', { y: -20, opacity: 0, duration: 0.8, ease: 'power3.out' });
-  gsap.from('.gsap-slide-up', {
-    y: 40,
-    opacity: 0,
-    duration: 0.8,
-    stagger: 0.1,
-    ease: 'back.out(1.5)'
-  });
+  if (!isPrefersReducedMotion()) {
+    gsap.from('.gsap-fade-in', { y: -20, opacity: 0, duration: 0.8, ease: 'power3.out' });
+    gsap.from('.gsap-slide-up', {
+      y: 40,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: 'back.out(1.5)'
+    });
+  }
 
   // Restore current active profile form values and calculate (deferred to let UI render and animate first)
   setTimeout(() => {

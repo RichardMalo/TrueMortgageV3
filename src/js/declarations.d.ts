@@ -14,12 +14,13 @@ declare module 'plotly.js-basic-dist' {
 }
 
 declare module 'html2pdf.js' {
-  interface Html2PdfWorker {
+  export interface Html2PdfWorker {
     from: (_element: Element | HTMLElement | string | null) => Html2PdfWorker;
     set: (_options: unknown) => Html2PdfWorker;
     save: () => Promise<void>;
     output: (_type: string) => Promise<Blob>;
   }
+  export type Html2PdfFactory = () => Html2PdfWorker;
   function html2pdf(): Html2PdfWorker;
   export default html2pdf;
 }

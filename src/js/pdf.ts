@@ -2,12 +2,14 @@ import { Inputs, ScheduleResult, ScheduleRow } from './types.js';
 import { formatCurrency } from './charts.js';
 import { escapeHtml } from './ui.js';
 import { t, currentLanguage } from './i18n.js';
-let html2pdfInstance: ((...args: unknown[]) => unknown) | null = null;
+import type { Html2PdfFactory } from 'html2pdf.js';
 
-export const loadHtml2Pdf = async () => {
+let html2pdfInstance: Html2PdfFactory | null = null;
+
+export const loadHtml2Pdf = async (): Promise<Html2PdfFactory | null> => {
   if (!html2pdfInstance) {
     const module = await import('html2pdf.js');
-    html2pdfInstance = (module.default || module) as (...args: unknown[]) => unknown;
+    html2pdfInstance = (module.default || module) as unknown as Html2PdfFactory;
   }
   return html2pdfInstance;
 };

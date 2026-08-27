@@ -147,6 +147,7 @@ export interface ProfileInputs {
   includeLtt?: boolean;
   lttProvince?: string;
   lttFirstTimeBuyer?: boolean;
+  [key: string]: string | boolean | number | LumpSumItem[] | undefined;
 }
 
 export interface Profile {
