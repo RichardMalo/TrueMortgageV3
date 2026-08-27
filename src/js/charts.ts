@@ -75,7 +75,7 @@ const CONFIG = {
     balance: '#64748b',
     thresholdRed: '#ef4444',
     investLine: '#8b5cf6',
-    termEnd: '#f97316'
+    termEnd: '#ef4444'
   }
 };
 
@@ -572,13 +572,14 @@ const renderDebtBalanceChart = (
   const shapes3 = [];
   if (termLine) {
     shapes3.push(termLine);
+    const termColor = state.isDark ? '#f87171' : '#dc2626';
     t3.push({
       x: [null],
       y: [null],
       name: t('Term End'),
       type: 'scatter',
       mode: 'lines',
-      line: { color: CONFIG.colors.termEnd || '#f97316', width: 2, dash: 'dot' },
+      line: { color: termColor, width: 2.5, dash: 'dash' },
       showlegend: true
     });
   }
@@ -1165,24 +1166,36 @@ export const renderCharts = (
   compData: ScheduleResult | null = null
 ) => {
   const xKey = 'year' as const;
-  let termX: number | null = state.currentMode === 'mortgage' ? inputs.termYears : null;
+  const termYearsVal = inputs.termYears || 0;
+  let termX: number | null =
+    (state.currentMode === 'mortgage' || state.currentMode === 'loan') && termYearsVal > 0
+      ? termYearsVal
+      : null;
 
-  if (termX !== null && inputs.startDate && baseData.schedule.length > 0) {
-    termX = baseData.schedule[0]!.year + inputs.termYears;
+  if (termX !== null && baseData.schedule.length > 0) {
+    const periodsPerYear = baseData.summary.periodsPerYear || 12;
+    const termPeriodIndex = Math.round(termYearsVal * periodsPerYear) - 1;
+    if (termPeriodIndex >= 0 && termPeriodIndex < baseData.schedule.length) {
+      termX = baseData.schedule[termPeriodIndex]!.year;
+    } else if (inputs.startDate) {
+      termX = baseData.schedule[0]!.year + termYearsVal;
+    }
   }
 
-  const termLine = termX
-    ? {
-        type: 'line',
-        x0: termX,
-        y0: 0,
-        x1: termX,
-        y1: 1,
-        xref: 'x',
-        yref: 'paper',
-        line: { color: CONFIG.colors.termEnd || '#f97316', width: 2, dash: 'dot' }
-      }
-    : null;
+  const termLineColor = state.isDark ? '#f87171' : '#dc2626';
+  const termLine =
+    termX !== null && termX > 0
+      ? {
+          type: 'line',
+          x0: termX,
+          y0: 0,
+          x1: termX,
+          y1: 1,
+          xref: 'x',
+          yref: 'paper',
+          line: { color: termLineColor, width: 2.5, dash: 'dash' }
+        }
+      : null;
 
   const payoffX =
     hasStrat && actualData.schedule.length > 0
