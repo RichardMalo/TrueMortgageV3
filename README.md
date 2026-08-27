@@ -42,6 +42,7 @@ The entire application executes **locally in your browser**—all financial calc
 ### 3. Bento Dashboard & Accessibility (a11y)
 
 - **Customizable Bento Grid:** Drag-and-drop or keyboard-accessible card reordering, widget visibility toggling, and full-width card expansions.
+- **Red Term-End Milestone Indicators:** High-contrast crimson red dividing line and banner inside the Amortization Schedule Table immediately identifying your renewal boundary (e.g. Year 3 / Month 36 or Year 5 / Month 60), coupled with a vertical indicator line on the Debt Balance Trajectory chart.
 - **WAI-ARIA Standards:** Accessible modal dialogs with focus trapping and restoration (`modals.ts`), WAI-ARIA listboxes and menus, screen reader live regions (`#a11y-live-announcer`), and WCAG AA compliant color contrast ratios.
 - **Progressive Table Rendering:** Renders large amortization schedules (up to 1,200 payment periods) in progressive 50-row chunks using `requestAnimationFrame` for 60fps main-thread responsiveness.
 - **Zero-Flash Dark Mode:** Synchronous `theme-loader.ts` module ensuring zero-FOUC theme initialization under strict Content Security Policies (`script-src 'self' blob:`).
@@ -86,11 +87,12 @@ flowchart TD
 - In the **Payment Frequency** selector, switch from _Monthly_ to **Accelerated Bi-Weekly**.
 - _Impact:_ You make 26 half-monthly payments per year, which seamlessly equates to **13 full monthly payments** each calendar year. Notice the immediate reduction in your total payoff timeline (typically 3 to 4 years shaved off a 25-year mortgage) and thousands of dollars saved in compound interest.
 
-### Step 3: Stress-Test with Refinancing Rate Shocks
+### Step 3: Stress-Test with Refinancing Rate Shocks & Renewal Red Lines
 
 - Enable the **Refinancing Rate Shock Timeline** in the Bento dashboard.
 - If you hold a 3-year or 5-year fixed/variable term, simulate what happens if market interest rates increase by +1.50% or +2.50% upon renewal.
-- _Impact:_ Observe your adjusted monthly payment and lifetime interest curve, allowing you to prepare cash reserves before mortgage renewal surprises occur.
+- Look at the **Amortization Schedule Table**: Notice the distinct **Red Term-End Dividing Line & Milestone Banner** at the end of your contract term (e.g. at Month 36 for a 3-year term), clearly demarcating your remaining balance and principal paid before renewal.
+- Check the **Debt Balance Trajectory Chart**: A tasteful vertical red dashed indicator line clearly highlights the end of your term on the timeline.
 
 ### Step 4: Run the Payoff Goal Solver
 
@@ -116,14 +118,15 @@ flowchart TD
 
 ## 📊 How to Visualize for Maximum Strategic Insight
 
-| Visualization                    | What It Displays                                                                                             | How to Interpret for Strategic Advantage                                                                                                               |
-| :------------------------------- | :----------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Balance Trajectory Curve**     | Projected remaining balance over time (Baseline vs. Accelerated Strategy).                                   | Look for the **divergence point** where extra payments separate the curve from the baseline. The steeper the drop, the greater your interest velocity. |
-| **Principal vs. Interest Stack** | Periodic payment composition over the life of the loan.                                                      | In early years, interest dominates the stack ("vampire drag"). As principal paydowns accelerate, the interest layer shrinks rapidly.                   |
-| **Strategy Impact Heatmap**      | 2D matrix evaluating combinations of monthly extra payments vs. lump sums.                                   | Deep blue cells represent the sweet spot of maximum years and interest saved per dollar deployed.                                                      |
-| **Vampire Drain & Bank Wages**   | Converts cumulative lifetime interest into working hours and equivalent rent.                                | Transforms abstract numbers into visceral career metrics (e.g. _"You are working 1,420 hours exclusively to pay bank interest"_).                      |
-| **Concentric Capital Rings**     | Circular visualization comparing starting principal against total interest markup.                           | A smaller outer markup ring indicates optimal efficiency. High markup rings signal urgent need for accelerated frequency or surplus principal paydown. |
-| **Payoff Milestones Roadmap**    | Chronological timeline of critical financial events (20% equity, PMI drop-off, 50% debt-free, final payoff). | Use these dates as psychological milestone targets for your household budget.                                                                          |
+| Visualization                    | What It Displays                                                                                             | How to Interpret for Strategic Advantage                                                                                                                  |
+| :------------------------------- | :----------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Balance Trajectory Curve**     | Projected remaining balance over time with vertical **Red Term-End Line**.                                   | Look for the **divergence point** where extra payments separate the curve from the baseline. The red vertical marker shows your exact balance at renewal. |
+| **Amortization Schedule Table**  | Progressive row-by-row schedule with **Red Milestone Divider Banner**.                                       | Highlights the exact payment row where your initial term expires, giving you the precise balance remaining before interest rate adjustments.              |
+| **Principal vs. Interest Stack** | Periodic payment composition over the life of the loan.                                                      | In early years, interest dominates the stack ("vampire drag"). As principal paydowns accelerate, the interest layer shrinks rapidly.                      |
+| **Strategy Impact Heatmap**      | 2D matrix evaluating combinations of monthly extra payments vs. lump sums.                                   | Deep blue cells represent the sweet spot of maximum years and interest saved per dollar deployed.                                                         |
+| **Vampire Drain & Bank Wages**   | Converts cumulative lifetime interest into working hours and equivalent rent.                                | Transforms abstract numbers into visceral career metrics (e.g. _"You are working 1,420 hours exclusively to pay bank interest"_).                         |
+| **Concentric Capital Rings**     | Circular visualization comparing starting principal against total interest markup.                           | A smaller outer markup ring indicates optimal efficiency. High markup rings signal urgent need for accelerated frequency or surplus principal paydown.    |
+| **Payoff Milestones Roadmap**    | Chronological timeline of critical financial events (20% equity, PMI drop-off, 50% debt-free, final payoff). | Use these dates as psychological milestone targets for your household budget.                                                                             |
 
 ---
 
@@ -135,7 +138,7 @@ flowchart TD
 - **Animations:** [GSAP 3.12](https://greensock.com/gsap/) (Micro-animations with `@media (prefers-reduced-motion)` support)
 - **Charting:** [Plotly.js Basic Dist](https://plotly.com/javascript/) (Asynchronous vendor chunk with IntersectionObserver lazy loading)
 - **PDF Generation:** [html2pdf.js](https://github.com/eKoopmans/html2pdf.js) (Client-side HTML5 canvas vector PDF exporter)
-- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (223 tests passing across 21 test suites with coverage thresholds)
+- **Unit Testing:** [Vitest 4.1](https://vitest.dev/) (224 tests passing across 21 test suites with coverage thresholds)
 - **E2E Testing:** [Playwright 1.61](https://playwright.dev/) (27 multi-browser E2E tests across Chromium, Firefox, and WebKit)
 - **Linting & Formatting:** ESLint 9/10 (Flat Config) + Prettier 3.3
 
