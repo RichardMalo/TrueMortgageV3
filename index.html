@@ -14,6 +14,7 @@
         font-src    'self' https://fonts.gstatic.com;
         img-src     'self' data: blob:;
         connect-src 'self' https://fonts.gstatic.com;
+        form-action 'self';
         object-src  'none';
         base-uri    'self';
       "
@@ -1594,6 +1595,8 @@
                   class="table-expand-btn"
                   id="table-expand-btn"
                   title="Expand Table"
+                  aria-expanded="false"
+                  aria-label="Expand amortization ledger table view"
                 >
                   +
                 </button>
@@ -1601,6 +1604,9 @@
             </div>
             <div class="table-responsive">
               <table id="amortization-table">
+                <caption class="sr-only">
+                  Amortization Schedule Ledger
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Date / #</th>
@@ -1900,64 +1906,184 @@
             <div class="layout-card-item">
               <span>Amortization Balance Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chart3" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chart3" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chart3"
+                    aria-label="Amortization Balance Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chart3"
+                    aria-label="Amortization Balance Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Equity Build Up Chart -->
             <div class="layout-card-item mortgage-only">
               <span>Equity Build Up Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chart" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chart" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chart"
+                    aria-label="Equity Build Up Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chart"
+                    aria-label="Equity Build Up Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Cumulative Outflow Chart -->
             <div class="layout-card-item">
               <span>Cumulative Outflow Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chart2" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chart2" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chart2"
+                    aria-label="Cumulative Outflow Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chart2"
+                    aria-label="Cumulative Outflow Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Annual Cash Flow Chart -->
             <div class="layout-card-item">
               <span>Annual Cash Flow Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chart11" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chart11" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chart11"
+                    aria-label="Annual Cash Flow Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chart11"
+                    aria-label="Annual Cash Flow Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Payment Composition Chart -->
             <div class="layout-card-item">
               <span>Payment Composition Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chart6" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chart6" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chart6"
+                    aria-label="Payment Composition Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chart6"
+                    aria-label="Payment Composition Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Interest Comparison Chart -->
             <div class="layout-card-item comp-only">
               <span>Interest Comparison Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chart9" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chart9" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chart9"
+                    aria-label="Interest Comparison Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chart9"
+                    aria-label="Interest Comparison Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Payoff Time Comparison Chart -->
             <div class="layout-card-item comp-only">
               <span>Payoff Time Comparison Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chart12" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chart12" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chart12"
+                    aria-label="Payoff Time Comparison Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chart12"
+                    aria-label="Payoff Time Comparison Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- LTV Chart -->
             <div class="layout-card-item mortgage-only">
               <span>LTV Chart</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-chartLTV" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-chartLTV" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chartLTV"
+                    aria-label="LTV Chart: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chartLTV"
+                    aria-label="LTV Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Opportunity Cost Chart -->
@@ -1965,33 +2091,91 @@
               <span>Opportunity Cost Chart</span>
               <div class="layout-card-controls">
                 <label
-                  ><input type="checkbox" id="layoutShow-chartOppCost" checked /> Visible</label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-chartOppCost"
+                    aria-label="Opportunity Cost Chart: Visible"
+                    checked
+                  />
+                  Visible</label
                 >
-                <label><input type="checkbox" id="layoutFull-chartOppCost" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-chartOppCost"
+                    aria-label="Opportunity Cost Chart: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Concentric Cost Stack -->
             <div class="layout-card-item">
               <span>The Gravity of the Debt</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-concentric" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-concentric" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-concentric"
+                    aria-label="The Gravity of the Debt: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-concentric"
+                    aria-label="The Gravity of the Debt: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Interest Wages Circle Map -->
             <div class="layout-card-item">
               <span>Interest Wages Visualizer</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-wages" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-wages" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-wages"
+                    aria-label="Interest Wages Visualizer: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-wages"
+                    aria-label="Interest Wages Visualizer: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
             <!-- Milestones Timeline -->
             <div class="layout-card-item">
               <span>Milestone Timeline Nodes</span>
               <div class="layout-card-controls">
-                <label><input type="checkbox" id="layoutShow-milestones" checked /> Visible</label>
-                <label><input type="checkbox" id="layoutFull-milestones" /> Full Width</label>
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutShow-milestones"
+                    aria-label="Milestone Timeline Nodes: Visible"
+                    checked
+                  />
+                  Visible</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="layoutFull-milestones"
+                    aria-label="Milestone Timeline Nodes: Full Width"
+                  />
+                  Full Width</label
+                >
               </div>
             </div>
           </div>

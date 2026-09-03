@@ -2,7 +2,7 @@ import gsap from 'gsap';
 import { AppState, LumpSumItem } from './types.js';
 import { getRowDateLabel } from './math.js';
 import { MOBILE_BREAKPOINT } from './constants.js';
-import { formatCurrency, formatDecimal, getCurrencySymbol } from './charts.js';
+import { formatCurrency, formatDecimal, getCurrencySymbol } from './formatters.js';
 import { t, currentLanguage } from './i18n.js';
 
 // Re-export extracted modules for backward compatibility

@@ -1,6 +1,6 @@
 import { Milestone, AppElements } from './types.js';
 import { escapeHtml } from './ui.js';
-import { getCurrencySymbol } from './charts.js';
+import { getCurrencySymbol } from './formatters.js';
 
 /**
  * Renders calculated milestones into the scrollable timeline card in the DOM.

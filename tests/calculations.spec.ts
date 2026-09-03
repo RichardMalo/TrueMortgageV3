@@ -1705,6 +1705,10 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         const caClosing = calculateClosingTax(800000, 'CA', 'ON-TORONTO', false);
         expect(caClosing.regionType).toBe('CA_LTT');
         expect(caClosing.taxAmount).toBe(24950);
+
+        // Verify post-2024 Toronto luxury MLTT tier (3.5% on $3M-$4M)
+        const caLuxury = calculateClosingTax(3500000, 'CA', 'ON-TORONTO', false);
+        expect(caLuxury.taxAmount).toBe(152950);
       });
     });
 

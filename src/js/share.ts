@@ -1,6 +1,6 @@
 import gsap from 'gsap';
 import { AppState, Inputs, ScheduleResult } from './types.js';
-import { getCurrencySymbol } from './charts.js';
+import { getCurrencySymbol } from './formatters.js';
 import { getCalculationsInputs } from './form.js';
 import { trapFocus } from './modals.js';
 import { generateReportHtml, loadHtml2Pdf } from './pdf.js';

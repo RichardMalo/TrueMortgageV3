@@ -1,6 +1,6 @@
 import { AppState, ScheduleResult, AppElements } from './types.js';
 import { MOBILE_BREAKPOINT } from './constants.js';
-import { formatCurrency } from './charts.js';
+import { formatCurrency } from './formatters.js';
 import { t, currentLanguage } from './i18n.js';
 
 /**
@@ -79,8 +79,8 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
     }
   }
 
-  const annualTax = els.inputs.tax ? parseFloat(els.inputs.tax.value) || 0 : 0;
-  const annualIns = els.inputs.ins ? parseFloat(els.inputs.ins.value) || 0 : 0;
+  const annualTax = els.inputs.tax ? Math.max(0, parseFloat(els.inputs.tax.value) || 0) : 0;
+  const annualIns = els.inputs.ins ? Math.max(0, parseFloat(els.inputs.ins.value) || 0) : 0;
 
   const displayValues: Record<number, number> = {};
   let maxDisplayVal = 0;

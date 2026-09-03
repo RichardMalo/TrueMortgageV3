@@ -1,5 +1,5 @@
 import { ScheduleRow } from './types.js';
-import { formatCurrency } from './charts.js';
+import { formatCurrency } from './formatters.js';
 import { TABLE_RENDER_CHUNK_SIZE } from './constants.js';
 import { currentLanguage } from './i18n.js';
 
@@ -27,7 +27,6 @@ export const updateTable = (
       escrowTh.classList.add('hidden');
     }
   }
-  tbody.replaceChildren();
 
   if (tableAnimationFrameId !== null) {
     cancelAnimationFrame(tableAnimationFrameId);
@@ -178,7 +177,11 @@ export const updateTable = (
       }
     }
 
-    tbody.appendChild(frag);
+    if (start === 0) {
+      tbody.replaceChildren(frag);
+    } else {
+      tbody.appendChild(frag);
+    }
 
     if (end < schedule.length) {
       tableAnimationFrameId = requestAnimationFrame(() => renderChunk(end));

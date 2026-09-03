@@ -1,5 +1,5 @@
 import { Inputs, ScheduleResult, ScheduleRow } from './types.js';
-import { formatCurrency } from './charts.js';
+import { formatCurrency } from './formatters.js';
 import { escapeHtml } from './ui.js';
 import { t, currentLanguage } from './i18n.js';
 import type { Html2PdfFactory } from 'html2pdf.js';

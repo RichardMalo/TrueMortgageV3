@@ -5,7 +5,7 @@ import {
   generateLoanSchedule,
   calculateCmhcInsurance
 } from './math.js';
-import { formatCurrency } from './charts.js';
+import { formatCurrency } from './formatters.js';
 import { t, currentLanguage } from './i18n.js';
 
 const runScheduleForMode = (

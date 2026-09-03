@@ -67,8 +67,19 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           // Fallback to offline index.html if navigation request fails
           if (event.request.mode === 'navigate') {
-            return caches.match('./index.html') || caches.match('./');
+            return caches.match('./index.html').then((cached) => {
+              return cached || caches.match('./');
+            });
           }
+          return caches.match(event.request).then((cached) => {
+            return (
+              cached ||
+              new Response('Offline', {
+                status: 503,
+                statusText: 'Service Unavailable'
+              })
+            );
+          });
         });
     })
   );

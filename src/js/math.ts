@@ -440,10 +440,11 @@ export const generateMortgageSchedule = (
     balance = Math.round(balance * 100) / 100;
     if (balance < 0.001) balance = 0;
 
-    totalInterest += interestPortion;
-    totalPrincipal += principalPortion + currentExtraPayment;
-    totalExtraPaid += currentExtraPayment;
-    totalEscrow += periodicEscrow;
+    totalInterest = Math.round((totalInterest + interestPortion) * 100) / 100;
+    totalPrincipal =
+      Math.round((totalPrincipal + principalPortion + currentExtraPayment) * 100) / 100;
+    totalExtraPaid = Math.round((totalExtraPaid + currentExtraPayment) * 100) / 100;
+    totalEscrow = Math.round((totalEscrow + periodicEscrow) * 100) / 100;
 
     if (!summaryOnly) {
       const {
@@ -1363,7 +1364,22 @@ export const calculateCanadianLandTransferTax = (
       municipalLtt += Math.min(price - 400000, 1600000) * 0.02;
     }
     if (price > 2000000) {
-      municipalLtt += (price - 2000000) * 0.025;
+      municipalLtt += Math.min(price - 2000000, 1000000) * 0.025;
+    }
+    if (price > 3000000) {
+      municipalLtt += Math.min(price - 3000000, 1000000) * 0.035;
+    }
+    if (price > 4000000) {
+      municipalLtt += Math.min(price - 4000000, 1000000) * 0.045;
+    }
+    if (price > 5000000) {
+      municipalLtt += Math.min(price - 5000000, 5000000) * 0.055;
+    }
+    if (price > 10000000) {
+      municipalLtt += Math.min(price - 10000000, 10000000) * 0.065;
+    }
+    if (price > 20000000) {
+      municipalLtt += (price - 20000000) * 0.075;
     }
   }
 
