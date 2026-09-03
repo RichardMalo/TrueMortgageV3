@@ -15,7 +15,8 @@ export const updateTable = (
   escrowTh: HTMLElement | null,
   compSchedule: ScheduleRow[] | null = null,
   termYears = 0,
-  periodsPerYear = 12
+  periodsPerYear = 12,
+  showTermMilestone = true
 ) => {
   const tbody = document.querySelector('#amortization-table tbody');
   if (!tbody) return;
@@ -46,7 +47,7 @@ export const updateTable = (
       const row = schedule[index];
       if (!row) continue;
       const tr = document.createElement('tr');
-      const isTermEnd = termPeriod > 0 && row.period === termPeriod;
+      const isTermEnd = termPeriod > 0 && row.period === termPeriod && showTermMilestone;
       if (isTermEnd) {
         tr.classList.add('term-end-row');
       }

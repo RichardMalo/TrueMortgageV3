@@ -161,6 +161,8 @@ export const dictionary: Record<string, string> = {
 
   // Table
   'Amortization Schedule': "Tableau d'amortissement",
+  '🚩 Term Milestone': '🚩 Échéance du terme',
+  'Toggle Term Renewal Milestone': 'Afficher/masquer le jalon de renouvellement du terme',
 
   // Share Modal
   'Export your customized debt payoff strategy and share it with others or save it for your records.':

@@ -69,7 +69,8 @@ const state: AppState = {
   comparisonProfileId: null,
   compareModeActive: false,
   profiles: {},
-  bankWagesView: 'wages'
+  bankWagesView: 'wages',
+  showTermMilestone: true
 };
 
 /** Builds the full body className string from current state — single source of truth. */
@@ -120,7 +121,8 @@ const els = {
     cmhcProvince: document.getElementById('cmhcProvince') as HTMLSelectElement | null,
     includeLtt: document.getElementById('includeLtt') as HTMLInputElement | null,
     lttProvince: document.getElementById('lttProvince') as HTMLSelectElement | null,
-    lttFirstTimeBuyer: document.getElementById('lttFirstTimeBuyer') as HTMLInputElement | null
+    lttFirstTimeBuyer: document.getElementById('lttFirstTimeBuyer') as HTMLInputElement | null,
+    termMilestoneToggle: document.getElementById('termMilestoneToggle') as HTMLInputElement | null
   },
   results: {
     mortgageDisplay: document.getElementById('mortgageAmountDisplay'),
@@ -448,7 +450,8 @@ const calculate = (e?: Event) => {
     els.containers.escrowTh,
     compData ? compData.schedule : null,
     termYearsVal,
-    actData.summary.periodsPerYear || 12
+    actData.summary.periodsPerYear || 12,
+    state.showTermMilestone !== false
   );
 
   const milestones = calculateMilestones(
@@ -731,6 +734,9 @@ const handleProfileSwitch = (profileId: string) => {
       'hidden',
       !(els.inputs.goalSolverToggle && els.inputs.goalSolverToggle.checked)
     );
+  }
+  if (els.inputs.termMilestoneToggle) {
+    els.inputs.termMilestoneToggle.checked = state.showTermMilestone !== false;
   }
 
   const wageToggleBtns = document.querySelectorAll('.wage-toggle-btn');
@@ -1183,6 +1189,12 @@ const bootApp = () => {
     calculate();
   });
 
+  els.inputs.termMilestoneToggle?.addEventListener('change', () => {
+    state.showTermMilestone = !!els.inputs.termMilestoneToggle?.checked;
+    syncCheckboxARIALabels();
+    calculate();
+  });
+
   // Region and Compounding bidirectional synchronization
   els.inputs.countrySelect?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
@@ -1243,9 +1255,13 @@ const bootApp = () => {
   Object.values(els.inputs).forEach((inp) => {
     if (
       inp &&
-      !['oppCostToggle', 'includePitiToggle', 'rateShockToggle', 'goalSolverToggle'].includes(
-        inp.id
-      )
+      ![
+        'oppCostToggle',
+        'includePitiToggle',
+        'rateShockToggle',
+        'goalSolverToggle',
+        'termMilestoneToggle'
+      ].includes(inp.id)
     ) {
       inp.addEventListener('blur', () => {
         if (calcTimer) {

@@ -274,4 +274,29 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     // 7. Verify row is deleted
     await expect(row).not.toBeVisible();
   });
+
+  test('should toggle term renewal milestone in amortization schedule table and chart', async ({
+    page
+  }) => {
+    // 1. Verify toggle starts off checked
+    const toggle = page.locator('#termMilestoneToggle');
+    await expect(toggle).toBeChecked();
+
+    // 2. Verify milestone banner exists in table
+    const banner = page.locator('.term-divider-banner');
+    await expect(banner).toBeVisible();
+    await expect(banner).toContainText('End of Term');
+
+    // 3. Click toggle to turn OFF
+    await toggle.click();
+    await expect(toggle).not.toBeChecked();
+
+    // 4. Verify milestone banner disappears from rendering
+    await expect(banner).not.toBeVisible();
+
+    // 5. Click toggle to turn back ON
+    await toggle.click();
+    await expect(toggle).toBeChecked();
+    await expect(banner).toBeVisible();
+  });
 });

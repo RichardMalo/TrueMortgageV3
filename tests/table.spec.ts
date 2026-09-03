@@ -101,4 +101,15 @@ describe('Table Module (updateTable)', () => {
     expect(dividerRow).not.toBeNull();
     expect(dividerRow!.querySelector('.term-divider-badge')?.textContent).toContain('End of Term');
   });
+
+  it('should not render term-end-row or term-divider-banner when showTermMilestone is false', () => {
+    const schedule: ScheduleRow[] = [createMockRow(1), createMockRow(2), createMockRow(3)];
+    updateTable(schedule, false, 'date', escrowTh, null, 0.25, 12, false);
+
+    const termEndRow = tableBody.querySelector('tr.term-end-row');
+    expect(termEndRow).toBeNull();
+
+    const dividerRow = tableBody.querySelector('tr.term-divider-row');
+    expect(dividerRow).toBeNull();
+  });
 });

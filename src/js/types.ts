@@ -244,6 +244,7 @@ export interface AppState {
   currentTargetYears?: number;
   hiddenCards?: string[];
   fullWidthCards?: string[];
+  showTermMilestone?: boolean;
 }
 
 export interface Milestone {
@@ -294,6 +295,7 @@ export interface AppElements {
     includeLtt?: HTMLInputElement | null;
     lttProvince?: HTMLSelectElement | null;
     lttFirstTimeBuyer?: HTMLInputElement | null;
+    termMilestoneToggle?: HTMLInputElement | null;
   };
   results: {
     mortgageDisplay: HTMLElement | null;

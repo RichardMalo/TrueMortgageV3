@@ -1124,8 +1124,11 @@ export const renderCharts = (
 ) => {
   const xKey = 'year' as const;
   const termYearsVal = inputs.termYears || 0;
+  const showTermMilestone = state.showTermMilestone !== false;
   let termX: number | null =
-    (state.currentMode === 'mortgage' || state.currentMode === 'loan') && termYearsVal > 0
+    showTermMilestone &&
+    (state.currentMode === 'mortgage' || state.currentMode === 'loan') &&
+    termYearsVal > 0
       ? termYearsVal
       : null;
 
