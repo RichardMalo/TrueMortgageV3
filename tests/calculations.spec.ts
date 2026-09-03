@@ -8,9 +8,13 @@ import {
   calculateCmhcInsurance,
   calculateCanadianMinDownPayment,
   calculateOsfiStressTestRate,
-  calculateCanadianLandTransferTax
+  calculateCanadianLandTransferTax,
+  calculateUkSdlt,
+  calculateAustralianTransferDuty,
+  calculateClosingTax,
+  calculateMultiDebtCascade
 } from '../src/js/math.js';
-import { Inputs, Milestone } from '../src/js/types.js';
+import { Inputs, Milestone, MultiDebtAccount } from '../src/js/types.js';
 import { calculateOpportunityCostData } from '../src/js/charts.js';
 
 describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
@@ -1580,10 +1584,206 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(resStandard.provincialLtt).toBe(6000);
         expect(resStandard.totalLtt).toBe(6000);
 
-        // First-time buyer with price <= $500,000 gets 100% exemption
+        // First-time buyer with price <= $835,000 gets 100% exemption (BC Budget 2024)
         const resFtb = calculateCanadianLandTransferTax(400000, 'BC', false, true);
         expect(resFtb.firstTimeRebate).toBe(6000);
         expect(resFtb.totalLtt).toBe(0);
+
+        // $800k home in BC gets 100% exemption under 2024 rules (threshold $835,000)
+        // PTT: 1% on 200k ($2,000) + 2% on 600k ($12,000) = $14,000
+        const resFtb800 = calculateCanadianLandTransferTax(800000, 'BC', false, true);
+        expect(resFtb800.provincialLtt).toBe(14000);
+        expect(resFtb800.firstTimeRebate).toBe(14000);
+        expect(resFtb800.totalLtt).toBe(0);
+
+        // $850k home in BC gets pro-rated phase-out ((860k - 850k) / 25k = 40% rebate)
+        // PTT: 1% on 200k ($2,000) + 2% on 650k ($13,000) = $15,000
+        // Rebate: 15,000 * 0.40 = $6,000, net = $9,000
+        const resFtb850 = calculateCanadianLandTransferTax(850000, 'BC', false, true);
+        expect(resFtb850.provincialLtt).toBe(15000);
+        expect(resFtb850.firstTimeRebate).toBe(6000);
+        expect(resFtb850.totalLtt).toBe(9000);
+      });
+
+      it('should calculate Alberta statutory nominal Land Titles registration fee without falling through to Ontario', () => {
+        // Price: $800,000
+        // $50 base fee + $2 per $5,000 (160 units of $5,000) = $50 + $320 = $370
+        const resAb = calculateCanadianLandTransferTax(800000, 'AB', false, false);
+        expect(resAb.provincialLtt).toBe(370);
+        expect(resAb.municipalLtt).toBe(0);
+        expect(resAb.firstTimeRebate).toBe(0);
+        expect(resAb.totalLtt).toBe(370);
+      });
+
+      it('should calculate Quebec municipal Taxe de bienvenue without falling through to Ontario', () => {
+        // Price: $800,000
+        // 0 - $58,900 @ 0.5% = $294.50
+        // $58,900 - $294,600 ($235,700) @ 1.0% = $2,357.00
+        // $294,600 - $800,000 ($505,400) @ 1.5% = $7,581.00
+        // Total = $294.50 + $2,357.00 + $7,581.00 = $10,232.50
+        const resQc = calculateCanadianLandTransferTax(800000, 'QC', false, false);
+        expect(resQc.provincialLtt).toBe(10232.5);
+        expect(resQc.municipalLtt).toBe(0);
+        expect(resQc.firstTimeRebate).toBe(0);
+        expect(resQc.totalLtt).toBe(10232.5);
+      });
+
+      it('should enforce statutory Canadian CMHC $1.5M insurance prohibition and 95% max LTV', () => {
+        // Properties >= $1.5M are legally prohibited from CMHC default insurance
+        const overCap = calculateCmhcInsurance(1500000, 100000, 25, 'ON', true);
+        expect(overCap.insuranceRate).toBe(0);
+        expect(overCap.insuranceAmount).toBe(0);
+        expect(overCap.totalPrincipal).toBe(1400000);
+
+        // Down payment < 5% (LTV > 95%) is legally ineligible for CMHC default insurance
+        const underDown = calculateCmhcInsurance(500000, 15000, 25, 'ON', true); // 3% down
+        expect(underDown.insuranceRate).toBe(0);
+        expect(underDown.insuranceAmount).toBe(0);
+      });
+    });
+
+    describe('International Closing Taxes (UK SDLT & Australian Duty)', () => {
+      it('should calculate UK Stamp Duty Land Tax (SDLT) correctly for standard residential purchase', () => {
+        // £500,000 home:
+        // 0% on first £250,000 = £0
+        // 5% on next £250,000 (£250k - £500k) = £12,500
+        const res = calculateUkSdlt(500000, false, false);
+        expect(res.sdltAmount).toBe(12500);
+        expect(res.effectiveRatePct).toBe(2.5);
+        expect(res.firstTimeBuyerRelief).toBe(0);
+      });
+
+      it('should apply UK First-Time Buyer relief for properties <= £625,000', () => {
+        // £500,000 home for first-time buyer:
+        // 0% up to £425,000
+        // 5% on remaining £75,000 = £3,750
+        // Standard was £12,500, relief = £8,750
+        const res = calculateUkSdlt(500000, true, false);
+        expect(res.sdltAmount).toBe(3750);
+        expect(res.firstTimeBuyerRelief).toBe(8750);
+        expect(res.effectiveRatePct).toBe(0.75);
+      });
+
+      it('should apply UK Additional Property Surcharge (+5%)', () => {
+        // £500,000 additional home: £12,500 standard + 5% of £500k (£25,000) = £37,500
+        const res = calculateUkSdlt(500000, false, true);
+        expect(res.sdltAmount).toBe(37500);
+        expect(res.effectiveRatePct).toBe(7.5);
+      });
+
+      it('should calculate Australian Transfer Duty (NSW & VIC)', () => {
+        // NSW $600,000 property:
+        // $10,525 + 4.5% of ($600,000 - $351,000) = $10,525 + $11,205 = $21,730
+        const nswRes = calculateAustralianTransferDuty(600000, 'NSW', false);
+        expect(nswRes.transferDuty).toBe(21730);
+
+        // NSW First Home Buyer exemption for <= $800k = 100% concession
+        const nswFtb = calculateAustralianTransferDuty(600000, 'NSW', true);
+        expect(nswFtb.transferDuty).toBe(0);
+        expect(nswFtb.concessionAmount).toBe(21730);
+
+        // VIC $500,000 property:
+        // $2,870 + 6% of ($500,000 - $130,000) = $2,870 + $22,200 = $25,070
+        const vicRes = calculateAustralianTransferDuty(500000, 'VIC', false);
+        expect(vicRes.transferDuty).toBe(25070);
+
+        // VIC First Home Buyer exemption for <= $600k = 100% concession
+        const vicFtb = calculateAustralianTransferDuty(500000, 'VIC', true);
+        expect(vicFtb.transferDuty).toBe(0);
+        expect(vicFtb.concessionAmount).toBe(25070);
+      });
+
+      it('should route calculateClosingTax correctly across countries', () => {
+        const ukClosing = calculateClosingTax(500000, 'UK', '', true);
+        expect(ukClosing.regionType).toBe('UK_SDLT');
+        expect(ukClosing.taxAmount).toBe(3750);
+
+        const auClosing = calculateClosingTax(600000, 'AU', 'NSW', false);
+        expect(auClosing.regionType).toBe('AU_DUTY');
+        expect(auClosing.taxAmount).toBe(21730);
+
+        const caClosing = calculateClosingTax(800000, 'CA', 'ON-TORONTO', false);
+        expect(caClosing.regionType).toBe('CA_LTT');
+        expect(caClosing.taxAmount).toBe(24950);
+      });
+    });
+
+    describe('Statutory Rate Guards & Mandates Sanity Tests', () => {
+      it('should enforce statutory Canadian down payment minimums accurately', () => {
+        expect(calculateCanadianMinDownPayment(400000).minDownPayment).toBe(20000); // 5%
+        expect(calculateCanadianMinDownPayment(800000).minDownPayment).toBe(55000); // 25k + 10% of 300k
+        expect(calculateCanadianMinDownPayment(1600000).minDownPayment).toBe(320000); // 20%
+        expect(calculateCanadianMinDownPayment(1600000).isCmhcEligible).toBe(false);
+      });
+
+      it('should verify CMHC sliding rate tiers and PST rates', () => {
+        // 95% LTV (5% down) -> 4.0%
+        const tier1 = calculateCmhcInsurance(500000, 25000, 25, 'ON', true);
+        expect(tier1.insuranceRate).toBe(0.04);
+        expect(tier1.insuranceAmount).toBe(19000);
+        expect(tier1.pstAmount).toBe(1520); // 8% ON PST
+
+        // 90% LTV (10% down) -> 3.1%
+        const tier2 = calculateCmhcInsurance(500000, 50000, 25, 'QC', true);
+        expect(tier2.insuranceRate).toBe(0.031);
+        expect(tier2.insuranceAmount).toBe(13950);
+        expect(tier2.pstAmount).toBe(1255.5); // 9% QC QST
+
+        // 85% LTV (15% down) -> 2.8%
+        const tier3 = calculateCmhcInsurance(500000, 75000, 25, 'SK', true);
+        expect(tier3.insuranceRate).toBe(0.028);
+        expect(tier3.insuranceAmount).toBe(11900);
+        expect(tier3.pstAmount).toBe(714); // 6% SK PST
+
+        // 30-year amortization surcharge (+0.20%)
+        const surcharge = calculateCmhcInsurance(500000, 25000, 30, 'ON', true);
+        expect(surcharge.insuranceRate).toBe(0.042);
+      });
+
+      it('should verify OSFI B-20 qualifying stress test floor (5.25%)', () => {
+        expect(calculateOsfiStressTestRate(2.5)).toBe(5.25); // 2.5 + 2.0 = 4.5 < 5.25 floor
+        expect(calculateOsfiStressTestRate(4.39)).toBe(6.39); // 4.39 + 2.0 = 6.39 > 5.25 floor
+      });
+    });
+
+    describe('Multi-Debt Avalanche vs. Snowball Cascade Engine', () => {
+      it('should calculate multi-debt cascade and optimize total interest with Avalanche', () => {
+        const debts: MultiDebtAccount[] = [
+          { id: 'cc1', name: 'Store Card', balance: 2000, rate: 24.99, minPayment: 60 },
+          { id: 'cc2', name: 'Bank Visa', balance: 8000, rate: 19.99, minPayment: 200 },
+          { id: 'loan', name: 'Auto Loan', balance: 12000, rate: 7.99, minPayment: 300 }
+        ];
+
+        // Total min payments = 60 + 200 + 300 = $560/mo
+        // Accelerated budget = $1,000/mo (+$440/mo extra surplus)
+        const result = calculateMultiDebtCascade(debts, 1000, 'avalanche');
+
+        expect(result.baselineTotalInterest).toBeGreaterThan(0);
+        expect(result.avalanche.totalInterestPaid).toBeLessThan(result.baselineTotalInterest);
+        expect(result.avalanche.interestSavedVsMinimums).toBeGreaterThan(0);
+        expect(result.avalanche.monthsSavedVsMinimums).toBeGreaterThan(0);
+
+        // Avalanche should pay off Store Card (24.99%) first, then Bank Visa (19.99%), then Auto Loan (7.99%)
+        expect(result.avalanche.payoffOrder[0]).toBe('Store Card');
+        expect(result.avalanche.payoffOrder[1]).toBe('Bank Visa');
+        expect(result.avalanche.payoffOrder[2]).toBe('Auto Loan');
+
+        // Snowball should pay off lowest balance first: Store Card ($2,000), then Bank Visa ($8,000), then Auto Loan ($12,000)
+        expect(result.snowball.payoffOrder[0]).toBe('Store Card');
+        expect(result.snowball.payoffOrder[1]).toBe('Bank Visa');
+        expect(result.snowball.payoffOrder[2]).toBe('Auto Loan');
+
+        // Avalanche interest paid should be less than or equal to Snowball interest paid
+        expect(result.avalanche.totalInterestPaid).toBeLessThanOrEqual(
+          result.snowball.totalInterestPaid
+        );
+      });
+
+      it('should handle empty or zero debt list in multi-debt cascade gracefully', () => {
+        const emptyResult = calculateMultiDebtCascade([], 500);
+        expect(emptyResult.baselineTotalInterest).toBe(0);
+        expect(emptyResult.avalanche.totalInterestPaid).toBe(0);
+        expect(emptyResult.schedule.length).toBe(0);
       });
     });
   });

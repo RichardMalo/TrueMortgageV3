@@ -52,8 +52,11 @@ export const updateTable = (
         tr.classList.add('term-end-row');
       }
 
-      // Date / Period label
-      const tdLabel = document.createElement('td');
+      // Date / Period label (Accessible row header)
+      const tdLabel = document.createElement('th');
+      tdLabel.setAttribute('scope', 'row');
+      tdLabel.style.fontWeight = 'normal';
+      tdLabel.style.textAlign = 'left';
       tdLabel.textContent = isPeriod ? `P${row.period}` : row.dateLabel;
       tr.appendChild(tdLabel);
 
@@ -77,7 +80,7 @@ export const updateTable = (
       // Escrow (PITI mode)
       if (usePiti) {
         const tdEscrow = document.createElement('td');
-        tdEscrow.style.color = '#8b5cf6';
+        tdEscrow.style.color = 'var(--escrow-color, #6d28d9)';
         tdEscrow.textContent = formatCurrency(row.escrow);
         tr.appendChild(tdEscrow);
       }
@@ -93,7 +96,31 @@ export const updateTable = (
       strongBalance.textContent = formatCurrency(row.balance);
       tdBalance.appendChild(strongBalance);
 
-      const compRow = compSchedule ? compSchedule[index] : undefined;
+      let compRow: ScheduleRow | undefined;
+      if (compSchedule && compSchedule.length > 0) {
+        if (compSchedule.length === schedule.length) {
+          compRow = compSchedule[index];
+        } else {
+          // Find closest row in compSchedule by elapsed year for accurate temporal delta comparison
+          const targetYear = row.year;
+          let low = 0;
+          let high = compSchedule.length - 1;
+          while (low <= high) {
+            const mid = (low + high) >> 1;
+            const midYear = compSchedule[mid]!.year;
+            if (midYear < targetYear) {
+              low = mid + 1;
+            } else {
+              high = mid - 1;
+            }
+          }
+          const idx1 = Math.max(0, Math.min(compSchedule.length - 1, low));
+          const idx2 = Math.max(0, Math.min(compSchedule.length - 1, high));
+          const diff1 = Math.abs(compSchedule[idx1]!.year - targetYear);
+          const diff2 = Math.abs(compSchedule[idx2]!.year - targetYear);
+          compRow = diff1 < diff2 ? compSchedule[idx1] : compSchedule[idx2];
+        }
+      }
       if (compRow) {
         const diff = row.balance - compRow.balance;
         if (Math.abs(diff) >= 1) {

@@ -140,7 +140,7 @@ export const encryptData = async (plainText: string, passcode: string): Promise<
 
   const iv = window.crypto.getRandomValues(new Uint8Array(12));
   const encrypted = await window.crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv, tagLength: 128 },
     key,
     enc.encode(plainText)
   );
@@ -166,6 +166,11 @@ const decryptDataWithIterations = async (
   iterations: number
 ): Promise<string> => {
   const binaryStr = atob(cipherTextBase64);
+  if (binaryStr.length < 44) {
+    throw new Error(
+      'Invalid encrypted payload: insufficient bytes for AES-GCM salt, IV, and authentication tag.'
+    );
+  }
   const combined = new Uint8Array(binaryStr.length);
   for (let i = 0; i < binaryStr.length; i++) {
     combined[i] = binaryStr.charCodeAt(i);
@@ -197,7 +202,11 @@ const decryptDataWithIterations = async (
     ['decrypt']
   );
 
-  const decrypted = await window.crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  const decrypted = await window.crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv, tagLength: 128 },
+    key,
+    ciphertext
+  );
 
   const dec = new TextDecoder();
   return dec.decode(decrypted);

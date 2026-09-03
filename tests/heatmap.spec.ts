@@ -148,6 +148,22 @@ describe('Heatmap Module', () => {
       firstCell.click();
       expect(firstCell.classList.contains('selected')).toBe(true);
 
+      // Keyboard navigation (Enter / Space)
+      const secondCell = cells[1] as HTMLElement;
+      secondCell.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      expect(secondCell.classList.contains('selected')).toBe(true);
+
+      secondCell.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', bubbles: true }));
+      expect(secondCell.classList.contains('selected')).toBe(true);
+
+      // Mouse hover and mouse out
+      secondCell.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+      secondCell.dispatchEvent(new MouseEvent('mouseout', { bubbles: true }));
+
+      // Focusin and focusout
+      secondCell.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+      secondCell.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+
       // Click apply strategy button in details panel
       const applyBtn = document.getElementById('heatmap-apply-strategy-btn');
       expect(applyBtn).not.toBeNull();

@@ -8,7 +8,7 @@
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src  'self' blob:;
+        script-src  'self';
         worker-src  'self' blob:;
         style-src   'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src    'self' https://fonts.gstatic.com;
@@ -23,6 +23,18 @@
     <meta
       name="description"
       content="Algorithmic mortgage & credit card optimizer featuring US/Canadian compounding, refinancing rate shocks, opportunity cost analytics, and bento dashboards."
+    />
+    <!-- International Hreflang Canonical Links -->
+    <link rel="alternate" hreflang="en" href="https://richardmalo.github.io/TrueMortgageV3/" />
+    <link
+      rel="alternate"
+      hreflang="fr"
+      href="https://richardmalo.github.io/TrueMortgageV3/?lang=fr"
+    />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://richardmalo.github.io/TrueMortgageV3/"
     />
     <!-- Theme Color & Mobile App Capabilities -->
     <meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
@@ -108,6 +120,7 @@
       </div>
     </noscript>
     <a href="#mortgageForm" class="skip-link">Skip to mortgage calculation form</a>
+    <div id="a11y-live-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <div class="container">
       <header class="app-header gsap-fade-in">
         <div class="header-top-bar">
@@ -142,6 +155,17 @@
               aria-label="Open Scenario Sandbox Sidebar"
             >
               <span class="text-lg">📂</span>
+            </button>
+
+            <!-- Shortcuts Help button -->
+            <button
+              type="button"
+              class="dropdown-trigger settings-trigger round-icon-btn"
+              id="shortcutsTrigger"
+              title="Keyboard Shortcuts (?)"
+              aria-label="Open Keyboard Shortcuts Modal"
+            >
+              <span class="text-lg">⌨️</span>
             </button>
 
             <!-- Settings Gear button -->
@@ -739,6 +763,8 @@
                             Ontario - City of Toronto (PLTT + MLTT)
                           </option>
                           <option value="BC">British Columbia (PTT)</option>
+                          <option value="AB">Alberta (Land Titles Fee)</option>
+                          <option value="QC">Quebec (Taxe de bienvenue)</option>
                         </select>
                       </div>
                       <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px">
@@ -1552,26 +1578,38 @@
                   ></span
                 >
               </h2>
-              <button
-                type="button"
-                class="table-expand-btn"
-                id="table-expand-btn"
-                title="Expand Table"
-              >
-                +
-              </button>
+              <div class="flex items-center gap-8">
+                <button
+                  type="button"
+                  class="table-expand-btn text-xs font-semibold px-2"
+                  id="exportCsvBtn"
+                  title="Export Amortization Table to CSV"
+                  aria-label="Export Amortization Schedule Table to CSV File"
+                  style="width: auto; min-width: 44px; padding: 0 10px; font-size: 0.75rem"
+                >
+                  CSV 📥
+                </button>
+                <button
+                  type="button"
+                  class="table-expand-btn"
+                  id="table-expand-btn"
+                  title="Expand Table"
+                >
+                  +
+                </button>
+              </div>
             </div>
             <div class="table-responsive">
               <table id="amortization-table">
                 <thead>
                   <tr>
-                    <th>Date / #</th>
-                    <th>Payment</th>
-                    <th>Principal</th>
-                    <th>Interest</th>
-                    <th class="hidden" id="escrowTh">Escrow (Tax/Ins)</th>
-                    <th>Extra</th>
-                    <th>Balance</th>
+                    <th scope="col">Date / #</th>
+                    <th scope="col">Payment</th>
+                    <th scope="col">Principal</th>
+                    <th scope="col">Interest</th>
+                    <th scope="col" class="hidden" id="escrowTh">Escrow (Tax/Ins)</th>
+                    <th scope="col">Extra</th>
+                    <th scope="col">Balance</th>
                   </tr>
                 </thead>
                 <tbody></tbody>
@@ -1612,6 +1650,11 @@
               <div class="option-icon">💬</div>
               <div class="option-title">WhatsApp Text</div>
               <div class="option-desc">Send strategy text summary directly</div>
+            </button>
+            <button id="downloadCsvOption" class="share-option-card">
+              <div class="option-icon">📊</div>
+              <div class="option-title">Export CSV</div>
+              <div class="option-desc">Download raw schedule spreadsheet</div>
             </button>
             <button id="copyTextOption" class="share-option-card">
               <div class="option-icon">📋</div>
@@ -1711,6 +1754,7 @@
                   type="password"
                   id="blueprintPasscode"
                   placeholder="Enter a secure passcode"
+                  autocomplete="new-password"
                 />
               </div>
             </div>
@@ -1953,6 +1997,65 @@
           </div>
           <div class="flex justify-end gap-12">
             <button id="saveLayoutBtn" class="btn btn-primary">Apply & Save Layout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div id="shortcutsModal" class="modal-overlay">
+      <div
+        class="modal-card max-w-450"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcutsModalTitle"
+      >
+        <div class="modal-header">
+          <h2 id="shortcutsModalTitle" class="m-0 flex items-center text-md">
+            <span class="mr-8">⌨️</span> Keyboard Shortcuts
+          </h2>
+          <button id="closeShortcutsModalBtn" class="close-btn" aria-label="Close Shortcuts Modal">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm mb-15 lh-1-45">
+            Use these keyboard shortcuts anywhere in the application for rapid calculation
+            navigation.
+          </p>
+          <div class="shortcuts-list grid grid-cols-1 gap-10 text-sm">
+            <div class="shortcut-row flex justify-between items-center py-2 border-b">
+              <span class="opacity-80">Toggle Shortcuts Menu</span>
+              <kbd class="kbd-key">?</kbd>
+            </div>
+            <div class="shortcut-row flex justify-between items-center py-2 border-b">
+              <span class="opacity-80">Switch to Mortgage Mode</span>
+              <kbd class="kbd-key">M</kbd>
+            </div>
+            <div class="shortcut-row flex justify-between items-center py-2 border-b">
+              <span class="opacity-80">Switch to Credit Card Mode</span>
+              <kbd class="kbd-key">C</kbd>
+            </div>
+            <div class="shortcut-row flex justify-between items-center py-2 border-b">
+              <span class="opacity-80">Switch to Personal Loan Mode</span>
+              <kbd class="kbd-key">L</kbd>
+            </div>
+            <div class="shortcut-row flex justify-between items-center py-2 border-b">
+              <span class="opacity-80">Toggle Dark / Light Theme</span>
+              <kbd class="kbd-key">D</kbd>
+            </div>
+            <div class="shortcut-row flex justify-between items-center py-2 border-b">
+              <span class="opacity-80">Open Share & Export Modal</span>
+              <kbd class="kbd-key">S</kbd>
+            </div>
+            <div class="shortcut-row flex justify-between items-center py-2 border-b">
+              <span class="opacity-80">Open Scenario Sandbox</span>
+              <kbd class="kbd-key">B</kbd>
+            </div>
+            <div class="shortcut-row flex justify-between items-center py-2">
+              <span class="opacity-80">Close Modal / Dialog</span>
+              <kbd class="kbd-key">Esc</kbd>
+            </div>
           </div>
         </div>
       </div>

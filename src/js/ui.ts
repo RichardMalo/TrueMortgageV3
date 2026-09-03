@@ -8,7 +8,7 @@ import { t, currentLanguage } from './i18n.js';
 // Re-export extracted modules for backward compatibility
 export { trapFocus, showConfirmModal, showAlertModal } from './modals.js';
 export { generateReportHtml } from './pdf.js';
-export { setupShareFunctionality } from './share.js';
+export { setupShareFunctionality, exportScheduleToCsv } from './share.js';
 
 // HTML escaping helper to prevent script injection in exports (Security Fix)
 export const escapeHtml = (str: string): string => {
@@ -158,6 +158,7 @@ export const setupTouchAndKeyboardTooltips = () => {
         tooltipText.id = `help-tooltip-text-${index}`;
       }
       tooltipText.setAttribute('role', 'tooltip');
+      tooltipText.setAttribute('aria-hidden', 'true');
     }
 
     tip.setAttribute('tabindex', '0');
@@ -168,7 +169,18 @@ export const setupTouchAndKeyboardTooltips = () => {
       tip.setAttribute('aria-describedby', tooltipText.id);
     }
 
-    const setExpanded = (open: boolean) => tip.setAttribute('aria-expanded', String(open));
+    const setExpanded = (open: boolean) => {
+      tip.setAttribute('aria-expanded', String(open));
+      if (tooltipText) {
+        tooltipText.setAttribute('aria-hidden', String(!open));
+      }
+    };
+
+    // Prevent click on help tip from triggering parent <label> form activation
+    tip.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    });
 
     // Desktop hover bindings
     tip.addEventListener('mouseenter', () => {

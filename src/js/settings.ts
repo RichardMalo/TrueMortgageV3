@@ -265,6 +265,98 @@ export const setupSettingsMenu = (
     }
   });
 
+  const shortcutsModal = document.getElementById('shortcutsModal');
+  const shortcutsTrigger = document.getElementById('shortcutsTrigger');
+  const closeShortcutsBtn = document.getElementById('closeShortcutsModalBtn');
+
+  let cleanupShortcutsTrap: (() => void) | null = null;
+  const closeShortcutsModal = () => {
+    if (shortcutsModal) {
+      shortcutsModal.classList.remove('active');
+      cleanupShortcutsTrap?.();
+      cleanupShortcutsTrap = null;
+    }
+  };
+
+  if (shortcutsTrigger && shortcutsModal) {
+    shortcutsTrigger.addEventListener('click', () => {
+      shortcutsModal.classList.add('active');
+      if (!isPrefersReducedMotion()) {
+        gsap.fromTo(
+          '#shortcutsModal .modal-card',
+          { scale: 0.9, y: 20 },
+          { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
+        );
+      }
+      cleanupShortcutsTrap = trapFocus(
+        (shortcutsModal.querySelector('.modal-card') as HTMLElement) ?? shortcutsModal,
+        shortcutsTrigger,
+        closeShortcutsModal
+      );
+    });
+
+    if (closeShortcutsBtn) {
+      closeShortcutsBtn.addEventListener('click', closeShortcutsModal);
+    }
+
+    shortcutsModal.addEventListener('click', (e) => {
+      if (e.target === shortcutsModal) {
+        closeShortcutsModal();
+      }
+    });
+  }
+
+  // Global Hotkeys Listener (Accessible Keyboard Navigation)
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    const activeEl = document.activeElement;
+    const isTyping =
+      activeEl &&
+      (activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.tagName === 'SELECT' ||
+        activeEl.getAttribute('contenteditable') === 'true');
+
+    if (isTyping) return;
+
+    if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+      e.preventDefault();
+      if (shortcutsModal) {
+        if (shortcutsModal.classList.contains('active')) {
+          closeShortcutsModal();
+        } else {
+          shortcutsTrigger?.click();
+        }
+      }
+    } else if (e.key === 'm' || e.key === 'M') {
+      const btn = document.querySelector(
+        '.mode-btn[data-mode="mortgage"]'
+      ) as HTMLButtonElement | null;
+      btn?.click();
+    } else if (e.key === 'c' || e.key === 'C') {
+      const btn = document.querySelector('.mode-btn[data-mode="cc"]') as HTMLButtonElement | null;
+      btn?.click();
+    } else if (e.key === 'l' || e.key === 'L') {
+      const btn = document.querySelector('.mode-btn[data-mode="loan"]') as HTMLButtonElement | null;
+      btn?.click();
+    } else if (e.key === 'd' || e.key === 'D') {
+      const modeSwitch = document.getElementById('mode-switch') as HTMLInputElement | null;
+      if (modeSwitch) {
+        modeSwitch.click();
+      } else {
+        state.isDark = !state.isDark;
+        document.body.classList.toggle('dark-mode', state.isDark);
+        document.body.classList.toggle('light-mode', !state.isDark);
+        saveAndRecalc();
+      }
+    } else if (e.key === 's' || e.key === 'S') {
+      const shareBtn = document.getElementById('shareBtn');
+      shareBtn?.click();
+    } else if (e.key === 'b' || e.key === 'B') {
+      const sandboxBtn = document.getElementById('sandboxTrigger');
+      sandboxBtn?.click();
+    }
+  });
+
   optReset.addEventListener('click', async () => {
     dropdown.classList.remove('active');
     const confirmWipe = await showConfirmModal(

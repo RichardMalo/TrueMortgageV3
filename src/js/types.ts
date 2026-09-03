@@ -50,6 +50,66 @@ export interface Inputs {
   includeLtt?: boolean;
   lttProvince?: string;
   lttFirstTimeBuyer?: boolean;
+  country?: string;
+  isAdditionalProperty?: boolean;
+  ukFirstTimeBuyer?: boolean;
+  auState?: string;
+  auFirstTimeBuyer?: boolean;
+}
+
+export interface UkSdltResult {
+  sdltAmount: number;
+  effectiveRatePct: number;
+  firstTimeBuyerRelief: number;
+}
+
+export interface AustralianDutyResult {
+  transferDuty: number;
+  effectiveRatePct: number;
+  concessionAmount: number;
+}
+
+export interface ClosingTaxResult {
+  regionType: 'CA_LTT' | 'UK_SDLT' | 'AU_DUTY' | 'NONE';
+  taxAmount: number;
+  effectiveRatePct: number;
+  rebateOrRelief: number;
+  details?: Record<string, number | string>;
+}
+
+export interface MultiDebtAccount {
+  id: string;
+  name: string;
+  balance: number;
+  rate: number;
+  minPayment: number;
+}
+
+export interface MultiDebtPaymentRow {
+  period: number;
+  dateLabel: string;
+  balances: Record<string, number>;
+  payments: Record<string, number>;
+  totalBalance: number;
+  totalPayment: number;
+  totalInterest: number;
+}
+
+export interface MultiDebtStrategySummary {
+  strategy: 'avalanche' | 'snowball';
+  totalInterestPaid: number;
+  totalMonthsToPayoff: number;
+  interestSavedVsMinimums: number;
+  monthsSavedVsMinimums: number;
+  payoffOrder: string[];
+}
+
+export interface MultiDebtCascadeResult {
+  baselineTotalInterest: number;
+  baselineMaxMonths: number;
+  avalanche: MultiDebtStrategySummary;
+  snowball: MultiDebtStrategySummary;
+  schedule: MultiDebtPaymentRow[];
 }
 
 export interface ScheduleRow {
@@ -91,6 +151,9 @@ export interface ScheduleSummary {
     totalLtt: number;
     effectiveRatePct: number;
   };
+  ukSdltResult?: UkSdltResult;
+  australianDutyResult?: AustralianDutyResult;
+  closingTaxResult?: ClosingTaxResult;
   /** Whether the debt was fully paid off within max periods limit */
   paidOff?: boolean;
   /** Whether the schedule reached the max period limit without full payoff */

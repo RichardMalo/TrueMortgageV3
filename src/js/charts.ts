@@ -189,7 +189,10 @@ export const queueChartRender = (
   }
 };
 
+let currentRenderGeneration = 0;
+
 export const cancelPendingChartRenders = () => {
+  currentRenderGeneration++;
   if (renderFrameId !== null) {
     cancelAnimationFrame(renderFrameId);
     renderFrameId = null;
@@ -207,6 +210,7 @@ const flushRenderQueue = async () => {
   const queueSnapshot = new Map(renderQueue);
   renderQueue.clear();
   renderFrameId = null;
+  const generationId = ++currentRenderGeneration;
 
   try {
     const Plotly = await loadPlotly();
@@ -254,6 +258,10 @@ const flushRenderQueue = async () => {
 
     // Mutate DOM sequentially, yielding to the browser's paint loop after each chart to maximize INP performance.
     for (const { el, data, layout, config, elementId } of elementsToRender) {
+      // Abort if a newer calculation or cancellation has superseded this render loop
+      if (generationId !== currentRenderGeneration) {
+        break;
+      }
       try {
         Plotly.react(el, data, layout, config);
         visibleChartsMap[elementId] = true;
@@ -339,14 +347,23 @@ export const clearVisibleChartsCache = () => {
   latestChartConfigs.clear();
   Object.keys(visibleChartsMap).forEach((key) => {
     visibleChartsMap[key] = false;
-    if (plotlyInstance) {
-      const el = document.getElementById(key);
-      if (el) {
+    const el = document.getElementById(key);
+    if (el) {
+      if (plotlyInstance) {
         try {
           plotlyInstance.purge(el);
         } catch {
           // ignore
         }
+      }
+      if (chartObserver && observedElements.has(key)) {
+        chartObserver.unobserve(el);
+        observedElements.delete(key);
+        intersectingElements.delete(key);
+      }
+      if (sharedResizeObserver && observedResizeElements.has(el)) {
+        sharedResizeObserver.unobserve(el);
+        observedResizeElements.delete(el);
       }
     }
   });

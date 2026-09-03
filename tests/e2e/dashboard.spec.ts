@@ -79,19 +79,16 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     await downPaymentInput.click();
     await downPaymentInput.fill('0');
     await downPaymentInput.press('Tab');
-    await page.waitForTimeout(150);
 
     // Focus, fill homePrice with 500000, and move focus via Tab
     await homePriceInput.click();
     await homePriceInput.fill('500000');
     await homePriceInput.press('Tab');
-    await page.waitForTimeout(150);
 
     // Focus, fill downPayment with 100000, and move focus via Tab
     await downPaymentInput.click();
     await downPaymentInput.fill('100000');
     await downPaymentInput.press('Tab');
-    await page.waitForTimeout(150);
 
     // Verify stats boxes update
     const mortgageAmount = page.locator('#mortgageAmountDisplay');
@@ -261,12 +258,10 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     await amountInput.click();
     await amountInput.fill('15000');
     await amountInput.press('Tab');
-    await page.waitForTimeout(100);
 
     await paymentInput.click();
     await paymentInput.fill('24');
     await paymentInput.press('Tab');
-    await page.waitForTimeout(100);
 
     // 5. Verify dynamic date label updates correctly (should contain 2028)
     const dateLabel = row.locator('.lump-sum-date-badge');

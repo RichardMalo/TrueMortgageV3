@@ -57,10 +57,10 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const result = solveRequiredMonthly(300, mortgageInputs, 'mortgage', baseData);
     expect(result).toBeGreaterThan(0);
 
-    // Verify that applying the solved monthly payment achieves target periods <= 300
+    // Verify that applying the solved monthly payment achieves target periods <= 300 exactly
     const solvedInputs = { ...mortgageInputs, extraPayment: result };
     const solvedSchedule = generateMortgageSchedule(solvedInputs, false);
-    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(300 + 1);
+    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(300);
   });
 
   it('should solve for required lump sum payment to meet a target payoff year', () => {
@@ -69,10 +69,10 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const result = solveRequiredLumpSum(300, mortgageInputs, 'mortgage', baseData);
     expect(result).toBeGreaterThan(0);
 
-    // Verify that applying the solved lump sum achieves target periods <= 300
+    // Verify that applying the solved lump sum achieves target periods <= 300 exactly
     const solvedInputs = { ...mortgageInputs, lumpSum: result };
     const solvedSchedule = generateMortgageSchedule(solvedInputs, false);
-    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(300 + 1);
+    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(300);
   });
 
   it('should return Infinity when target payoff period is mathematically unreachable', () => {
@@ -120,7 +120,7 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
       lumpSum: result
     };
     const solvedSchedule = generateMortgageSchedule(testInputs, false);
-    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(301);
+    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(300);
   });
 
   it('should solve for required monthly payment under accelerated biweekly frequency', () => {
@@ -135,7 +135,7 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
 
     const solvedInputs = { ...accelInputs, extraPayment: result };
     const solvedSchedule = generateMortgageSchedule(solvedInputs, false);
-    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(201);
+    expect(solvedSchedule.summary.periodsToPayoff).toBeLessThanOrEqual(200);
   });
 
   it('should accurately factor in capitalized CMHC insurance premium when includeCmhc is true', () => {

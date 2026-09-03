@@ -19,42 +19,41 @@ The entire application executes **locally in your browser**—all financial calc
 
 - **Mortgage Engine:**
   - **Regional Compounding Standards:** Canadian fixed mortgages (**semi-annual compounding by law**: $r = 2 \times ((1 + i/2)^{2/f} - 1)$) vs. US/UK/AU/NZ (**monthly nominal compounding**: $r = i / f$).
-  - **Canadian Statutory Regulations:** Automatically models tiered minimum down payments (5% up to \$500k, 10% to \$1.5M, 20% floor for \$1.5M+), CMHC mortgage default insurance sliding tiers (up to 95% LTV), the Canadian 30-year amortization surcharge (+0.20%), provincial closing sales taxes (ON 8%, QC 9.975%, SK 6%), and OSFI B-20 qualifying stress test rates.
-  - **Land Transfer Tax (LTT) Matrix:** Multi-bracket provincial taxes (ON, QC, BC, AB) and Toronto Municipal MLTT double-bracket system with statutory first-time homebuyer rebate caps (\$4,000 provincial, \$4,475 municipal).
+  - **Canadian Statutory Regulations:** Automatically models tiered minimum down payments (5% up to \$500k, 10% to \$1.5M, 20% floor for \$1.5M+), statutory CMHC default insurance prohibition for properties $\ge \$1.5\text{M}$ and minimum 5% down payment enforcement, the Canadian 30-year amortization surcharge (+0.20%), provincial closing sales taxes (ON 8%, QC 9.975%, SK 6%), and OSFI B-20 qualifying stress test rates.
+  - **Land Transfer Tax (LTT) Matrix:** Comprehensive provincial tax engines covering **Ontario** (PLTT + Toronto Municipal double-bracket MLTT with \$4,000 / \$4,475 first-time buyer rebates), **British Columbia** (PTT updated to statutory 2024 First-Time Home Buyers' Program limits of \$835,000 full exemption and \$860,000 phase-out), **Alberta** (statutory nominal Land Titles registration transfer fees: \$50 base + \$2 per \$5,000 value), and **Quebec** (statutory municipal *Taxe de bienvenue* tiers: 0.5% to \$58.9k, 1.0% to \$294.6k, 1.5% remainder).
   - **Private Mortgage Insurance (PMI):** Automatic LTV threshold tracking (cancellation at $\le 80\%$ LTV) for US mortgages, with automatic PMI omission for Canadian insured loans.
   - **Accelerated Payment Frequencies:** Monthly, semi-monthly, bi-weekly, accelerated bi-weekly (saving thousands in interest by providing 13 full monthly payments per year), and accelerated weekly schedules.
 - **Credit Card Engine:**
   - **Legislation-Compliant Minimum Payments:** Ontario standard (3%) vs. Quebec legal mandate (5%), plus custom percentage/interest+principal rules and flat minimum floors.
-  - **Negative Amortization Safeguards:** Handles minimum payments lower than monthly interest without cumulative principal underflow or runaway loops.
+  - **Cent-Accurate Rounding & Negative Amortization Safeguards:** Eliminates floating-point cent drift across 600 periods using strict currency rounding, and protects against runaway negative amortization loops.
 - **Personal & Auto Loan Engine:**
   - **Customizable Amortization & Origination Fees:** Models fixed-term consumer loans (personal, auto, student) featuring an optional upfront origination fee toggle and effective APR calculations.
   - **Accelerated Paydown Trajectories:** Models discretionary periodic extra principal paydowns, lump sums, and flexible payment frequencies.
 
 ### 2. Advanced Strategy Modeling & Analytics
 
-- **Payoff Goal Solver:** High-precision binary search algorithm ($O(\log N)$) that solves for the exact monthly surplus or one-time lump sum required to achieve a target debt-free date, equipped with feasibility guards.
+- **Payoff Goal Solver:** High-precision binary search algorithm ($O(\log N)$) that solves for the exact monthly surplus or one-time lump sum required to achieve an exact target debt-free date, with sub-\$1 ceiling precision and feasibility guards.
 - **Refinancing Rate Shocks:** Dynamic interest rate adjustments at renewal milestones (e.g. modeling 5-year fixed or variable term rate hikes/drops) with integer period boundary math.
 - **Scheduled Future Lump Sums:** Dynamic scheduled lump-sum payments (annual bonuses, tax refunds) at specific payment numbers with automated date badges.
 - **Opportunity Cost Analytics:** Directly compares paying off low-interest debt early versus investing surplus cash flow in market index funds. Features an $O(N)$ linear cursor sweep incorporating PMI cancellation cash-flow reinvestments.
-- **Strategy Impact Heatmap:** Interactive 2D matrix visualizing payoff acceleration and interest savings across varying extra payments and lump sums, offloaded to dedicated background **Web Workers** for instantaneous 60fps interaction.
+- **Strategy Impact Heatmap:** Interactive 2D matrix visualizing payoff acceleration and interest savings across varying extra payments and lump sums, offloaded to a dedicated background **Web Worker** with request IDs discarding stale calculation responses for 60fps responsiveness.
 - **Bank Wages & Vampire Drain:** Converts abstract interest friction into tangible working hours, equivalent months of rent, and lost career labor.
 
 ### 3. Bento Dashboard & Accessibility (a11y)
 
 - **Customizable Bento Grid:** Drag-and-drop or keyboard-accessible card reordering, widget visibility toggling, and full-width card expansions.
 - **Red Term-End Milestone Indicators:** High-contrast crimson red dividing line and banner inside the Amortization Schedule Table immediately identifying your renewal boundary (e.g. Year 3 / Month 36 or Year 5 / Month 60), coupled with a vertical indicator line on the Debt Balance Trajectory chart.
-- **WAI-ARIA Standards:** Accessible modal dialogs with focus trapping and restoration (`modals.ts`), WAI-ARIA listboxes and menus, screen reader live regions (`#a11y-live-announcer`), and WCAG AA compliant color contrast ratios.
-- **Progressive Table Rendering:** Renders large amortization schedules (up to 1,200 payment periods) in progressive 50-row chunks using `requestAnimationFrame` for 60fps main-thread responsiveness.
-- **Zero-Flash Dark Mode:** Synchronous `theme-loader.ts` module ensuring zero-FOUC theme initialization under strict Content Security Policies (`script-src 'self' blob:`).
+- **WAI-ARIA Standards & Focus Sealing:** Fully accessible modal dialogs with focus trapping and restoration (`modals.ts`), sealed inactive dialog overlays and off-screen sidebar drawer (`visibility: hidden !important; pointer-events: none !important;`) preventing focus leaks, static screen reader live regions (`#a11y-live-announcer`), visual form validation error states (`input[aria-invalid="true"]`), and WCAG AA compliant color contrast ratios ($\ge 4.5:1$ across both light and dark themes).
+- **Progressive Table Rendering & Temporal Scenario Deltas:** Renders large amortization schedules in progressive 50-row chunks via `requestAnimationFrame` with chronologically aligned comparison badges across differing payment frequencies.
+- **Zero-Flash Dark Mode:** Synchronous `theme-loader.ts` module ensuring zero-FOUC theme initialization under strict Content Security Policies.
 - **Reduced-Motion Support:** Complete `@media (prefers-reduced-motion)` integration across all CSS transitions and GSAP tweens.
 
 ### 4. Zero-Trust Security & Portability
 
-- **Web Cryptography Storage:** Profile data encrypted locally via Web Cryptography (`window.crypto.subtle`) using PBKDF2 with **600,000 iterations**, SHA-256 key derivation, and 256-bit AES-GCM encryption with 16-byte random salt and 12-byte IVs.
-- **Prototype Pollution Defense:** Recursive `removePrototypeKeys()` sanitizer filtering untrusted JSON file uploads and state hydrations.
-- **Content Security Policy (CSP):** Strict CSP meta headers restricting resource origins, enforcing module-isolated script loading without inline script vulnerabilities.
-- **Blueprint Import/Export:** Encrypted payload sync or plain-text JSON blueprint file exports.
-- **Shareable Reports & PDF Export:** Client-side dynamic vector PDF report generation using `html2pdf.js`, clean markdown copy summaries, and direct WhatsApp sharing.
+- **Web Cryptography Storage:** Profile data encrypted locally via Web Cryptography (`window.crypto.subtle`) using PBKDF2 with **600,000 iterations**, SHA-256 key derivation, explicit 128-bit authentication tags, 44-byte ciphertext payload validation, and 256-bit AES-GCM encryption with 16-byte random salt and 12-byte IVs.
+- **Prototype Pollution Defense & Blueprint Sanitization:** Recursive `removePrototypeKeys()` sanitizer filtering untrusted JSON file uploads and state hydrations, re-persisting only validated canonical schemas.
+- **Content Security Policy (CSP):** Strict CSP meta headers restricting resource origins (`script-src 'self'`), eliminating `blob:` script execution vulnerabilities.
+- **Privacy-Preserving Sharing:** Client-side vector PDF report generation using `html2pdf.js`, clean markdown copy summaries, and privacy-first WhatsApp sharing that never transmits personal debt balances or lifetime interest figures over HTTP GET URLs.
 - **Multilingual (i18n):** Real-time localized translation engine supporting English and Quebecois French across all UI labels, dynamic chart legends, tooltips, scenario sandboxes, and PDF exports.
 
 ---

@@ -325,6 +325,7 @@ export const setupBlueprintSync = (
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(parsedSettings));
         loadSettingsFromStorage(state, defaultInputs);
+        saveSettingsToStorage(state, els.inputs, defaultInputs, false);
         handleProfileSwitch(state.activeProfileId as string);
         showFeedback('Strategy Blueprint Restored Successfully! 🎉');
         passcodeInput.value = '';

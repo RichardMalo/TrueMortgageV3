@@ -1,4 +1,16 @@
-import { Inputs, ScheduleResult, ScheduleRow, Milestone } from './types.js';
+import {
+  Inputs,
+  ScheduleResult,
+  ScheduleRow,
+  Milestone,
+  UkSdltResult,
+  AustralianDutyResult,
+  ClosingTaxResult,
+  MultiDebtAccount,
+  MultiDebtCascadeResult,
+  MultiDebtStrategySummary,
+  MultiDebtPaymentRow
+} from './types.js';
 import {
   PMI_LTV_THRESHOLD,
   MAX_CC_PAYOFF_MONTHS,
@@ -49,6 +61,18 @@ export const calculateCmhcInsurance = (
 
   // Conventional mortgage (LTV <= 80%, down payment >= 20%) requires no CMHC default insurance
   if (ltv <= 0.8) {
+    return {
+      insuranceRate: 0,
+      insuranceAmount: 0,
+      pstRate: 0,
+      pstAmount: 0,
+      totalPrincipal: basePrincipal
+    };
+  }
+
+  // Statutory Canadian regulations: Mortgage default insurance is legally prohibited
+  // for properties >= $1,500,000, and requires at least a 5% down payment (maximum 95% LTV).
+  if (homePrice >= 1500000 || ltv > 0.95 + 1e-6) {
     return {
       insuranceRate: 0,
       insuranceAmount: 0,
@@ -464,6 +488,30 @@ export const generateMortgageSchedule = (
       )
     : undefined;
 
+  const ukSdltResult =
+    inputs.country === 'monthly-uk' || inputs.country === 'UK'
+      ? calculateUkSdlt(safeHomePrice, !!inputs.ukFirstTimeBuyer, !!inputs.isAdditionalProperty)
+      : undefined;
+
+  const australianDutyResult =
+    inputs.country === 'monthly-au' || inputs.country === 'AU'
+      ? calculateAustralianTransferDuty(
+          safeHomePrice,
+          inputs.auState || 'NSW',
+          !!inputs.auFirstTimeBuyer
+        )
+      : undefined;
+
+  const closingTaxResult = inputs.includeLtt
+    ? calculateClosingTax(
+        safeHomePrice,
+        inputs.country || 'CA',
+        inputs.lttProvince || 'ON',
+        !!inputs.lttFirstTimeBuyer || !!inputs.ukFirstTimeBuyer || !!inputs.auFirstTimeBuyer,
+        !!inputs.isAdditionalProperty
+      )
+    : undefined;
+
   return {
     schedule,
     summary: {
@@ -477,6 +525,9 @@ export const generateMortgageSchedule = (
       cmhcPstRate: cmhcRes.pstRate,
       basePrincipalWithoutCmhc: basePrincipal,
       lttResult,
+      ukSdltResult,
+      australianDutyResult,
+      closingTaxResult,
       paidOff: paidOff
     }
   };
@@ -546,11 +597,19 @@ export const generateCCSchedule = (
         ? Math.max(flatMin, balance * provPct)
         : Math.max(flatMin, balance * provPct, interestPortion + balance * principalPct);
 
+    calculatedMinimumPayment = Math.round(calculatedMinimumPayment * 100) / 100;
+
     if (calculatedMinimumPayment > balance + interestPortion) {
-      calculatedMinimumPayment = balance + interestPortion;
+      calculatedMinimumPayment = Math.round((balance + interestPortion) * 100) / 100;
     }
 
-    let regularPrincipal = calculatedMinimumPayment - interestPortion;
+    let regularPrincipal = Math.round((calculatedMinimumPayment - interestPortion) * 100) / 100;
+
+    // Runaway negative amortization safeguard: if minimum payment fails to cover interest
+    // and balance grows beyond 3x the starting balance, break early to prevent runaway loop
+    if (regularPrincipal < 0 && userExtra === 0 && balance > Math.max(1000, principal * 3)) {
+      break;
+    }
 
     let currentExtraPayment = userExtra;
     const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
@@ -574,11 +633,14 @@ export const generateCCSchedule = (
     }
 
     balance -= regularPrincipal + currentExtraPayment;
+    balance = Math.round(balance * 100) / 100;
     if (balance < 0.001) balance = 0;
 
-    totalInterest += interestPortion;
-    totalPrincipal += Math.max(0, regularPrincipal + currentExtraPayment);
-    totalExtraPaid += currentExtraPayment;
+    totalInterest = Math.round((totalInterest + interestPortion) * 100) / 100;
+    totalPrincipal =
+      Math.round((totalPrincipal + Math.max(0, regularPrincipal + currentExtraPayment)) * 100) /
+      100;
+    totalExtraPaid = Math.round((totalExtraPaid + currentExtraPayment) * 100) / 100;
 
     if (!summaryOnly) {
       const {
@@ -593,7 +655,7 @@ export const generateCCSchedule = (
         calendarYear,
         dateLabel: dLbl,
         ltv: 0,
-        payment: regularPrincipal + interestPortion + currentExtraPayment,
+        payment: Math.round((regularPrincipal + interestPortion + currentExtraPayment) * 100) / 100,
         principal: regularPrincipal,
         interest: interestPortion,
         tax: 0,
@@ -617,8 +679,8 @@ export const generateCCSchedule = (
     summary: {
       periodsToPayoff: paidOff ? periodsToPayoff : Infinity,
       periodsPerYear: 12,
-      totalInterest: totalInterest,
-      totalPrincipal: totalPrincipal,
+      totalInterest: Math.round(totalInterest * 100) / 100,
+      totalPrincipal: Math.round(totalPrincipal * 100) / 100,
       totalEscrow: 0,
       paidOff: paidOff,
       isTruncated: !paidOff
@@ -1198,6 +1260,42 @@ export const calculateCanadianLandTransferTax = (
 
   const provUpper = (province || 'ON').toUpperCase();
 
+  if (provUpper === 'AB') {
+    // Alberta: No progressive land transfer tax.
+    // Statutory Land Titles registration fee: $50 base fee + $2 per $5,000 of property value (or part thereof)
+    const propertyTransferFee = 50 + Math.ceil(price / 5000) * 2;
+    return {
+      provincialLtt: propertyTransferFee,
+      municipalLtt: 0,
+      firstTimeRebate: 0,
+      totalLtt: propertyTransferFee,
+      effectiveRatePct: Math.round((propertyTransferFee / price) * 10000) / 100
+    };
+  }
+
+  if (provUpper === 'QC') {
+    // Quebec: Statutory municipal transfer tax ("Taxe de bienvenue" under Quebec provincial law)
+    // 0 to $58,900: 0.5%
+    // $58,901 to $294,600: 1.0%
+    // Above $294,600: 1.5%
+    let qcTax = 0;
+    qcTax += Math.min(price, 58900) * 0.005;
+    if (price > 58900) {
+      qcTax += Math.min(price - 58900, 235700) * 0.01;
+    }
+    if (price > 294600) {
+      qcTax += (price - 294600) * 0.015;
+    }
+    const roundedQc = Math.round(qcTax * 100) / 100;
+    return {
+      provincialLtt: roundedQc,
+      municipalLtt: 0,
+      firstTimeRebate: 0,
+      totalLtt: roundedQc,
+      effectiveRatePct: Math.round((roundedQc / price) * 10000) / 100
+    };
+  }
+
   if (provUpper === 'BC') {
     // British Columbia Property Transfer Tax (PTT)
     let ptt = 0;
@@ -1214,11 +1312,12 @@ export const calculateCanadianLandTransferTax = (
 
     let rebate = 0;
     if (isFirstTimeBuyer) {
-      if (price <= 500000) {
-        rebate = ptt; // Full exemption up to $500,000
-      } else if (price <= 525000) {
-        // Pro-rated phase-out between $500,000 and $525,000
-        const factor = (525000 - price) / 25000;
+      // Updated statutory First-Time Home Buyers' Program thresholds (BC Budget 2024: $835k / $860k)
+      if (price <= 835000) {
+        rebate = ptt; // Full exemption up to $835,000
+      } else if (price <= 860000) {
+        // Pro-rated phase-out between $835,000 and $860,000
+        const factor = (860000 - price) / 25000;
         rebate = ptt * Math.max(0, factor);
       }
     }
@@ -1233,20 +1332,22 @@ export const calculateCanadianLandTransferTax = (
     };
   }
 
-  // Ontario Provincial Land Transfer Tax (PLTT)
+  // Ontario Provincial Land Transfer Tax (PLTT) - only applies to Ontario
   let provLtt = 0;
-  provLtt += Math.min(price, 55000) * 0.005;
-  if (price > 55000) {
-    provLtt += Math.min(price - 55000, 195000) * 0.01;
-  }
-  if (price > 250000) {
-    provLtt += Math.min(price - 250000, 150000) * 0.015;
-  }
-  if (price > 400000) {
-    provLtt += Math.min(price - 400000, 1600000) * 0.02;
-  }
-  if (price > 2000000) {
-    provLtt += (price - 2000000) * 0.025;
+  if (provUpper === 'ON') {
+    provLtt += Math.min(price, 55000) * 0.005;
+    if (price > 55000) {
+      provLtt += Math.min(price - 55000, 195000) * 0.01;
+    }
+    if (price > 250000) {
+      provLtt += Math.min(price - 250000, 150000) * 0.015;
+    }
+    if (price > 400000) {
+      provLtt += Math.min(price - 400000, 1600000) * 0.02;
+    }
+    if (price > 2000000) {
+      provLtt += (price - 2000000) * 0.025;
+    }
   }
 
   let municipalLtt = 0;
@@ -1266,7 +1367,7 @@ export const calculateCanadianLandTransferTax = (
     }
   }
 
-  const provRebate = isFirstTimeBuyer ? Math.min(provLtt, 4000) : 0;
+  const provRebate = isFirstTimeBuyer && provUpper === 'ON' ? Math.min(provLtt, 4000) : 0;
   const torontoRebate =
     isFirstTimeBuyer && isToronto && provUpper === 'ON' ? Math.min(municipalLtt, 4475) : 0;
   const totalRebate = provRebate + torontoRebate;
@@ -1282,5 +1383,409 @@ export const calculateCanadianLandTransferTax = (
     firstTimeRebate: roundedRebate,
     totalLtt: netTotal,
     effectiveRatePct: Math.round((netTotal / price) * 10000) / 100
+  };
+};
+
+/**
+ * Calculates United Kingdom Stamp Duty Land Tax (SDLT) for residential property in England & Northern Ireland.
+ *
+ * @param homePrice - Property purchase price in GBP (£).
+ * @param isFirstTimeBuyer - Whether the buyer qualifies for First-Time Buyer relief (up to £625k).
+ * @param isAdditionalProperty - Whether the property is an additional residential property (subject to +5% surcharge).
+ * @returns SDLT amount, effective rate percentage, and first-time buyer relief savings.
+ */
+export const calculateUkSdlt = (
+  homePrice: number,
+  isFirstTimeBuyer = false,
+  isAdditionalProperty = false
+): UkSdltResult => {
+  const price = Math.max(0, homePrice || 0);
+  if (price <= 0) {
+    return { sdltAmount: 0, effectiveRatePct: 0, firstTimeBuyerRelief: 0 };
+  }
+
+  // Standard calculation
+  let standardSdlt = 0;
+  if (price > 250000) {
+    standardSdlt += Math.min(price - 250000, 675000) * 0.05; // £250k - £925k @ 5%
+  }
+  if (price > 925000) {
+    standardSdlt += Math.min(price - 925000, 575000) * 0.1; // £925k - £1.5M @ 10%
+  }
+  if (price > 1500000) {
+    standardSdlt += (price - 1500000) * 0.12; // Over £1.5M @ 12%
+  }
+
+  let relief = 0;
+  let netTax = standardSdlt;
+
+  // First-Time Buyer Relief (applies if purchase price is £625,000 or less)
+  if (isFirstTimeBuyer && !isAdditionalProperty && price <= 625000) {
+    let ftbTax = 0;
+    if (price > 425000) {
+      ftbTax = (price - 425000) * 0.05; // £425k - £625k @ 5%
+    }
+    relief = Math.max(0, standardSdlt - ftbTax);
+    netTax = ftbTax;
+  }
+
+  // Additional Property Surcharge (+5% on all bands)
+  if (isAdditionalProperty) {
+    netTax += price * 0.05;
+  }
+
+  const roundedTax = Math.round(netTax * 100) / 100;
+  const roundedRelief = Math.round(relief * 100) / 100;
+
+  return {
+    sdltAmount: roundedTax,
+    effectiveRatePct: Math.round((roundedTax / price) * 10000) / 100,
+    firstTimeBuyerRelief: roundedRelief
+  };
+};
+
+/**
+ * Calculates Australian State Transfer Duty (Stamp Duty) for residential purchases.
+ *
+ * @param homePrice - Property purchase price in AUD ($).
+ * @param stateCode - Australian state or territory ('NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT').
+ * @param isFirstTimeBuyer - Whether the buyer qualifies for state-specific first home buyer assistance.
+ * @returns Net duty amount, effective tax percentage, and concession savings.
+ */
+export const calculateAustralianTransferDuty = (
+  homePrice: number,
+  stateCode = 'NSW',
+  isFirstTimeBuyer = false
+): AustralianDutyResult => {
+  const price = Math.max(0, homePrice || 0);
+  if (price <= 0) {
+    return { transferDuty: 0, effectiveRatePct: 0, concessionAmount: 0 };
+  }
+
+  const stateUpper = (stateCode || 'NSW').toUpperCase();
+  let baseDuty: number;
+  let concession = 0;
+
+  if (stateUpper === 'VIC') {
+    // Victoria (VIC) standard rates
+    if (price <= 25000) {
+      baseDuty = price * 0.014;
+    } else if (price <= 130000) {
+      baseDuty = 350 + (price - 25000) * 0.024;
+    } else if (price <= 960000) {
+      baseDuty = 2870 + (price - 130000) * 0.06;
+    } else {
+      baseDuty = price * 0.055;
+    }
+
+    // VIC First Home Buyer Duty Exemption / Concession
+    if (isFirstTimeBuyer) {
+      if (price <= 600000) {
+        concession = baseDuty;
+      } else if (price <= 750000) {
+        // Pro-rated concession between $600k and $750k
+        const factor = (750000 - price) / 150000;
+        concession = baseDuty * Math.max(0, factor);
+      }
+    }
+  } else {
+    // Default / New South Wales (NSW) standard rates
+    if (price <= 17000) {
+      baseDuty = Math.max(10, price * 0.0125);
+    } else if (price <= 36000) {
+      baseDuty = 212 + (price - 17000) * 0.015;
+    } else if (price <= 93000) {
+      baseDuty = 497 + (price - 36000) * 0.0175;
+    } else if (price <= 351000) {
+      baseDuty = 1495 + (price - 93000) * 0.035;
+    } else if (price <= 1168000) {
+      baseDuty = 10525 + (price - 351000) * 0.045;
+    } else {
+      baseDuty = 47290 + (price - 1168000) * 0.055;
+    }
+
+    // NSW First Home Buyers Assistance Scheme (FHBAS)
+    if (isFirstTimeBuyer) {
+      if (price <= 800000) {
+        concession = baseDuty;
+      } else if (price <= 1000000) {
+        // Pro-rated concession between $800k and $1,000,000
+        const factor = (1000000 - price) / 200000;
+        concession = baseDuty * Math.max(0, factor);
+      }
+    }
+  }
+
+  const netDuty = Math.round(Math.max(0, baseDuty - concession) * 100) / 100;
+  const roundedConcession = Math.round(concession * 100) / 100;
+
+  return {
+    transferDuty: netDuty,
+    effectiveRatePct: Math.round((netDuty / price) * 10000) / 100,
+    concessionAmount: roundedConcession
+  };
+};
+
+/**
+ * Unified closing tax calculator across Canada, United Kingdom, and Australia.
+ */
+export const calculateClosingTax = (
+  homePrice: number,
+  country = 'CA',
+  region = 'ON',
+  isFirstTimeBuyer = false,
+  isAdditionalProperty = false
+): ClosingTaxResult => {
+  const countryUpper = (country || 'CA').toUpperCase();
+
+  if (countryUpper === 'UK' || countryUpper === 'GB' || countryUpper === 'MONTHLY-UK') {
+    const uk = calculateUkSdlt(homePrice, isFirstTimeBuyer, isAdditionalProperty);
+    return {
+      regionType: 'UK_SDLT',
+      taxAmount: uk.sdltAmount,
+      effectiveRatePct: uk.effectiveRatePct,
+      rebateOrRelief: uk.firstTimeBuyerRelief,
+      details: {
+        sdltAmount: uk.sdltAmount,
+        firstTimeBuyerRelief: uk.firstTimeBuyerRelief
+      }
+    };
+  }
+
+  if (countryUpper === 'AU' || countryUpper === 'MONTHLY-AU') {
+    const au = calculateAustralianTransferDuty(homePrice, region, isFirstTimeBuyer);
+    return {
+      regionType: 'AU_DUTY',
+      taxAmount: au.transferDuty,
+      effectiveRatePct: au.effectiveRatePct,
+      rebateOrRelief: au.concessionAmount,
+      details: {
+        transferDuty: au.transferDuty,
+        concessionAmount: au.concessionAmount
+      }
+    };
+  }
+
+  if (countryUpper === 'CA' || countryUpper === 'SEMI') {
+    const isToronto = region === 'ON-TORONTO';
+    const lttProv = isToronto ? 'ON' : region || 'ON';
+    const ca = calculateCanadianLandTransferTax(homePrice, lttProv, isToronto, isFirstTimeBuyer);
+    return {
+      regionType: 'CA_LTT',
+      taxAmount: ca.totalLtt,
+      effectiveRatePct: ca.effectiveRatePct,
+      rebateOrRelief: ca.firstTimeRebate,
+      details: {
+        provincialLtt: ca.provincialLtt,
+        municipalLtt: ca.municipalLtt,
+        firstTimeRebate: ca.firstTimeRebate
+      }
+    };
+  }
+
+  return {
+    regionType: 'NONE',
+    taxAmount: 0,
+    effectiveRatePct: 0,
+    rebateOrRelief: 0
+  };
+};
+
+/**
+ * Simulates multi-debt repayment cascade under Avalanche (highest APR first)
+ * and Snowball (lowest balance first) debt elimination strategies.
+ *
+ * @param debts - Array of debt liabilities (e.g. credit cards, personal loans, mortgages).
+ * @param totalMonthlyBudget - Total liquid monthly budget allocated to debt repayment.
+ * @param strategy - 'avalanche' (highest APR first) or 'snowball' (lowest balance first).
+ * @returns Comprehensive simulation output comparing baseline, avalanche, and snowball metrics.
+ */
+export const calculateMultiDebtCascade = (
+  debts: MultiDebtAccount[],
+  totalMonthlyBudget: number,
+  strategy: 'avalanche' | 'snowball' = 'avalanche'
+): MultiDebtCascadeResult => {
+  const validDebts = debts.filter((d) => d.balance > 0 && d.rate >= 0);
+  if (validDebts.length === 0) {
+    const emptyStrategy: MultiDebtStrategySummary = {
+      strategy,
+      totalInterestPaid: 0,
+      totalMonthsToPayoff: 0,
+      interestSavedVsMinimums: 0,
+      monthsSavedVsMinimums: 0,
+      payoffOrder: []
+    };
+    return {
+      baselineTotalInterest: 0,
+      baselineMaxMonths: 0,
+      avalanche: { ...emptyStrategy, strategy: 'avalanche' },
+      snowball: { ...emptyStrategy, strategy: 'snowball' },
+      schedule: []
+    };
+  }
+
+  const sumMinPayments = validDebts.reduce((acc, d) => acc + Math.max(0, d.minPayment || 0), 0);
+  const activeBudget = Math.max(sumMinPayments, totalMonthlyBudget || sumMinPayments);
+
+  // 1. Calculate Baseline (paying only minimum payments for each debt)
+  let baselineTotalInterest = 0;
+  let baselineMaxMonths = 0;
+
+  for (const debt of validDebts) {
+    let bal = debt.balance;
+    const monthlyRate = debt.rate / 100 / 12;
+    const minPmt = Math.max(10, debt.minPayment);
+    let debtInterest = 0;
+    let months = 0;
+
+    while (bal > 0.01 && months < MAX_CC_PAYOFF_MONTHS) {
+      months++;
+      const interest = Math.round(bal * monthlyRate * 100) / 100;
+      const payment = Math.min(bal + interest, minPmt);
+      const principal = payment - interest;
+      if (principal <= 0) {
+        // Negative amortization guard
+        debtInterest += interest * (MAX_CC_PAYOFF_MONTHS - months);
+        months = MAX_CC_PAYOFF_MONTHS;
+        break;
+      }
+      bal = Math.max(0, bal - principal);
+      debtInterest += interest;
+    }
+    baselineTotalInterest += debtInterest;
+    if (months > baselineMaxMonths) baselineMaxMonths = months;
+  }
+
+  // Helper to run a strategy simulation
+  const simulateStrategy = (
+    strat: 'avalanche' | 'snowball'
+  ): {
+    summary: MultiDebtStrategySummary;
+    schedule: MultiDebtPaymentRow[];
+  } => {
+    // Clone debts
+    const activeDebts = validDebts.map((d) => ({
+      id: d.id,
+      name: d.name,
+      balance: d.balance,
+      rate: d.rate,
+      minPayment: d.minPayment,
+      paidMonth: -1
+    }));
+
+    // Sort order: Avalanche = rate desc, Snowball = balance asc
+    const getTargetDebt = () => {
+      const remaining = activeDebts.filter((d) => d.balance > 0.009);
+      if (remaining.length === 0) return null;
+      if (strat === 'avalanche') {
+        return remaining.sort((a, b) => b.rate - a.rate)[0]!;
+      } else {
+        return remaining.sort((a, b) => a.balance - b.balance)[0]!;
+      }
+    };
+
+    let totalInterestPaid = 0;
+    let month = 0;
+    const payoffOrder: string[] = [];
+    const schedule: MultiDebtPaymentRow[] = [];
+
+    while (activeDebts.some((d) => d.balance > 0.009) && month < MAX_CC_PAYOFF_MONTHS) {
+      month++;
+      let monthlyAvailableSurplus = activeBudget;
+      const monthlyBalances: Record<string, number> = {};
+      const monthlyPayments: Record<string, number> = {};
+      let monthInterestTotal = 0;
+
+      // First pass: Calculate interest and mandatory minimums for active debts
+      for (const debt of activeDebts) {
+        if (debt.balance <= 0.009) {
+          monthlyBalances[debt.id] = 0;
+          monthlyPayments[debt.id] = 0;
+          continue;
+        }
+
+        const monthlyRate = debt.rate / 100 / 12;
+        const interest = Math.round(debt.balance * monthlyRate * 100) / 100;
+        const regularPayment = Math.min(debt.balance + interest, Math.max(10, debt.minPayment));
+        const regularPrincipal = regularPayment - interest;
+
+        debt.balance = Math.max(0, debt.balance - regularPrincipal);
+        monthInterestTotal += interest;
+        totalInterestPaid += interest;
+        monthlyPayments[debt.id] = regularPayment;
+        monthlyAvailableSurplus -= regularPayment;
+
+        if (debt.balance <= 0.009) {
+          debt.paidMonth = month;
+          payoffOrder.push(debt.name);
+        }
+      }
+
+      // Second pass: Apply remaining surplus to target debt (cascade rollover)
+      let target = getTargetDebt();
+      while (target && monthlyAvailableSurplus > 0.01) {
+        const extraToApply = Math.min(target.balance, monthlyAvailableSurplus);
+        target.balance -= extraToApply;
+        monthlyAvailableSurplus -= extraToApply;
+        monthlyPayments[target.id] = (monthlyPayments[target.id] || 0) + extraToApply;
+
+        if (target.balance <= 0.009) {
+          target.paidMonth = month;
+          if (!payoffOrder.includes(target.name)) {
+            payoffOrder.push(target.name);
+          }
+          target = getTargetDebt();
+        } else {
+          break;
+        }
+      }
+
+      activeDebts.forEach((d) => {
+        monthlyBalances[d.id] = Math.round(d.balance * 100) / 100;
+      });
+
+      const totalBalanceRemaining = activeDebts.reduce((sum, d) => sum + d.balance, 0);
+      const totalPmtThisMonth = Object.values(monthlyPayments).reduce((sum, p) => sum + p, 0);
+
+      schedule.push({
+        period: month,
+        dateLabel: `Month ${month}`,
+        balances: monthlyBalances,
+        payments: monthlyPayments,
+        totalBalance: Math.round(totalBalanceRemaining * 100) / 100,
+        totalPayment: Math.round(totalPmtThisMonth * 100) / 100,
+        totalInterest: Math.round(monthInterestTotal * 100) / 100
+      });
+    }
+
+    const roundedInterest = Math.round(totalInterestPaid * 100) / 100;
+    const interestSaved = Math.max(
+      0,
+      Math.round((baselineTotalInterest - roundedInterest) * 100) / 100
+    );
+    const monthsSaved = Math.max(0, baselineMaxMonths - month);
+
+    return {
+      summary: {
+        strategy: strat,
+        totalInterestPaid: roundedInterest,
+        totalMonthsToPayoff: month,
+        interestSavedVsMinimums: interestSaved,
+        monthsSavedVsMinimums: monthsSaved,
+        payoffOrder
+      },
+      schedule
+    };
+  };
+
+  const avalancheRes = simulateStrategy('avalanche');
+  const snowballRes = simulateStrategy('snowball');
+
+  return {
+    baselineTotalInterest: Math.round(baselineTotalInterest * 100) / 100,
+    baselineMaxMonths,
+    avalanche: avalancheRes.summary,
+    snowball: snowballRes.summary,
+    schedule: strategy === 'avalanche' ? avalancheRes.schedule : snowballRes.schedule
   };
 };

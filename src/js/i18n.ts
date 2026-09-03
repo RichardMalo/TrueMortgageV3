@@ -173,6 +173,29 @@ export const dictionary: Record<string, string> = {
   'Send strategy text summary directly': 'Envoyez directement le résumé texte de la stratégie',
   'Copy Summary': 'Copier le résumé',
   'Copy formatted summary to clipboard': 'Copiez le résumé mis en forme dans le presse-papiers',
+  'Export CSV': 'Exporter en CSV',
+  'Download raw schedule spreadsheet': 'Télécharger le chiffrier brut des versements',
+  'CSV exported successfully!': 'Fichier CSV exporté avec succès !',
+  'Export Amortization Table to CSV': "Exporter le tableau d'amortissement en CSV",
+
+  // Shortcuts Modal
+  'Keyboard Shortcuts': 'Raccourcis clavier',
+  'Use these keyboard shortcuts anywhere in the application for rapid calculation navigation.':
+    "Utilisez ces raccourcis clavier partout dans l'application pour une navigation rapide.",
+  'Toggle Shortcuts Menu': 'Ouvrir/Fermer le menu des raccourcis',
+  'Switch to Mortgage Mode': 'Passer au mode Hypothèque',
+  'Switch to Credit Card Mode': 'Passer au mode Carte de crédit',
+  'Switch to Personal Loan Mode': 'Passer au mode Prêt personnel',
+  'Toggle Dark / Light Theme': 'Basculer le thème sombre / clair',
+  'Open Share & Export Modal': 'Ouvrir le menu de partage et exportation',
+  'Open Scenario Sandbox': 'Ouvrir le bac à sable de scénarios',
+  'Close Modal / Dialog': 'Fermer la boîte de dialogue',
+
+  // International Taxes & Strategies
+  'UK Stamp Duty (SDLT)': 'Droit de timbre britannique (SDLT)',
+  'Australian Stamp Duty': 'Droit de mutation australien',
+  'Avalanche (Highest APR First)': 'Avalanche (TAP le plus élevé en premier)',
+  'Snowball (Lowest Balance First)': 'Boule de neige (Solde le plus bas en premier)',
 
   // Sync Modal
   'Export or restore your strategy blueprint as a secure JSON file to back up your custom scenarios and sync easily across your phone, tablet, or PC. All data remains 100% private in local storage.':

@@ -32,6 +32,7 @@ legend {
   --primary-rgb: 37, 99, 235;
   --accent-color: #059669; /* Emerald Green (Darkened for WCAG AA contrast) */
   --danger-color: #dc2626; /* Crimson Red (Darkened for WCAG AA contrast) */
+  --escrow-color: #6d28d9; /* High-contrast Purple (WCAG AA >= 4.5:1 on white) */
   --card-bg: #ffffff;
   --border-color: #e2e8f0;
   --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.08);
@@ -62,6 +63,7 @@ body.dark-mode {
   --primary-rgb: 59, 130, 246;
   --accent-color: #34d399; /* Bright Emerald Green (for dark mode contrast) */
   --danger-color: #f87171; /* Bright Crimson Red (for dark mode contrast) */
+  --escrow-color: #a78bfa; /* Bright Purple for dark mode contrast */
   --card-bg: #151e32;
   --border-color: #1e293b;
   --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
@@ -522,6 +524,14 @@ button:focus-visible,
   outline-offset: 2px;
 }
 
+/* Accessible Form Validation Error Styles */
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+.input-error {
+  border-color: var(--danger-color, #ef4444) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
 .small-switch {
   width: 44px;
   height: 24px;
@@ -965,6 +975,7 @@ input:focus-visible,
 
 /* Amortization Table Expansion Button */
 .table-expand-btn {
+  position: relative;
   width: 28px;
   height: 28px;
   border-radius: 50%;
@@ -988,6 +999,15 @@ input:focus-visible,
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+.table-expand-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
 }
 .table-expand-btn:hover {
   border-color: var(--primary-color);
@@ -1426,11 +1446,15 @@ body.mode-loan .cc-only {
   align-items: center;
   z-index: var(--z-modal);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.3s ease;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
 }
 .modal-overlay.active {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
 }
 
@@ -1457,13 +1481,23 @@ body.mode-loan .cc-only {
   margin-bottom: 20px;
 }
 .close-btn {
+  position: relative;
   background: transparent;
   border: none;
   font-size: 1.8rem;
   color: var(--text-color);
   cursor: pointer;
-  opacity: 0.6;
+  opacity: 0.8;
   transition: opacity 0.2s ease;
+}
+.close-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
 }
 .close-btn:hover {
   opacity: 1;
@@ -2004,6 +2038,8 @@ body.dark-mode .flag-icon {
   width: 380px;
   z-index: var(--z-sidebar);
   transform: translateX(100%);
+  visibility: hidden;
+  pointer-events: none;
   backdrop-filter: blur(25px);
   -webkit-backdrop-filter: blur(25px);
   background: rgba(15, 23, 42, 0.75);
@@ -2016,10 +2052,13 @@ body.dark-mode .flag-icon {
   color: var(--text-color);
   transition:
     transform 0.4s var(--spring-easing),
+    visibility 0.4s ease,
     background-color 0.3s ease;
 }
 .scenario-sidebar.active {
   transform: translateX(0) !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
 }
 body:not(.dark-mode) .scenario-sidebar {
   background: rgba(255, 255, 255, 0.85);
@@ -2061,16 +2100,26 @@ body:not(.dark-mode) .scenario-sidebar {
   gap: 8px;
 }
 .sidebar-close-btn {
+  position: relative;
   background: none;
   border: none;
   color: var(--text-color);
   font-size: 1.5rem;
   font-weight: 700;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.8;
   transition: opacity 0.2s ease;
   padding: 0;
   line-height: 1;
+}
+.sidebar-close-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
 }
 .sidebar-close-btn:hover {
   opacity: 1;
@@ -3399,6 +3448,31 @@ body.dark-mode .goal-result-box:hover {
 
 .plotly-container {
   min-height: 320px;
+}
+
+/* Keyboard Shortcut Key Styling */
+.kbd-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 2px 7px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 2px 0 var(--border-color);
+}
+
+.shortcuts-list .shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
 }
 
 /* Print Media Styles */

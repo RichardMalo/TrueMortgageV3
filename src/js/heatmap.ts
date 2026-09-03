@@ -2,6 +2,7 @@ import { AppState, ScheduleResult, AppElements, Inputs } from './types.js';
 import { generateMortgageSchedule, generateCCSchedule, generateLoanSchedule } from './math.js';
 import { formatCurrency } from './charts.js';
 import { t, currentLanguage } from './i18n.js';
+import type { HeatmapWorkerResponse } from './workers/heatmap.worker.js';
 
 /**
  * Determines row (monthly extra) and column (lump sum) values dynamically.
@@ -112,45 +113,36 @@ export const computeHeatmapGridSync = (
   return { grid, maxSaved, axes };
 };
 
+let heatmapWorker: Worker | null = null;
+let activeRequestId = 0;
+
+const getWorker = (): Worker | null => {
+  if (typeof window === 'undefined' || typeof Worker === 'undefined') return null;
+  if (!heatmapWorker) {
+    try {
+      heatmapWorker = new Worker(new URL('./workers/heatmap.worker.ts', import.meta.url), {
+        type: 'module'
+      });
+    } catch {
+      heatmapWorker = null;
+    }
+  }
+  return heatmapWorker;
+};
+
 /**
- * Computes grid data and renders the interactive HTML heatmap.
+ * Renders the interactive HTML heatmap table and detail panel.
  */
-export const renderHeatmap = (
-  state: AppState,
-  els: AppElements,
-  actData: ScheduleResult,
-  baseData: ScheduleResult,
-  getInputs: () => Inputs,
+export const renderHeatmapDOM = (
+  grid: GridCell[][],
+  maxSaved: number,
+  axes: { monthly: number[]; lumpSum: number[] },
+  inputs: Inputs,
+  container: HTMLElement,
+  detailsPanel: HTMLElement,
   onCellClick: (_monthly: number, _lumpSum: number) => void
 ) => {
-  const card = document.getElementById('heatmap-card');
-  if (!card) return;
-
-  const mode = state.currentMode || 'mortgage';
-  const inputs = getInputs();
-  let balance: number;
-  if (mode === 'mortgage') {
-    balance = Math.max(0, inputs.homePrice - inputs.downPayment);
-  } else if (mode === 'loan') {
-    balance = Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment);
-  } else {
-    balance = Math.max(0, inputs.ccBalance || 0);
-  }
-
-  // Hide heatmap if there is no balance/debt
-  if (balance <= 0) {
-    card.classList.add('hidden');
-    return;
-  }
-  card.classList.remove('hidden');
-
-  const container = document.getElementById('heatmapContainer');
-  const detailsPanel = document.getElementById('heatmap-details-panel');
-  if (!container || !detailsPanel) return;
-
   container.innerHTML = '';
-
-  const { grid, maxSaved, axes } = computeHeatmapGridSync(mode, inputs, balance, baseData);
 
   // Find if current inputs match any cell in the grid
   const currentMonthly = inputs.extraPayment || 0;
@@ -393,4 +385,65 @@ export const renderHeatmap = (
   });
 
   container.appendChild(table);
+};
+
+/**
+ * Computes grid data and renders the interactive HTML heatmap.
+ * Uses dedicated Web Worker off the main thread when supported, with synchronous fallback.
+ */
+export const renderHeatmap = (
+  state: AppState,
+  els: AppElements,
+  actData: ScheduleResult,
+  baseData: ScheduleResult,
+  getInputs: () => Inputs,
+  onCellClick: (_monthly: number, _lumpSum: number) => void
+) => {
+  const card = document.getElementById('heatmap-card');
+  if (!card) return;
+
+  const mode = state.currentMode || 'mortgage';
+  const inputs = getInputs();
+  let balance: number;
+  if (mode === 'mortgage') {
+    balance = Math.max(0, inputs.homePrice - inputs.downPayment);
+  } else if (mode === 'loan') {
+    balance = Math.max(0, inputs.loanAmount ?? inputs.homePrice - inputs.downPayment);
+  } else {
+    balance = Math.max(0, inputs.ccBalance || 0);
+  }
+
+  // Hide heatmap if there is no balance/debt
+  if (balance <= 0) {
+    card.classList.add('hidden');
+    return;
+  }
+  card.classList.remove('hidden');
+
+  const container = document.getElementById('heatmapContainer');
+  const detailsPanel = document.getElementById('heatmap-details-panel');
+  if (!container || !detailsPanel) return;
+
+  const worker = getWorker();
+  if (worker) {
+    const requestId = ++activeRequestId;
+    worker.onmessage = (e: MessageEvent<HeatmapWorkerResponse>) => {
+      if (e.data.requestId !== undefined && e.data.requestId !== activeRequestId) {
+        return; // Discard stale job
+      }
+      renderHeatmapDOM(
+        e.data.grid,
+        e.data.maxSaved,
+        e.data.axes,
+        inputs,
+        container,
+        detailsPanel,
+        onCellClick
+      );
+    };
+    worker.postMessage({ mode, inputs, balance, baseData, requestId });
+  } else {
+    const { grid, maxSaved, axes } = computeHeatmapGridSync(mode, inputs, balance, baseData);
+    renderHeatmapDOM(grid, maxSaved, axes, inputs, container, detailsPanel, onCellClick);
+  }
 };

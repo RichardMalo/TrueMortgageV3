@@ -7,6 +7,7 @@ export interface HeatmapWorkerRequest {
   inputs: Inputs;
   balance: number;
   baseData: ScheduleResult;
+  requestId?: number;
 }
 
 export interface HeatmapWorkerResponse {
@@ -16,6 +17,7 @@ export interface HeatmapWorkerResponse {
     monthly: number[];
     lumpSum: number[];
   };
+  requestId?: number;
 }
 
 self.onmessage = (e: MessageEvent<HeatmapWorkerRequest>) => {
@@ -81,7 +83,8 @@ self.onmessage = (e: MessageEvent<HeatmapWorkerRequest>) => {
   const response: HeatmapWorkerResponse = {
     grid,
     maxSaved,
-    axes
+    axes,
+    requestId: e.data.requestId
   };
 
   self.postMessage(response);

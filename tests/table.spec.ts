@@ -57,7 +57,7 @@ describe('Table Module (updateTable)', () => {
     const rows = tableBody.querySelectorAll('tr');
     expect(rows.length).toBe(2);
 
-    const firstRowCols = rows[0]!.querySelectorAll('td');
+    const firstRowCols = rows[0]!.querySelectorAll('th, td');
     expect(firstRowCols[0]!.textContent).toBe('Jan 1, 2025');
     // Without PITI, there should be 6 columns (date, pmt, prin, int, extra, bal)
     expect(firstRowCols.length).toBe(6);
@@ -71,7 +71,7 @@ describe('Table Module (updateTable)', () => {
     const rows = tableBody.querySelectorAll('tr');
     expect(rows.length).toBe(1);
 
-    const cols = rows[0]!.querySelectorAll('td');
+    const cols = rows[0]!.querySelectorAll('th, td');
     expect(cols[0]!.textContent).toBe('P1');
     // With PITI, there should be 7 columns (date, pmt, prin, int, escrow, extra, bal)
     expect(cols.length).toBe(7);

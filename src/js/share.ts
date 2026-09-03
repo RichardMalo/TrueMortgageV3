@@ -274,8 +274,11 @@ export const setupShareFunctionality = (
   const whatsappBtn = document.getElementById('whatsappOption');
   if (whatsappBtn) {
     whatsappBtn.addEventListener('click', () => {
-      const text = getReportSummaryText(true);
-      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+      const isFr = currentLanguage() === 'fr';
+      const shareMessage = isFr
+        ? 'Découvrez le Debt Elimination Engine — un optimiseur algorithmique pour éliminer vos dettes et optimiser vos versements : https://richardmalo.github.io/TrueMortgageV3/'
+        : 'Check out the Debt Elimination Engine — an algorithmic mortgage & debt optimization platform: https://richardmalo.github.io/TrueMortgageV3/';
+      const url = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareMessage)}`;
       window.open(url, '_blank', 'noopener,noreferrer');
     });
   }
@@ -333,4 +336,92 @@ export const setupShareFunctionality = (
       }
     });
   }
+
+  const downloadCsvBtn = document.getElementById('downloadCsvOption');
+  if (downloadCsvBtn) {
+    downloadCsvBtn.addEventListener('click', () => {
+      const { actualData } = getLatestSchedules();
+      const isMortgage = state.currentMode === 'mortgage';
+      const inputs = getInputs();
+      const modeName = isMortgage
+        ? 'Mortgage'
+        : state.currentMode === 'loan'
+          ? 'Loan'
+          : 'CreditCard';
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const filename = `Amortization_Schedule_${modeName}_${localDate}.csv`;
+      exportScheduleToCsv(actualData.schedule, filename, inputs.usePiti && isMortgage);
+
+      const statusEl = document.getElementById('shareStatus');
+      if (statusEl) {
+        statusEl.style.display = 'block';
+        statusEl.textContent = t('CSV exported successfully!');
+        setTimeout(() => {
+          statusEl.style.display = 'none';
+        }, 3000);
+      }
+    });
+  }
+
+  const exportTableCsvBtn = document.getElementById('exportCsvBtn');
+  if (exportTableCsvBtn) {
+    exportTableCsvBtn.addEventListener('click', () => {
+      const { actualData } = getLatestSchedules();
+      const isMortgage = state.currentMode === 'mortgage';
+      const inputs = getInputs();
+      const modeName = isMortgage
+        ? 'Mortgage'
+        : state.currentMode === 'loan'
+          ? 'Loan'
+          : 'CreditCard';
+      const now = new Date();
+      const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      const filename = `Amortization_Schedule_${modeName}_${localDate}.csv`;
+      exportScheduleToCsv(actualData.schedule, filename, inputs.usePiti && isMortgage);
+    });
+  }
+};
+
+/**
+ * Exports an amortization schedule array to a downloadable standard CSV spreadsheet file.
+ */
+export const exportScheduleToCsv = (
+  schedule: ScheduleResult['schedule'],
+  filename = 'Debt_Elimination_Schedule.csv',
+  usePiti = false
+) => {
+  if (!schedule || schedule.length === 0) return;
+  const headers = ['Period', 'Date', 'Payment', 'Principal', 'Interest'];
+  if (usePiti) headers.push('Escrow');
+  headers.push('Extra', 'Balance', 'Total Interest', 'Total Principal');
+
+  const rows = schedule.map((r) => {
+    const rowData = [
+      r.period,
+      `"${(r.dateLabel || '').replace(/"/g, '""')}"`,
+      r.payment.toFixed(2),
+      r.principal.toFixed(2),
+      r.interest.toFixed(2)
+    ];
+    if (usePiti) rowData.push(r.escrow.toFixed(2));
+    rowData.push(
+      r.extra.toFixed(2),
+      r.balance.toFixed(2),
+      r.totalInterest.toFixed(2),
+      r.totalPrincipal.toFixed(2)
+    );
+    return rowData.join(',');
+  });
+
+  const csvContent = [headers.join(','), ...rows].join('\r\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };

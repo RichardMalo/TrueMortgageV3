@@ -88,7 +88,7 @@ export const solveRequiredMonthly = (
       min = mid;
     }
   }
-  return result < 1.0 ? 0 : Math.ceil(result);
+  return result <= 0.001 ? 0 : Math.ceil(result);
 };
 
 /**
@@ -140,7 +140,7 @@ export const solveRequiredLumpSum = (
       min = mid;
     }
   }
-  return result < 1.0 ? 0 : Math.ceil(result);
+  return result <= 0.001 ? 0 : Math.ceil(result);
 };
 
 /**

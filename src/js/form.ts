@@ -14,6 +14,7 @@ export const validateForm = (
   Object.values(inputs).forEach((input) => {
     if (input) {
       input.removeAttribute('aria-invalid');
+      input.removeAttribute('aria-describedby');
     }
   });
 
@@ -25,6 +26,12 @@ export const validateForm = (
       targetInput.setAttribute('aria-invalid', 'true');
       if (errorContainer?.id) {
         targetInput.setAttribute('aria-describedby', errorContainer.id);
+      }
+      try {
+        targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        targetInput.focus({ preventScroll: true });
+      } catch {
+        targetInput.focus();
       }
     }
     if (errorContainer) {

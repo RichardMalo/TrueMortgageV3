@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { setupShareFunctionality } from '../src/js/share.js';
+import { setupShareFunctionality, exportScheduleToCsv } from '../src/js/share.js';
 import { AppState } from '../src/js/types.js';
 
 describe('Share Functionality (share.ts)', () => {
@@ -123,5 +123,58 @@ describe('Share Functionality (share.ts)', () => {
     const statusEl = document.getElementById('shareStatus');
     expect(statusEl?.textContent).toContain('copied');
     execCommandSpy.mockRestore();
+  });
+
+  it('should export schedule to CSV correctly and trigger download', () => {
+    const mockSchedule = [
+      {
+        period: 1,
+        year: 1,
+        calendarYear: 2026,
+        dateLabel: 'Jul 2026',
+        ltv: 80,
+        payment: 2000,
+        principal: 1500,
+        interest: 500,
+        tax: 0,
+        ins: 0,
+        hoa: 0,
+        pmi: 0,
+        escrow: 0,
+        extra: 0,
+        balance: 398500,
+        totalInterest: 500,
+        totalPrincipal: 1500,
+        totalExtra: 0,
+        totalEscrow: 0
+      }
+    ];
+
+    let createdBlob: Blob | null = null;
+    let createdUrl = '';
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+
+    URL.createObjectURL = vi.fn((blob: Blob) => {
+      createdBlob = blob;
+      createdUrl = 'blob:http://localhost/mock-csv';
+      return createdUrl;
+    });
+    URL.revokeObjectURL = vi.fn();
+
+    const linkClickSpy = vi
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {});
+
+    exportScheduleToCsv(mockSchedule, 'Test_Schedule.csv', false);
+
+    expect(URL.createObjectURL).toHaveBeenCalled();
+    expect(linkClickSpy).toHaveBeenCalled();
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith(createdUrl);
+    expect(createdBlob).not.toBeNull();
+
+    linkClickSpy.mockRestore();
+    URL.createObjectURL = originalCreateObjectURL;
+    URL.revokeObjectURL = originalRevokeObjectURL;
   });
 });
