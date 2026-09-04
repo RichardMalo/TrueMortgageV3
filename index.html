@@ -1568,29 +1568,30 @@
           </div>
 
           <div class="bento-card table-card mt-24">
-            <div class="section-header-with-toggle mb-20 flex-wrap gap-10">
-              <h2 class="section-title m-0">
-                Amortization Schedule
-                <span class="help-tip"
-                  >?<span class="tooltip-text"
-                    >A granular ledger mapping principal pay-down and interest decay curves. Note:
-                    Minor variances can occur based on how individual lenders round daily interest
-                    and process extra payments.</span
-                  ></span
-                >
-              </h2>
-              <div class="flex items-center gap-12 flex-wrap">
+            <div class="section-header-with-toggle table-header-bar mb-20 flex-wrap gap-12">
+              <div class="table-header-left flex items-center gap-14 flex-wrap">
+                <h2 class="section-title m-0">
+                  Amortization Schedule
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >A granular ledger mapping principal pay-down and interest decay curves. Note:
+                      Minor variances can occur based on how individual lenders round daily interest
+                      and process extra payments.</span
+                    ></span
+                  >
+                </h2>
                 <div
-                  class="toggle-wrapper flex items-center gap-8 mortgage-only"
+                  class="table-milestone-pill mortgage-only"
                   id="termMilestoneToggleWrapper"
                   title="Toggle Term Renewal Milestone"
                 >
-                  <span
-                    class="text-xs font-semibold opacity-80 whitespace-nowrap"
+                  <label
+                    class="table-toolbar-label"
+                    for="termMilestoneToggle"
                     id="termMilestoneToggleLabel"
-                    >🚩 Term Milestone</span
+                    >🚩 Term Milestone</label
                   >
-                  <label class="switch small-switch" title="Toggle Term Renewal Milestone">
+                  <label class="switch table-switch" title="Toggle Term Renewal Milestone">
                     <input
                       type="checkbox"
                       id="termMilestoneToggle"
@@ -1602,19 +1603,36 @@
                     <span class="slider"></span>
                   </label>
                 </div>
+              </div>
+              <div class="table-header-actions flex items-center gap-8">
                 <button
                   type="button"
-                  class="table-expand-btn text-xs font-semibold px-2"
+                  class="secondary-btn compact-btn table-action-btn"
                   id="exportCsvBtn"
                   title="Export Amortization Table to CSV"
                   aria-label="Export Amortization Schedule Table to CSV File"
-                  style="width: auto; min-width: 44px; padding: 0 10px; font-size: 0.75rem"
                 >
-                  CSV 📥
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="btn-icon"
+                    aria-hidden="true"
+                  >
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  <span>Export CSV</span>
                 </button>
                 <button
                   type="button"
-                  class="table-expand-btn"
+                  class="secondary-btn compact-btn table-expand-btn"
                   id="table-expand-btn"
                   title="Expand Table"
                   aria-expanded="false"

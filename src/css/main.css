@@ -973,47 +973,182 @@ input:focus-visible,
   -webkit-overflow-scrolling: touch;
 }
 
-/* Amortization Table Expansion Button */
-.table-expand-btn {
-  position: relative;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background-color: var(--input-bg);
-  border: 1px solid var(--border-color);
-  color: var(--text-color);
-  font-size: 1.1rem;
-  font-weight: 700;
+/* Amortization Table Header Controls */
+.table-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.table-header-left {
   display: flex;
   align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: var(--z-dropdown);
-  transition: all 0.2s var(--spring-easing);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  padding: 0;
-  line-height: 1;
+  gap: 14px;
+  flex-wrap: wrap;
+}
 
-  touch-action: manipulation;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
+.table-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Term Milestone Pill Badge */
+.table-milestone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  padding: 3px 6px 3px 12px;
+  height: 32px;
+  transition: all 0.25s var(--spring-easing);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.table-milestone-pill:hover {
+  border-color: rgba(var(--primary-rgb), 0.5);
+  background-color: var(--card-bg);
+}
+
+.table-toolbar-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-color);
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  opacity: 0.88;
+  cursor: pointer;
   user-select: none;
 }
-.table-expand-btn::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  min-width: 44px;
-  min-height: 44px;
+
+/* Micro Switch for Table Milestone Pill */
+.table-switch {
+  position: relative;
+  display: inline-block;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  margin: 0;
 }
+
+.table-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.table-switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #94a3b8;
+  transition: 0.3s var(--spring-easing);
+  border-radius: 20px;
+}
+
+body.dark-mode .table-switch .slider {
+  background-color: #334155;
+}
+
+.table-switch .slider:before {
+  position: absolute;
+  content: '';
+  height: 14px;
+  width: 14px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s var(--spring-easing);
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.table-switch input:checked + .slider {
+  background-color: var(--primary-color);
+}
+
+.table-switch input:checked + .slider:before {
+  transform: translateX(16px);
+}
+
+.table-switch input:focus-visible + .slider {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Table Action Buttons */
+.table-action-btn {
+  height: 32px !important;
+  font-size: 0.78rem !important;
+  font-weight: 600 !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border-color) !important;
+  background-color: var(--input-bg) !important;
+  color: var(--text-color) !important;
+  padding: 0 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.25s var(--spring-easing) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+}
+
+.table-action-btn .btn-icon {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.table-action-btn:hover {
+  background-color: var(--card-bg) !important;
+  border-color: var(--primary-color) !important;
+  color: var(--primary-color) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.15) !important;
+}
+
+.table-action-btn:hover .btn-icon {
+  transform: translateY(1px);
+}
+
+/* Amortization Table Expansion Button */
+.table-expand-btn {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  background-color: var(--input-bg) !important;
+  border: 1px solid var(--border-color) !important;
+  color: var(--text-color) !important;
+  font-size: 1.15rem !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: all 0.25s var(--spring-easing) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+  line-height: 1 !important;
+  user-select: none;
+  touch-action: manipulation;
+}
+
 .table-expand-btn:hover {
-  border-color: var(--primary-color);
-  background-color: var(--card-bg);
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.15);
+  border-color: var(--primary-color) !important;
+  background-color: var(--card-bg) !important;
+  color: var(--primary-color) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(var(--primary-rgb), 0.15) !important;
 }
 .table-responsive.expanded {
   max-height: none;
@@ -2678,6 +2813,9 @@ body:not(.dark-mode) .scenario-sidebar {
 .inline-block {
   display: inline-block !important;
 }
+.flex {
+  display: flex !important;
+}
 .flex-col {
   display: flex !important;
   flex-direction: column !important;
@@ -3491,6 +3629,8 @@ body.dark-mode .goal-result-box:hover {
   .toggle-wrapper,
   .wage-toggle-selector,
   .table-expand-btn,
+  .table-milestone-pill,
+  .table-header-actions,
   .dropdown-trigger,
   .settings-dropdown-wrapper,
   #clearBtn,
