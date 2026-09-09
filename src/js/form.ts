@@ -8,7 +8,8 @@ import { t } from './i18n.js';
 export const validateForm = (
   currentMode: 'mortgage' | 'cc' | 'loan',
   inputs: Record<string, HTMLInputElement | HTMLSelectElement | null>,
-  errorContainer: HTMLElement | null
+  errorContainer: HTMLElement | null,
+  shouldFocus = false
 ): boolean => {
   // Clear any existing aria-invalid attributes
   Object.values(inputs).forEach((input) => {
@@ -27,11 +28,13 @@ export const validateForm = (
       if (errorContainer?.id) {
         targetInput.setAttribute('aria-describedby', errorContainer.id);
       }
-      try {
-        targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        targetInput.focus({ preventScroll: true });
-      } catch {
-        targetInput.focus();
+      if (shouldFocus) {
+        try {
+          targetInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          targetInput.focus({ preventScroll: true });
+        } catch {
+          targetInput.focus();
+        }
       }
     }
     if (errorContainer) {
@@ -92,7 +95,9 @@ export const validateForm = (
       showError('Down Payment must be a valid non-negative number.', inputs.downPayment);
       return false;
     }
-    if (dp > hp) {
+    const isTypingHp =
+      typeof document !== 'undefined' && document.activeElement === inputs.homePrice;
+    if (dp > hp && !isTypingHp) {
       showError('Down Payment cannot exceed the Home Price.', inputs.downPayment);
       return false;
     }
@@ -103,7 +108,9 @@ export const validateForm = (
       );
       return false;
     }
-    if (isNaN(term) || term <= 0 || term > amort) {
+    const isTypingAmort =
+      typeof document !== 'undefined' && document.activeElement === inputs.amortization;
+    if (isNaN(term) || term <= 0 || (term > amort && !isTypingAmort)) {
       showError(
         'Term Length must be positive and cannot exceed the Amortization period.',
         inputs.term

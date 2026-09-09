@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import { validateForm, getCalculationsInputs, profileToInputs } from '../src/js/form.js';
 
 describe('Form Validation & Parsing (form.ts)', () => {
@@ -485,6 +485,70 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(auInputs.country).toBe('monthly-au');
       expect(auInputs.auFirstTimeBuyer).toBe(true);
       expect(auInputs.auState).toBe('VIC');
+    });
+  });
+
+  describe('Focus Management & In-Flight Typing Protection', () => {
+    it('does not steal focus or scroll when shouldFocus is false (default for live typing)', () => {
+      document.body.appendChild(inputs.term!);
+      inputs.amortization!.value = '1';
+      inputs.term!.value = '5';
+      const focusSpy = vi.spyOn(inputs.term!, 'focus');
+
+      const isValid = validateForm('mortgage', inputs, errorContainer, false);
+      expect(isValid).toBe(false);
+      expect(focusSpy).not.toHaveBeenCalled();
+      focusSpy.mockRestore();
+    });
+
+    it('focuses the target input only when shouldFocus is true (explicit submit)', () => {
+      inputs.amortization!.value = '1';
+      inputs.term!.value = '5';
+      const focusSpy = vi.spyOn(inputs.term!, 'focus');
+
+      const isValid = validateForm('mortgage', inputs, errorContainer, true);
+      expect(isValid).toBe(false);
+      expect(focusSpy).toHaveBeenCalled();
+      focusSpy.mockRestore();
+    });
+
+    it('allows in-flight typing in amortization without premature term>amort error while field is active', () => {
+      document.body.appendChild(inputs.amortization!);
+      inputs.amortization!.focus();
+      expect(document.activeElement).toBe(inputs.amortization);
+
+      // Typing '1' on the way to '18'
+      inputs.amortization!.value = '1';
+      inputs.term!.value = '5';
+      inputs.homePrice!.value = '500000';
+      inputs.downPayment!.value = '100000';
+      inputs.rate!.value = '4.5';
+      inputs.extra!.value = '0';
+
+      const isValid = validateForm('mortgage', inputs, errorContainer, false);
+      expect(isValid).toBe(true);
+      expect(errorContainer.style.display).toBe('none');
+
+      inputs.amortization!.blur();
+    });
+
+    it('allows in-flight typing in homePrice without premature dp>hp error while field is active', () => {
+      document.body.appendChild(inputs.homePrice!);
+      inputs.homePrice!.focus();
+      expect(document.activeElement).toBe(inputs.homePrice);
+
+      // Typing '8' on the way to '800000' while downPayment is 100000
+      inputs.homePrice!.value = '8';
+      inputs.downPayment!.value = '100000';
+      inputs.amortization!.value = '25';
+      inputs.term!.value = '5';
+      inputs.rate!.value = '4.5';
+
+      const isValid = validateForm('mortgage', inputs, errorContainer, false);
+      expect(isValid).toBe(true);
+      expect(errorContainer.style.display).toBe('none');
+
+      inputs.homePrice!.blur();
     });
   });
 });
