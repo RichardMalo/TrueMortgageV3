@@ -582,6 +582,71 @@ export const saveSettingsToStorage = (
   }
 };
 
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingSaveArgs: {
+  state: AppState;
+  inputsMap: Record<string, HTMLInputElement | HTMLSelectElement | null>;
+  defaultInputs: Inputs;
+  skipDomSync: boolean;
+} | null = null;
+
+/**
+ * Immediately executes any queued debounced storage save.
+ */
+export const flushSaveSettings = (): void => {
+  if (saveTimer !== null) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  if (pendingSaveArgs) {
+    const { state, inputsMap, defaultInputs, skipDomSync } = pendingSaveArgs;
+    pendingSaveArgs = null;
+    saveSettingsToStorage(state, inputsMap, defaultInputs, skipDomSync);
+  }
+};
+
+/**
+ * Cancels any scheduled debounced save without writing to storage.
+ */
+export const cancelDebouncedSave = (): void => {
+  if (saveTimer !== null) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  pendingSaveArgs = null;
+};
+
+/**
+ * Debounces saveSettingsToStorage to prevent synchronous disk I/O thrashing
+ * on every single keystroke during rapid user typing.
+ *
+ * @param state - The shared AppState store.
+ * @param inputsMap - Direct references to all inputs in the HTML DOM.
+ * @param defaultInputs - Baseline defaults configuration.
+ * @param skipDomSync - If true, state is saved to storage directly without reading DOM values first.
+ * @param delayMs - Delay in milliseconds before flushing to localStorage (default: 200ms).
+ */
+export const debouncedSaveSettingsToStorage = (
+  state: AppState,
+  inputsMap: Record<string, HTMLInputElement | HTMLSelectElement | null>,
+  defaultInputs: Inputs,
+  skipDomSync = false,
+  delayMs = 200
+): void => {
+  pendingSaveArgs = { state, inputsMap, defaultInputs, skipDomSync };
+  if (saveTimer !== null) {
+    clearTimeout(saveTimer);
+  }
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    if (pendingSaveArgs) {
+      const { state: s, inputsMap: im, defaultInputs: di, skipDomSync: sds } = pendingSaveArgs;
+      pendingSaveArgs = null;
+      saveSettingsToStorage(s, im, di, sds);
+    }
+  }, delayMs);
+};
+
 /**
  * Loads and migrates saved Application Settings from localStorage.
  * Initializes default profiles and baseline settings if storage is empty.

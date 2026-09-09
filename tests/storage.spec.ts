@@ -1,9 +1,12 @@
-import { describe, it, expect, beforeAll, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 import {
   encryptData,
   decryptData,
   sanitizeProfile,
   saveSettingsToStorage,
+  debouncedSaveSettingsToStorage,
+  flushSaveSettings,
+  cancelDebouncedSave,
   loadSettingsFromStorage,
   getCountryCompoundingFromTimezone,
   removePrototypeKeys,
@@ -595,6 +598,118 @@ describe('Storage & Cryptography (storage.ts)', () => {
       expect(profile!.inputs.mortgageTerm).toBe('5');
       expect(profile!.inputs.loanAmortization).toBe('7');
       expect(profile!.inputs.loanTerm).toBe('7');
+    });
+  });
+
+  describe('debouncedSaveSettingsToStorage & flushSaveSettings', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      localStorage.clear();
+      cancelDebouncedSave();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      cancelDebouncedSave();
+    });
+
+    it('should debounce rapid save calls and write only once after 200ms', () => {
+      const state = {
+        activeProfileId: 'prof-test',
+        profiles: {
+          'prof-test': {
+            id: 'prof-test',
+            name: 'Test',
+            currentMode: 'mortgage',
+            complexity: 'simple',
+            isDark: false,
+            termRates: {},
+            customizedYears: {},
+            inputs: {}
+          }
+        }
+      } as unknown as AppState;
+
+      const inputEl = document.createElement('input');
+      const inputsMap = { homePrice: inputEl };
+
+      // Simulate 5 rapid keystrokes within 50ms
+      for (let i = 1; i <= 5; i++) {
+        inputEl.value = String(100000 * i);
+        debouncedSaveSettingsToStorage(state, inputsMap, DEFAULT_INPUTS, false, 200);
+        vi.advanceTimersByTime(10);
+      }
+
+      // Should not have written to localStorage yet because 200ms has not passed since last keystroke
+      expect(localStorage.getItem('mtg_calculator_settings')).toBeNull();
+
+      // Advance by remaining time to complete 200ms after the last keystroke
+      vi.advanceTimersByTime(200);
+
+      // Now it should have written exactly the latest value
+      const stored = JSON.parse(localStorage.getItem('mtg_calculator_settings')!);
+      expect(stored).toBeDefined();
+      expect(stored.profiles['prof-test'].inputs.homePrice).toBe('500000');
+    });
+
+    it('should immediately flush pending save when flushSaveSettings is called', () => {
+      const state = {
+        activeProfileId: 'prof-flush',
+        profiles: {
+          'prof-flush': {
+            id: 'prof-flush',
+            name: 'Flush Test',
+            currentMode: 'mortgage',
+            complexity: 'simple',
+            isDark: false,
+            termRates: {},
+            customizedYears: {},
+            inputs: {}
+          }
+        }
+      } as unknown as AppState;
+
+      const inputEl = document.createElement('input');
+      inputEl.value = '750000';
+      const inputsMap = { homePrice: inputEl };
+
+      debouncedSaveSettingsToStorage(state, inputsMap, DEFAULT_INPUTS, false, 200);
+      expect(localStorage.getItem('mtg_calculator_settings')).toBeNull();
+
+      // Flush immediately (e.g. on blur or page unload)
+      flushSaveSettings();
+
+      const stored = JSON.parse(localStorage.getItem('mtg_calculator_settings')!);
+      expect(stored).toBeDefined();
+      expect(stored.profiles['prof-flush'].inputs.homePrice).toBe('750000');
+    });
+
+    it('should cancel pending save when cancelDebouncedSave is called', () => {
+      const state = {
+        activeProfileId: 'prof-cancel',
+        profiles: {
+          'prof-cancel': {
+            id: 'prof-cancel',
+            name: 'Cancel Test',
+            currentMode: 'mortgage',
+            complexity: 'simple',
+            isDark: false,
+            termRates: {},
+            customizedYears: {},
+            inputs: {}
+          }
+        }
+      } as unknown as AppState;
+
+      const inputEl = document.createElement('input');
+      inputEl.value = '300000';
+      const inputsMap = { homePrice: inputEl };
+
+      debouncedSaveSettingsToStorage(state, inputsMap, DEFAULT_INPUTS, false, 200);
+      cancelDebouncedSave();
+
+      vi.advanceTimersByTime(500);
+      expect(localStorage.getItem('mtg_calculator_settings')).toBeNull();
     });
   });
 });

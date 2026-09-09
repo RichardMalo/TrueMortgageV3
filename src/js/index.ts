@@ -19,10 +19,13 @@ import {
   clearVisibleChartsCache,
   resizeChart,
   cancelPendingChartRenders,
-  formatCurrency
+  formatCurrency,
+  formatDecimal
 } from './charts.js';
 import {
   saveSettingsToStorage,
+  debouncedSaveSettingsToStorage,
+  flushSaveSettings,
   loadSettingsFromStorage,
   encryptData,
   decryptData,
@@ -163,6 +166,87 @@ const els = {
   masterBtns: document.querySelectorAll('.mode-btn')
 };
 
+// Baseline & Comparison Schedule Memoization Cache
+let cachedBaselineKey = '';
+let cachedBaseData: ScheduleResult | null = null;
+let cachedCompKey = '';
+let cachedCompData: ScheduleResult | null = null;
+
+export const getBaselineCacheKey = (
+  mode: string,
+  profileId: string,
+  inp: Inputs,
+  lang: string = 'en'
+): string => {
+  if (mode === 'mortgage') {
+    return [
+      profileId,
+      'mtg',
+      inp.homePrice,
+      inp.downPayment,
+      inp.annualRate,
+      inp.amortizationYears,
+      inp.termYears,
+      inp.compounding,
+      inp.province,
+      inp.country,
+      inp.includeCmhc,
+      inp.cmhcProvince,
+      inp.includeLtt,
+      inp.lttProvince,
+      inp.lttFirstTimeBuyer,
+      inp.ukFirstTimeBuyer,
+      inp.auFirstTimeBuyer,
+      inp.auState,
+      inp.isAdditionalProperty,
+      inp.taxRate,
+      inp.insRate,
+      inp.hoaRate,
+      inp.pmiRate,
+      inp.startDate,
+      inp.rateShockEnabled,
+      JSON.stringify(inp.termRates || {}),
+      lang
+    ].join('|');
+  }
+  if (mode === 'loan') {
+    return [
+      profileId,
+      'loan',
+      inp.loanAmount,
+      inp.homePrice,
+      inp.downPayment,
+      inp.annualRate,
+      inp.amortizationYears,
+      inp.termYears,
+      inp.loanOriginationFee,
+      inp.loanOriginationFeeEnabled,
+      inp.startDate,
+      lang
+    ].join('|');
+  }
+  return [
+    profileId,
+    'cc',
+    inp.ccBalance,
+    inp.annualRate,
+    inp.province,
+    inp.ccMinPercent,
+    inp.ccMinPrincipalPct,
+    inp.ccMinFlat,
+    inp.ccCompounding,
+    inp.startDate,
+    lang
+  ].join('|');
+};
+
+export const invalidateBaselineCache = () => {
+  cachedBaselineKey = '';
+  cachedBaseData = null;
+  cachedCompKey = '';
+  cachedCompData = null;
+};
+
 // Central calculation execution pipeline
 const calculate = (e?: Event) => {
   if (e) e.preventDefault();
@@ -171,6 +255,7 @@ const calculate = (e?: Event) => {
 
   const isMortgage = state.currentMode === 'mortgage';
   const inputs = getCalculationsInputs(state.currentMode, els.inputs, state.termRates);
+  inputs.lang = state.language;
   updateLabelCurrencySymbols();
   updateScheduledLumpSumDatesInPlace();
 
@@ -227,9 +312,10 @@ const calculate = (e?: Event) => {
   }
 
   const hasStrat =
-    inputs.extraPayment > 0 ||
+    (inputs.extraPayment || 0) > 0 ||
     (inputs.lumpSum || 0) > 0 ||
-    (isMortgage && inputs.frequency !== 'monthly');
+    Boolean(inputs.lumpSums && inputs.lumpSums.some((item) => (item.amount || 0) > 0)) ||
+    (state.currentMode !== 'cc' && inputs.frequency !== 'monthly');
 
   if (els.containers.comparison) {
     els.containers.comparison.classList.toggle('hidden', !hasStrat);
@@ -241,19 +327,33 @@ const calculate = (e?: Event) => {
     els.containers.oppCost.classList.toggle('hidden', !inputs.useOppCost);
   }
 
-  const baseData =
-    state.currentMode === 'mortgage'
-      ? generateMortgageSchedule(inputs, true)
-      : state.currentMode === 'loan'
-        ? generateLoanSchedule(inputs, true)
-        : generateCCSchedule(inputs, true);
+  const baselineKey = getBaselineCacheKey(
+    state.currentMode,
+    String(state.activeProfileId),
+    inputs,
+    state.language || 'en'
+  );
+  let baseData: ScheduleResult;
+  if (cachedBaseData && cachedBaselineKey === baselineKey) {
+    baseData = cachedBaseData;
+  } else {
+    baseData =
+      state.currentMode === 'mortgage'
+        ? generateMortgageSchedule(inputs, true)
+        : state.currentMode === 'loan'
+          ? generateLoanSchedule(inputs, true)
+          : generateCCSchedule(inputs, true);
+    cachedBaselineKey = baselineKey;
+    cachedBaseData = baseData;
+  }
 
-  const actData =
-    state.currentMode === 'mortgage'
+  const actData = hasStrat
+    ? state.currentMode === 'mortgage'
       ? generateMortgageSchedule(inputs, false)
       : state.currentMode === 'loan'
         ? generateLoanSchedule(inputs, false)
-        : generateCCSchedule(inputs, false);
+        : generateCCSchedule(inputs, false)
+    : baseData;
 
   const principalBorrowAmount =
     state.currentMode === 'mortgage'
@@ -279,7 +379,7 @@ const calculate = (e?: Event) => {
     cmhcProvinceWrapper.classList.toggle('hidden', !isCmhcActive);
   }
 
-  // Land Transfer Tax (LTT) update (Advanced Mode Only)
+  // Land Transfer Tax (LTT) / Stamp Duty update (Advanced Mode Only)
   const lttConfigWrapper = document.getElementById('lttConfigWrapper');
   const lttEstimateBadge = document.getElementById('lttEstimateBadge');
   const isLttActive = isMortgage && !!inputs.includeLtt && state.complexity === 'advanced';
@@ -287,7 +387,60 @@ const calculate = (e?: Event) => {
     lttConfigWrapper.classList.toggle('hidden', !isLttActive);
   }
   if (lttEstimateBadge) {
-    if (isLttActive && actData.summary.lttResult) {
+    if (
+      isLttActive &&
+      (inputs.country === 'monthly-uk' ||
+        inputs.country === 'UK' ||
+        actData.summary.closingTaxResult?.regionType === 'UK_SDLT')
+    ) {
+      const sdlt =
+        actData.summary.ukSdltResult ||
+        (actData.summary.closingTaxResult?.regionType === 'UK_SDLT'
+          ? {
+              sdltAmount: actData.summary.closingTaxResult.taxAmount,
+              effectiveRatePct: actData.summary.closingTaxResult.effectiveRatePct,
+              firstTimeBuyerRelief: actData.summary.closingTaxResult.rebateOrRelief
+            }
+          : null);
+      if (sdlt) {
+        const netSdltStr = formatCurrency(sdlt.sdltAmount);
+        let details = `${t('Effective Rate')}: ${sdlt.effectiveRatePct.toFixed(2)}%`;
+        if (sdlt.firstTimeBuyerRelief > 0) {
+          details += ` | ${t('Relief')}: -${formatCurrency(sdlt.firstTimeBuyerRelief)}`;
+        }
+        lttEstimateBadge.innerHTML = `<strong>${t('UK Stamp Duty (SDLT):')}</strong> <span style="color: var(--accent-color); font-weight: 700;">${netSdltStr}</span> (${details})`;
+        lttEstimateBadge.style.display = 'block';
+      } else {
+        lttEstimateBadge.style.display = 'none';
+      }
+    } else if (
+      isLttActive &&
+      (inputs.country === 'monthly-au' ||
+        inputs.country === 'AU' ||
+        actData.summary.closingTaxResult?.regionType === 'AU_DUTY')
+    ) {
+      const duty =
+        actData.summary.australianDutyResult ||
+        (actData.summary.closingTaxResult?.regionType === 'AU_DUTY'
+          ? {
+              transferDuty: actData.summary.closingTaxResult.taxAmount,
+              effectiveRatePct: actData.summary.closingTaxResult.effectiveRatePct,
+              concessionAmount: actData.summary.closingTaxResult.rebateOrRelief
+            }
+          : null);
+      if (duty) {
+        const netDutyStr = formatCurrency(duty.transferDuty);
+        const stateCode = inputs.auState || 'NSW';
+        let details = `${t('State')}: ${stateCode} | ${t('Effective Rate')}: ${duty.effectiveRatePct.toFixed(2)}%`;
+        if (duty.concessionAmount > 0) {
+          details += ` | ${t('Concession')}: -${formatCurrency(duty.concessionAmount)}`;
+        }
+        lttEstimateBadge.innerHTML = `<strong>${t('Australian Stamp Duty:')}</strong> <span style="color: var(--accent-color); font-weight: 700;">${netDutyStr}</span> (${details})`;
+        lttEstimateBadge.style.display = 'block';
+      } else {
+        lttEstimateBadge.style.display = 'none';
+      }
+    } else if (isLttActive && actData.summary.lttResult) {
       const ltt = actData.summary.lttResult;
       const netLttStr = formatCurrency(ltt.totalLtt);
       const provStr = formatCurrency(ltt.provincialLtt);
@@ -310,38 +463,63 @@ const calculate = (e?: Event) => {
   }
 
   // Calculate savings specifically from the one-time lump sum payment
-  const inputsWithoutLumpSum = {
-    ...inputs,
-    lumpSum: 0
-  };
-  const lumpSumFreeData =
-    state.currentMode === 'mortgage'
-      ? generateMortgageSchedule(inputsWithoutLumpSum, false, true)
-      : state.currentMode === 'loan'
-        ? generateLoanSchedule(inputsWithoutLumpSum, false, true)
-        : generateCCSchedule(inputsWithoutLumpSum, false, true);
+  const hasOtherStratBesidesLumpSum =
+    (inputs.extraPayment || 0) > 0 ||
+    Boolean(inputs.lumpSums && inputs.lumpSums.some((item) => (item.amount || 0) > 0)) ||
+    (state.currentMode !== 'cc' && inputs.frequency !== 'monthly');
 
-  const lumpSumSavings = Math.max(
-    0,
-    lumpSumFreeData.summary.totalInterest - actData.summary.totalInterest
-  );
+  let lumpSumSavings = 0;
+  if ((inputs.lumpSum || 0) > 0) {
+    if (!hasOtherStratBesidesLumpSum) {
+      lumpSumSavings = Math.max(0, baseData.summary.totalInterest - actData.summary.totalInterest);
+    } else {
+      const inputsWithoutLumpSum = {
+        ...inputs,
+        lumpSum: 0
+      };
+      const lumpSumFreeData =
+        state.currentMode === 'mortgage'
+          ? generateMortgageSchedule(inputsWithoutLumpSum, false, true)
+          : state.currentMode === 'loan'
+            ? generateLoanSchedule(inputsWithoutLumpSum, false, true)
+            : generateCCSchedule(inputsWithoutLumpSum, false, true);
+      lumpSumSavings = Math.max(
+        0,
+        lumpSumFreeData.summary.totalInterest - actData.summary.totalInterest
+      );
+    }
+  }
 
   // Calculate savings specifically from the extra payment
-  const inputsWithoutExtra = {
-    ...inputs,
-    extraPayment: 0
-  };
-  const extraFreeData =
-    state.currentMode === 'mortgage'
-      ? generateMortgageSchedule(inputsWithoutExtra, false, true)
-      : state.currentMode === 'loan'
-        ? generateLoanSchedule(inputsWithoutExtra, false, true)
-        : generateCCSchedule(inputsWithoutExtra, false, true);
+  const hasOtherStratBesidesExtra =
+    (inputs.lumpSum || 0) > 0 ||
+    Boolean(inputs.lumpSums && inputs.lumpSums.some((item) => (item.amount || 0) > 0)) ||
+    (state.currentMode !== 'cc' && inputs.frequency !== 'monthly');
 
-  const extraPaymentSavings = Math.max(
-    0,
-    extraFreeData.summary.totalInterest - actData.summary.totalInterest
-  );
+  let extraPaymentSavings = 0;
+  if ((inputs.extraPayment || 0) > 0) {
+    if (!hasOtherStratBesidesExtra) {
+      extraPaymentSavings = Math.max(
+        0,
+        baseData.summary.totalInterest - actData.summary.totalInterest
+      );
+    } else {
+      const inputsWithoutExtra = {
+        ...inputs,
+        extraPayment: 0
+      };
+      const extraFreeData =
+        state.currentMode === 'mortgage'
+          ? generateMortgageSchedule(inputsWithoutExtra, false, true)
+          : state.currentMode === 'loan'
+            ? generateLoanSchedule(inputsWithoutExtra, false, true)
+            : generateCCSchedule(inputsWithoutExtra, false, true);
+      extraPaymentSavings = Math.max(
+        0,
+        extraFreeData.summary.totalInterest - actData.summary.totalInterest
+      );
+    }
+  }
 
   let compData: ScheduleResult | null = null;
   if (
@@ -350,17 +528,24 @@ const calculate = (e?: Event) => {
     state.profiles[state.comparisonProfileId]
   ) {
     const compProfile = state.profiles[state.comparisonProfileId]!;
-    const compInputs = profileToInputs(
-      compProfile.inputs as unknown as Record<string, string | boolean | number | undefined>,
-      compProfile.termRates || {},
-      compProfile.currentMode || 'mortgage'
-    );
-    compData =
-      compProfile.currentMode === 'mortgage'
-        ? generateMortgageSchedule(compInputs, false)
-        : compProfile.currentMode === 'loan'
-          ? generateLoanSchedule(compInputs, false)
-          : generateCCSchedule(compInputs, false);
+    const compKey = `${state.comparisonProfileId}|${JSON.stringify(compProfile)}`;
+    if (cachedCompData && cachedCompKey === compKey) {
+      compData = cachedCompData;
+    } else {
+      const compInputs = profileToInputs(
+        compProfile.inputs as unknown as Record<string, string | boolean | number | undefined>,
+        compProfile.termRates || {},
+        compProfile.currentMode || 'mortgage'
+      );
+      compData =
+        compProfile.currentMode === 'mortgage'
+          ? generateMortgageSchedule(compInputs, false)
+          : compProfile.currentMode === 'loan'
+            ? generateLoanSchedule(compInputs, false)
+            : generateCCSchedule(compInputs, false);
+      cachedCompKey = compKey;
+      cachedCompData = compData;
+    }
   }
 
   const totalActualLifetimePaidToBank = actData.summary.totalInterest + principalBorrowAmount;
@@ -389,6 +574,20 @@ const calculate = (e?: Event) => {
 
   updateKineticText(els.results.actualLifetimePaidValue, totalActualLifetimePaidToBank);
   updateKineticText(els.results.mortgageDisplay, principalBorrowAmount);
+
+  const ratio =
+    principalBorrowAmount > 0 ? actData.summary.totalInterest / principalBorrowAmount : 0;
+  const concentricRatioNote = document.getElementById('concentricRatioNote');
+  if (concentricRatioNote) {
+    const isFr = state.language === 'fr';
+    const baseDollar = formatDecimal(1);
+    const ratioStr = formatDecimal(ratio);
+    if (isFr) {
+      concentricRatioNote.innerHTML = `Pour chaque ${baseDollar} emprunté, vous payez <strong class="text-red">${ratioStr}</strong> d'intérêt à la banque.`;
+    } else {
+      concentricRatioNote.innerHTML = `For every ${baseDollar} borrowed, you pay <strong class="text-red">${ratioStr}</strong> in interest to the bank.`;
+    }
+  }
 
   if (actData.summary.paidOff === false) {
     updateKineticText(
@@ -516,7 +715,7 @@ const calculate = (e?: Event) => {
   });
 
   syncStateCardOrderFromDOM(state);
-  saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+  debouncedSaveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false, 200);
   updateScheduledLumpSumSavingsInPlace(inputs, actData);
 };
 
@@ -616,6 +815,12 @@ const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleR
     const savingsBox = row.querySelector('.lump-sum-savings-box') as HTMLElement | null;
     if (!savingsBox) return;
 
+    const currentItem = (inputs.lumpSums || []).find((item) => item.id === currentId);
+    if (!currentItem || (currentItem.amount || 0) <= 0) {
+      updateKineticText(savingsBox, 0);
+      return;
+    }
+
     const listWithoutThisItem = (inputs.lumpSums || []).filter((item) => item.id !== currentId);
     const inputsWithoutThisItem = {
       ...inputs,
@@ -664,6 +869,7 @@ const setupScheduledLumpSums = () => {
 };
 
 const handleProfileSwitch = (profileId: string) => {
+  invalidateBaselineCache();
   const activeProfile = state.profiles[profileId];
   if (!activeProfile) return;
   state.currentMode = activeProfile.currentMode || 'mortgage';
@@ -763,6 +969,7 @@ const handleProfileSwitch = (profileId: string) => {
 };
 
 const resetApplicationData = () => {
+  invalidateBaselineCache();
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (err) {
@@ -1122,6 +1329,7 @@ const bootApp = () => {
     applyTranslations(state.language);
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
+    invalidateBaselineCache();
     calculate();
     saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
   });
@@ -1195,12 +1403,43 @@ const bootApp = () => {
     calculate();
   });
 
+  const updateRegionalTaxOptions = (country: string) => {
+    const lttProvEl = els.inputs.lttProvince;
+    if (!lttProvEl) return;
+
+    const currentVal = lttProvEl.value;
+    if (country === 'monthly-au' || country === 'AU') {
+      lttProvEl.innerHTML = `
+      <option value="NSW">${t('New South Wales (NSW)')}</option>
+      <option value="VIC">${t('Victoria (VIC)')}</option>
+    `;
+      lttProvEl.value = ['NSW', 'VIC'].includes(currentVal) ? currentVal : 'NSW';
+    } else if (country === 'monthly-uk' || country === 'UK') {
+      lttProvEl.innerHTML = `
+      <option value="ENG">${t('England & Northern Ireland (SDLT)')}</option>
+    `;
+      lttProvEl.value = 'ENG';
+    } else {
+      lttProvEl.innerHTML = `
+      <option value="ON">${t('Ontario (General PLTT)')}</option>
+      <option value="ON-TORONTO">${t('Ontario - City of Toronto (PLTT + MLTT)')}</option>
+      <option value="BC">${t('British Columbia (PTT)')}</option>
+      <option value="AB">${t('Alberta (Land Titles Fee)')}</option>
+      <option value="QC">${t('Quebec (Taxe de bienvenue)')}</option>
+    `;
+      lttProvEl.value = ['ON', 'ON-TORONTO', 'BC', 'AB', 'QC'].includes(currentVal)
+        ? currentVal
+        : 'ON';
+    }
+  };
+
   // Region and Compounding bidirectional synchronization
   els.inputs.countrySelect?.addEventListener('change', (e) => {
     const val = (e.target as HTMLSelectElement).value;
     if (els.inputs.compounding) {
       els.inputs.compounding.value = val === 'semi' ? 'semi' : 'monthly';
     }
+    updateRegionalTaxOptions(val);
     calculate();
   });
 
@@ -1249,9 +1488,6 @@ const bootApp = () => {
   });
 
   // Inputs event binds
-  // Debounce the localStorage save so it fires once after the user stops typing
-  // rather than on every keystroke (prevents main-thread blocking).
-  let saveTimer: ReturnType<typeof setTimeout> | undefined;
   Object.values(els.inputs).forEach((inp) => {
     if (
       inp &&
@@ -1264,6 +1500,7 @@ const bootApp = () => {
       ].includes(inp.id)
     ) {
       inp.addEventListener('blur', () => {
+        flushSaveSettings();
         if (calcTimer) {
           clearTimeout(calcTimer);
           calcTimer = undefined;
@@ -1272,16 +1509,19 @@ const bootApp = () => {
       });
       inp.addEventListener('input', () => {
         debouncedCalculate();
-        clearTimeout(saveTimer);
-        saveTimer = setTimeout(
-          () => saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false),
-          300
-        );
       });
       if (inp.tagName === 'SELECT' && inp.id !== 'country-select' && inp.id !== 'compounding') {
         inp.addEventListener('change', () => calculate());
       }
     }
+  });
+
+  // Flush any pending debounced storage write before page unloads
+  window.addEventListener('beforeunload', () => {
+    flushSaveSettings();
+  });
+  window.addEventListener('pagehide', () => {
+    flushSaveSettings();
   });
 
   els.form?.addEventListener('submit', (e) => {
@@ -1366,7 +1606,7 @@ const bootApp = () => {
   // Restore current active profile form values and calculate (deferred to let UI render and animate first)
   setTimeout(() => {
     handleProfileSwitch(state.activeProfileId as string);
-  }, 250);
+  }, 100);
 
   // Register Service Worker for offline PWA caching
   if ('serviceWorker' in navigator && !import.meta.env.DEV) {
@@ -1396,4 +1636,6 @@ if (import.meta.env.DEV || (window as unknown as { __TESTING__?: boolean }).__TE
   win.calculateMilestones = calculateMilestones;
   win.validate = validateForm;
   win.els = els;
+  win.getBaselineCacheKey = getBaselineCacheKey;
+  win.invalidateBaselineCache = invalidateBaselineCache;
 }

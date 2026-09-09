@@ -23,10 +23,8 @@ describe('i18n Translation Engine', () => {
         <span class="help-tip">
           ?
           <span class="tooltip-text" id="tooltip">
-            The gross transactional purchase price of the real estate asset before
-            deducting any down payment, adjustments, or transaction fees. Note: Banks
-            may apply local valuation models which can alter exact loan
-            calculations.
+            The total agreed purchase price of the home before your down payment,
+            closing costs, or taxes. Note: Bank appraisal values may vary slightly.
           </span>
         </span>
       </label>
@@ -53,7 +51,7 @@ describe('i18n Translation Engine', () => {
       'Solve for the exact monthly or lump-sum payment needed to meet a target payoff year.'
     );
     expect(tooltipEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
-      'The gross transactional purchase price of the real estate asset before deducting any down payment, adjustments, or transaction fees. Note: Banks may apply local valuation models which can alter exact loan calculations.'
+      'The total agreed purchase price of the home before your down payment, closing costs, or taxes. Note: Bank appraisal values may vary slightly.'
     );
     expect(titleEl.textContent?.trim()).toBe('Property & Loan');
     expect(ccEl.textContent?.trim()).toBe('Revolving Debt');
@@ -71,7 +69,7 @@ describe('i18n Translation Engine', () => {
       'Calculez le versement mensuel ou forfaitaire exact requis pour atteindre une année cible de remboursement.'
     );
     expect(tooltipEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
-      "Le prix d'achat brut de la propriété avant déduction de la mise de fonds, des ajustements ou des frais de transaction. Note : Les banques peuvent appliquer des modèles d'évaluation locaux qui modifient les calculs exacts du prêt."
+      "Le prix d'achat total de la propriété avant votre mise de fonds, les frais de clôture ou les taxes. Note : L'évaluation de la banque peut différer légèrement."
     );
     expect(titleEl.textContent?.trim()).toBe('Propriété & prêt');
     expect(ccEl.textContent?.trim()).toBe('Dette renouvelable');
@@ -89,7 +87,7 @@ describe('i18n Translation Engine', () => {
       'Solve for the exact monthly or lump-sum payment needed to meet a target payoff year.'
     );
     expect(tooltipEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
-      'The gross transactional purchase price of the real estate asset before deducting any down payment, adjustments, or transaction fees. Note: Banks may apply local valuation models which can alter exact loan calculations.'
+      'The total agreed purchase price of the home before your down payment, closing costs, or taxes. Note: Bank appraisal values may vary slightly.'
     );
     expect(goalSubtitleEl.textContent?.trim().replace(/\s+/g, ' ')).toBe(
       'Solve for the exact monthly or lump-sum payment needed to meet a target payoff year.'
@@ -149,6 +147,36 @@ describe('i18n Translation Engine', () => {
     ).toContain('Paiements');
 
     // Restore to English
+    applyTranslations('en');
+  });
+
+  it('should accurately translate ease-of-understanding tooltips and opportunity cost tradeoff banner', () => {
+    // English
+    applyTranslations('en');
+    const oppCostTradeoffEn =
+      "Trade-off: Paying off debt gives you a guaranteed, risk-free return equal to your loan's interest rate. Investing in the market offers potentially higher returns, but carries market volatility and investment taxes.";
+    const concentricGravityEn =
+      'A visual comparison of what you borrowed (blue) versus the total interest you will pay to the bank (red). The bigger the red circle, the more interest costs you over time. Note: Calculations are close estimations; bank interest formulas and rounding conventions may vary slightly.';
+    const oppCostTooltipEn =
+      'Compares two money strategies: paying down your debt faster (a guaranteed, risk-free return) versus investing your extra cash in the stock market (potential for higher returns, but with market volatility and taxes).';
+
+    expect(t(oppCostTradeoffEn)).toBe(oppCostTradeoffEn);
+    expect(t(concentricGravityEn)).toBe(concentricGravityEn);
+    expect(t(oppCostTooltipEn)).toBe(oppCostTooltipEn);
+
+    // French
+    applyTranslations('fr');
+    expect(t(oppCostTradeoffEn)).toBe(
+      "Compromis : Rembourser votre dette vous procure un rendement garanti et sans risque équivalent à votre taux d'intérêt. Investir sur les marchés offre des gains potentiellement plus élevés, mais comporte de la volatilité et des impôts."
+    );
+    expect(t(concentricGravityEn)).toBe(
+      "Une comparaison visuelle entre le montant emprunté (bleu) et le total des intérêts payés à la banque (rouge). Plus le cercle rouge est grand, plus les intérêts vous coûtent cher au fil du temps. Remarque : Ces calculs sont des estimations très proches ; les banques peuvent utiliser des formules et règles d'arrondi légèrement différentes."
+    );
+    expect(t(oppCostTooltipEn)).toBe(
+      'Compare deux stratégies : rembourser votre dette plus vite (un rendement garanti sans risque) ou investir vos surplus en bourse (potentiel de gain plus élevé, mais avec de la volatilité et des impôts).'
+    );
+
+    // Clean up
     applyTranslations('en');
   });
 });

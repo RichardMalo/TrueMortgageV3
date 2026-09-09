@@ -245,13 +245,25 @@ export const generateReportHtml = (
                 <span>${t('Compounding Style:')}</span><strong>${t(inputs.compounding === 'semi' ? 'Canadian Semi-Annual' : 'US Monthly')}</strong>
               </div>
               ${
-                actualData.summary.lttResult
+                actualData.summary.closingTaxResult?.regionType === 'UK_SDLT'
                   ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                  <span>${t('UK Stamp Duty (SDLT):')}</span><strong style="color: #059669;">${formatCurrency(actualData.summary.closingTaxResult.taxAmount)}</strong>
+                </div>
+              `
+                  : actualData.summary.closingTaxResult?.regionType === 'AU_DUTY'
+                    ? `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                  <span>${t('Australian Stamp Duty:')}</span><strong style="color: #059669;">${formatCurrency(actualData.summary.closingTaxResult.taxAmount)}</strong>
+                </div>
+              `
+                    : actualData.summary.lttResult
+                      ? `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                   <span>${t('Net Land Transfer Tax (Closing):')}</span><strong style="color: #059669;">${formatCurrency(actualData.summary.lttResult.totalLtt)}</strong>
                 </div>
               `
-                  : ''
+                      : ''
               }
             `
                 : `

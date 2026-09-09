@@ -57,8 +57,6 @@ export const dictionary: Record<string, string> = {
   'Compounding Method:': 'Méthode de capitalisation :',
   'Simple Interest': 'Intérêt simple',
   'Daily Compounding': 'Capitalisation quotidienne',
-  'Select between Simple interest calculation (APR divided by 12) or Daily compounding (interest calculated daily and added to the balance).':
-    'Choisissez entre le calcul des intérêts simples (TAP divisé par 12) ou la capitalisation quotidienne (intérêts calculés quotidiennement et ajoutés au solde).',
   'Aggressive Strategy': 'Stratégie agressive',
   'Payment Frequency': 'Fréquence des versements',
   'Extra Payment Surplus ($)': 'Versement excédentaire supplémentaire ($)',
@@ -310,62 +308,82 @@ export const dictionary: Record<string, string> = {
   'Semi-Monthly (24/Year)': 'Bimensuel (24/année)',
 
   // Help Tooltips (index.html)
-  'The gross transactional purchase price of the real estate asset before deducting any down payment, adjustments, or transaction fees. Note: Banks may apply local valuation models which can alter exact loan calculations.':
-    "Le prix d'achat brut de la propriété avant déduction de la mise de fonds, des ajustements ou des frais de transaction. Note : Les banques peuvent appliquer des modèles d'évaluation locaux qui modifient les calculs exacts du prêt.",
-  'The upfront equity capital contributed in cash. Higher thresholds mitigate initial loan-to-value (LTV) exposure and directly deflate the starting principal. Note: Exact minimum down payment requirements vary by region and property type.':
-    'Le capital initial versé en espèces. Des seuils plus élevés réduisent le ratio prêt-valeur (LTV) initial et réduisent directement le principal de départ. Note : Les exigences de mise de fonds minimale varient selon la région et le type de propriété.',
-  'The aggregate statement balance currently outstanding. This is the entire volume of compounding debt subject to dangerous revolving interest rates. Note: Daily balance variations and pending charges may cause statement totals to differ slightly.':
-    "Le solde total du compte actuellement impayé. Il s'agit de la totalité de la dette accumulée assujettie à des taux d'intérêt rotatifs dangereux. Note : Les variations quotidiennes de solde et les frais en attente peuvent faire varier légèrement les totaux des relevés.",
-  'The Annual Percentage Rate charged by the lender. Fractional variations compound rapidly, scaling total lifetime borrowing friction exponentially. Note: Real APR may include lender fees not captured here. Bank calculations may vary slightly due to daily interest accrual conventions.':
-    "Le taux annuel combiné (TAP) facturé par le prêteur. Les variations fractionnaires se capitalisent rapidement, augmentant de façon exponentielle les frais d'emprunt sur la durée de vie du prêt. Note : Le TAP réel peut inclure des frais de prêteur non saisis ici.",
-  'The contractual timeline required to completely eradicate the debt balance through baseline structured minimum installment payments. Note: Lender formulas and payment frequencies can affect the exact payoff timeline.':
-    'La durée contractuelle requise pour rembourser entièrement le solde de la dette par des versements périodiques minimaux. Note : Les formules des prêteurs et les fréquences de versement peuvent influer sur le délai exact de remboursement.',
+  'The total agreed purchase price of the home before your down payment, closing costs, or taxes. Note: Bank appraisal values may vary slightly.':
+    "Le prix d'achat total de la propriété avant votre mise de fonds, les frais de clôture ou les taxes. Note : L'évaluation de la banque peut différer légèrement.",
+  'The cash amount you pay upfront. A larger down payment lowers your loan balance and saves you substantial interest over time. Note: Minimum down payment rules vary by home price.':
+    "Le montant comptant que vous versez au départ. Une mise de fonds plus importante réduit votre prêt et vous fait économiser beaucoup d'intérêts. Note : Les exigences minimales varient selon le prix d'achat.",
+  'The total balance currently owed on your card that is collecting interest. Note: Daily charges and pending transactions may adjust this total.':
+    'Le solde total actuellement dû sur votre carte qui accumule des intérêts. Note : Les achats quotidiens et transactions en cours peuvent modifier ce total.',
+  'The total amount of money borrowed for your personal or vehicle loan.':
+    'Le montant total emprunté pour votre prêt personnel ou automobile.',
+  'One-time upfront administration or processing fee charged by the lender to set up the loan.':
+    'Frais administratifs ou de dossier uniques facturés par le prêteur pour mettre en place le prêt.',
+  'The yearly interest rate charged by your lender. Even small changes in your rate add up to thousands in interest over time. Note: Actual APR may include lender fees.':
+    "Le taux d'intérêt annuel facturé par votre prêteur. Même un petit écart de taux représente des milliers de dollars d'intérêts au fil du temps. Note : Le TAP réel peut inclure des frais de dossier.",
+  'The total number of years it will take to pay off the loan completely with regular payments. Note: Payment frequency and extra payments can shorten this time.':
+    "Le nombre total d'années nécessaires pour rembourser entièrement le prêt avec vos versements réguliers. Note : La fréquence et les paiements supplémentaires peuvent raccourcir cette période.",
   'Percentage of outstanding balance to charge as the minimum payment threshold.':
-    'Le pourcentage du solde impayé pour calculer le paiement minimal requis.',
-  'The interest portion of the cycle plus this percentage of the remaining principal balance.':
-    "La part d'intérêt du cycle plus ce pourcentage du solde de principal restant.",
-  'The absolute floor payment amount. The calculated minimum will never fall below this limit.':
-    'Le montant absolu minimal du versement. Le versement minimal calculé ne sera jamais inférieur à cette limite.',
-  'The duration of your active interest rate contract. Upon expiration, the remaining balance must be renegotiated or renewed at prevailing market yields. Note: Local regulations may restrict term lengths or mandate specific renewal conditions.':
-    "La durée de votre contrat de taux d'intérêt actif. À l'expiration, le solde restant doit être renégocié ou renouvelé aux taux du marché en vigueur. Note : Les réglementations locales peuvent limiter la durée du terme.",
-  'The frequency of interest calculations. Canadian law dictates semi-annual compounding for fixed mortgages, resulting in a lower Effective Annual Rate than US, UK, AU, and NZ monthly/daily compounding. Note: Some non-traditional lenders may use custom compounding models.':
-    "La fréquence de calcul des intérêts. La loi canadienne prescrit une capitalisation semestrielle pour les prêts hypothécaires à taux fixe, ce qui donne un taux annuel effectif plus bas que la capitalisation mensuelle ou quotidienne des É-U, du RU, de l'AU et de la NZ.",
-  'Accelerated schedules divide standard monthly distributions into halves or quarters, non-disruptively forcing an extra full monthly installment against principal per calendar year. Note: Banks may calculate accelerated payments using slightly different formulas (e.g. dividing monthly payment by 2 vs. 26 bi-weekly periods).':
-    "Les fréquences accélérées divisent les paiements mensuels standard en deux ou en quatre, ce qui force l'application d'un versement mensuel complet supplémentaire sur le principal par année civile. Note : Les banques peuvent utiliser des formules légèrement différentes.",
-  "Discretionary capital injected straight toward principal reduction per cycle, entirely bypassing the lender's interest calculation mechanism. Note: Some lenders restrict prepayments or charge penalty fees for exceeding yearly thresholds.":
-    'Capital discrétionnaire injecté directement pour réduire le principal à chaque cycle, contournant complètement le calcul des intérêts du prêteur. Note : Certains prêteurs limitent les remboursements anticipés ou imposent des pénalités.',
-  'Incremental capital deployed monthly above the mandatory minimum threshold, locking in an un-leveraged, guaranteed return equal to the account APR. Note: Review your credit agreement for terms regarding surplus payments.':
-    'Capital supplémentaire versé mensuellement au-dessus du minimum obligatoire, garantissant un rendement sans levier égal au taux de la carte de crédit (TAP). Note : Consultez votre contrat de crédit pour connaître les conditions relatives aux paiements excédentaires.',
-  'A one-time payment applied directly to the principal balance at the start of the schedule. Highly effective for visualising the compound impact of bonuses, tax returns, or inheritances.':
-    "Un versement unique appliqué directement sur le solde de principal au début du calendrier de remboursement. Très efficace pour visualiser l'impact composé des primes, des remboursements d'impôt ou des héritages.",
-  'Choose whether the amortization schedule labels each installment by calendar date (e.g. Jun 1, 2026) or by numeric cycle period (e.g. P1, P2, P3). Note: Calendar date assumes payments occur exactly on schedule with no deferred periods.':
-    "Déterminez si le calendrier d'amortissement affiche chaque versement par date civile (ex. 1 juin 2026) ou par numéro de période (ex. P1, P2, P3). Note : La date civile suppose des versements exactement à temps sans report.",
-  'A strategic net worth comparison. Evaluates whether aggressive debt pay-down yields superior equity value versus allocating those exact liquid surpluses to market index investments. Note: Market returns are projections and not guaranteed. Historical averages are not indicative of future performance.':
-    "Comparaison stratégique de la valeur nette. Évalue si un remboursement agressif de la dette donne une valeur nette supérieure par rapport à l'investissement de ces mêmes excédents sur les marchés financiers.",
-  'Integrates escrow housing expenses (PITI components) to map non-equity liquidity factors. Note: Tax assessments, insurance premiums, and HOA fees fluctuate over time; calculations are close estimates.':
-    'Intègre les frais de logement (composants PITI) pour modéliser les facteurs de liquidité hors équité.',
-  'Integrates escrow cash flow items (PITI components) to map non-equity housing expenses that impact gross monthly liquidity. Note: Tax assessments, insurance premiums, and HOA fees fluctuate over time; calculations are close estimates.':
-    'Intègre les éléments de compte séquestre (composantes PITI) pour cartographier les dépenses de logement hors équité qui influent sur vos liquidités mensuelles.',
-  'Simulate term renewal interest rate adjustments. Projects the dynamic impact on remaining amortization under the assumption that the periodic payment remains constant. Note: Calculations are theoretical and assume payments are unchanged at renewal; actual bank refinance terms may vary.':
-    "Simulez les ajustements de taux d'intérêt lors des renouvellements de terme. Projette l'impact dynamique sur l'amortissement restant sous l'hypothèse que le paiement périodique reste inchangé.",
-  'Drag the slider to set your target payoff timeline in years. The solver will instantly calculate the exact monthly extra payment or one-time lump sum required to reach your goal.':
-    'Faites glisser le curseur pour définir votre objectif de remboursement en années. Le solveur calculera instantanément le paiement mensuel supplémentaire ou le versement forfaitaire unique requis pour y parvenir.',
-  'A spatial representation of cumulative interest overhead. The relative size of the interest envelope (red) highlights capital inefficiencies over baseline asset cost (blue). Note: Calculations are close estimations; banks may use proprietary interest formulas causing minor variations.':
-    "Représentation spatiale des intérêts cumulés. La taille de l'enveloppe d'intérêt (rouge) met en évidence l'inefficacité du capital par rapport au coût de l'actif de base (bleu).",
-  'The interest accrued daily, representing a direct fee paid to the bank every 24 hours. Note: Actual bank accruals may vary slightly based on calculations (e.g. 365 vs. 360 days).':
-    'Les intérêts cumulés quotidiennement, représentant des frais directs payés à la banque toutes les 24 heures. Note : Les calculs réels des banques peuvent varier légèrement.',
-  'The verified principal debt remaining at term end, indicating refinancing risk. Note: Assumes standard payment schedule with no pre-payments or missed payments. Bank formulas may vary slightly.':
-    'Le solde de principal restant à la fin du terme, indiquant le risque de refinancement. Note : Suppose un calendrier de paiement standard sans versements anticipés ni retards.',
-  'Tracks structural shifts in installment ratios. Over time, reducing the principal shrinks the interest wedge. Note: Commercial bank schedules may vary slightly due to interest rounding routines.':
-    "Suit l'évolution structurelle de la répartition de vos versements. Avec le temps, la réduction du principal réduit la part des intérêts.",
-  'A visual matrix showing payoff time reduction (in years) for combinations of monthly extra payments (rows) and one-time lump sum payments (columns). Click any cell to apply that strategy immediately.':
-    "Une matrice visuelle montrant la réduction du temps de remboursement (en années) pour différentes combinaisons de versements mensuels supplémentaires (lignes) et de versements forfaitaires uniques (colonnes). Cliquez sur une cellule pour l'appliquer.",
-  'Algorithmic modeling tracking debt reduction trajectories. Note: Cards can be dragged to customize your layout. Calculations are close estimates; exact bank totals may vary due to custom formulas.':
-    'Modélisation algorithmique suivant les trajectoires de réduction de la dette. Note : Les cartes peuvent être glissées pour personnaliser votre disposition.',
-  'A dynamic timeline highlighting critical wealth milestones. Note: Projections assume continuous, uninterrupted surplus payments as scheduled. Commercial timelines may vary due to custom bank policies.':
-    'Une chronologie dynamique soulignant les étapes critiques du remboursement. Note : Les projections supposent des versements excédentaires continus et sans interruption.',
-  'A granular ledger mapping principal pay-down and interest decay curves. Note: Minor variances can occur based on how individual lenders round daily interest and process extra payments.':
-    'Un grand livre détaillé cartographiant le remboursement du principal et la courbe de décroissance des intérêts. Note : Des écarts mineurs peuvent se produire.',
+    'Le pourcentage de votre solde exigé par la banque comme paiement minimal chaque mois.',
+  'The minimum payment calculated as all interest owed this month plus a small percentage of your balance.':
+    'Le paiement minimal calculé comme tous les intérêts du mois plus un petit pourcentage de votre solde.',
+  'The minimum dollar amount you must pay each month, even if the percentage calculation is lower.':
+    'Le montant minimal en dollars à payer chaque mois, même si le calcul en pourcentage donne moins.',
+  'How the bank calculates interest: Simple interest divides your annual rate by 12, while Daily compounding adds interest every day.':
+    "La façon dont la banque calcule les intérêts : l'intérêt simple divise votre taux annuel par 12, tandis que la capitalisation quotidienne ajoute des intérêts chaque jour.",
+  'How long your current interest rate and mortgage contract last. When this term ends, you renew your mortgage at new interest rates.':
+    "La durée de validité de votre contrat hypothécaire et de votre taux d'intérêt. À la fin du terme, vous renouvelez votre prêt aux taux du marché.",
+  'How often interest is calculated. Canadian fixed mortgages use semi-annual compounding (which costs slightly less), while US, UK, AU, and NZ mortgages typically compound monthly.':
+    'La fréquence de calcul des intérêts. Les prêts à taux fixe au Canada utilisent une capitalisation semestrielle (qui coûte légèrement moins cher), tandis que les prêts américains, britanniques, australiens et néo-zélandais capitalisent généralement chaque mois.',
+  'In Canada, if your down payment is under 20%, mortgage default insurance (CMHC/Sagen) is required by law. The insurance fee is added directly onto your mortgage balance.':
+    "Au Canada, si votre mise de fonds est inférieure à 20 %, l'assurance prêt hypothécaire (SCHL/Sagen) est obligatoire. La prime est ajoutée directement au solde de votre prêt.",
+  'Provincial tax on CMHC insurance premiums (ON 8%, QC 9%, SK 6%) cannot be rolled into your mortgage and must be paid in cash on closing day.':
+    "La taxe provinciale sur la prime d'assurance SCHL (ON 8 %, QC 9 %, SK 6 %) ne peut pas être financée dans le prêt et doit être payée comptant chez le notaire.",
+  "Estimates the government property transfer taxes due at closing in Ontario (including Toronto's municipal tax) and British Columbia, applying first-time buyer rebates where eligible.":
+    "Estime les droits de mutation immobilière (taxe de bienvenue) payables à l'achat en Ontario (y compris la taxe municipale de Toronto) et en Colombie-Britannique, avec les rabais pour premiers acheteurs.",
+  'Paying accelerated bi-weekly or weekly splits your monthly payment into smaller pieces, effectively making one extra monthly payment per year to pay off your mortgage years earlier.':
+    'Payer aux deux semaines accéléré ou à la semaine divise vos versements en fractions plus fréquentes, équivalant à un versement mensuel complet de plus par an pour vous libérer plus vite.',
+  'Extra cash paid directly toward your mortgage principal each payment. Every extra dollar skips interest completely and pays off your home much faster.':
+    'Argent supplémentaire appliqué directement sur le capital à chaque versement. Chaque dollar de plus évite complètement les intérêts et rembourse votre maison beaucoup plus vite.',
+  'Extra money applied straight to your loan balance each payment to eliminate the debt sooner.':
+    'Montant supplémentaire appliqué directement sur le solde de votre prêt à chaque versement pour vous libérer plus rapidement.',
+  "Extra money paid each month above the minimum. Because credit card interest is high, paying extra gives you a guaranteed, risk-free savings equal to your card's interest rate.":
+    'Montant payé chaque mois au-dessus du minimum. Comme les taux de carte sont élevés, payer plus vous offre un rendement garanti sans risque équivalent au taux de votre carte.',
+  'A single cash payment applied directly to your loan balance today (from a tax refund, bonus, or savings). It permanently cuts future interest and shortens your payoff timeline.':
+    "Un versement unique appliqué directement sur votre solde aujourd'hui (provenant d'un remboursement d'impôt, prime ou épargne). Il réduit définitivement vos futurs intérêts et raccourcit votre dette.",
+  'Choose whether the schedule labels payments by calendar date (e.g. Jun 1, 2026) or by payment number (e.g. P1, P2, P3).':
+    "Choisissez d'afficher les paiements par date sur le calendrier (ex. 1 juin 2026) ou par numéro de versement (ex. P1, P2, P3).",
+  'Compares two money strategies: paying down your debt faster (a guaranteed, risk-free return) versus investing your extra cash in the stock market (potential for higher returns, but with market volatility and taxes).':
+    'Compare deux stratégies : rembourser votre dette plus vite (un rendement garanti sans risque) ou investir vos surplus en bourse (potentiel de gain plus élevé, mais avec de la volatilité et des impôts).',
+  'Adds property taxes, home insurance, and condo/HOA fees to show your complete monthly housing payment (often called PITI).':
+    "Ajoute les taxes foncières, l'assurance habitation et les frais de condo pour afficher votre paiement mensuel complet de logement (souvent appelé PITI).",
+  'See what happens when your mortgage renews at higher or lower interest rates. Keeping your payment the same shows how many extra years or months it would take to finish paying off the loan.':
+    "Voyez ce qui arrive si votre prêt est renouvelé à un taux différent. En gardant le même versement, vous verrez de combien d'années ou de mois votre remboursement sera prolongé ou raccourci.",
+  'Choose the year you want to be completely debt-free. The solver instantly calculates the exact extra payment or one-time lump sum needed to get you there.':
+    "Choisissez l'année où vous voulez être totalement libéré de vos dettes. Le solveur calcule instantanément le versement supplémentaire requis pour atteindre cet objectif.",
+  'A visual comparison of what you borrowed (blue) versus the total interest you will pay to the bank (red). The bigger the red circle, the more interest costs you over time. Note: Calculations are close estimations; bank interest formulas and rounding conventions may vary slightly.':
+    "Une comparaison visuelle entre le montant emprunté (bleu) et le total des intérêts payés à la banque (rouge). Plus le cercle rouge est grand, plus les intérêts vous coûtent cher au fil du temps. Remarque : Ces calculs sont des estimations très proches ; les banques peuvent utiliser des formules et règles d'arrondi légèrement différentes.",
+  'The interest that builds up every 24 hours — money that goes straight to the bank instead of paying down what you owe. Note: Daily accruals can vary slightly based on 365 vs. 360 day conventions.':
+    "Les intérêts qui s'accumulent toutes les 24 heures — de l'argent qui va directement à la banque au lieu de réduire ce que vous devez. Note : Le calcul quotidien peut varier selon la convention (365 vs 360 jours).",
+  'The remaining loan balance you still owe when your current term contract ends, which you will need to renew or refinance.':
+    "Le solde qu'il vous reste à payer à la fin de votre terme actuel, que vous devrez renouveler ou refinancer.",
+  'Shows how much of your payment goes to interest versus paying down principal. Over time, as your loan shrinks, more of your payment goes toward actual ownership.':
+    'Montre quelle part de votre versement va aux intérêts versus le capital. Plus votre solde diminue, plus votre versement sert à payer votre maison.',
+  'A color-coded grid showing how many years you can shave off your loan by combining monthly extra payments (rows) with a one-time cash lump sum (columns). Click any box to try it.':
+    "Une grille visuelle montrant combien d'années vous gagnez en combinant des versements mensuels supplémentaires (lignes) et un versement comptant unique (colonnes). Cliquez sur une case pour l'essayer.",
+  'Interactive charts tracking your loan balance, equity growth, and payment breakdown over time. You can drag cards to customize your view.':
+    "Des graphiques interactifs qui illustrent l'évolution de votre solde, l'accumulation de votre capital et la répartition des versements. Glissez les cartes pour organiser votre tableau de bord.",
+  'Visualizes your annual interest payments as a yearly paycheck you hand over to the bank. The circles get smaller as you pay down your debt. Note: Bank interest calculations may vary slightly.':
+    'Illustre vos intérêts annuels comme un chèque de paie que vous remettez à la banque chaque année. Les cercles diminuent à mesure que vous remboursez votre dette. Note : Les calculs bancaires peuvent varier légèrement.',
+  'A visual timeline celebrating key financial milestones, like paying off 25% of your loan, hitting 50% equity, and your final debt-free date.':
+    "Une chronologie visuelle qui souligne vos grandes victoires financières : 25 % remboursé, 50 % d'équité atteinte et la date où vous serez totalement libre de dette.",
+  'A complete payment-by-payment schedule showing exactly how much of each payment goes to principal and interest, and your remaining balance. Note: Minor variations can occur due to daily bank rounding.':
+    'Le calendrier complet versement par versement montrant exactement ce qui va au capital, aux intérêts et le solde restant. Note : De légères variations peuvent survenir selon les arrondis bancaires.',
+  'Opportunity Cost: Mortgage Paydown vs. Market Investing':
+    'Coût de renonciation : Rembourser le prêt vs Investir sur les marchés',
+  "Trade-off: Paying off debt gives you a guaranteed, risk-free return equal to your loan's interest rate. Investing in the market offers potentially higher returns, but carries market volatility and investment taxes.":
+    "Compromis : Rembourser votre dette vous procure un rendement garanti et sans risque équivalent à votre taux d'intérêt. Investir sur les marchés offre des gains potentiellement plus élevés, mais comporte de la volatilité et des impôts.",
+  'For every $1.00 borrowed, you pay $0.00 in interest to the bank.':
+    "Pour chaque 1,00 $ emprunté, vous payez 0,00 $ d'intérêt à la banque.",
 
   // Miscellanea
   'Ontario (3 %) / Quebec (5 %)': 'Ontario (3 %) / Québec (5 %)',
@@ -453,8 +471,21 @@ export const dictionary: Record<string, string> = {
   'Ontario (General PLTT)': 'Ontario (PLTT général)',
   'Ontario - City of Toronto (PLTT + MLTT)': 'Ontario - Ville de Toronto (PLTT + MLTT)',
   'British Columbia (PTT)': 'Colombie-Britannique (PTT)',
+  'Alberta (Land Titles Fee)': 'Alberta (Frais de titres de propriété)',
+  'Quebec (Taxe de bienvenue)': 'Québec (Taxe de bienvenue)',
+  'New South Wales (NSW)': 'Nouvelle-Galles du Sud (NSW)',
+  'Victoria (VIC)': 'Victoria (VIC)',
+  'England & Northern Ireland (SDLT)': 'Angleterre et Irlande du Nord (SDLT)',
   'Estimated Closing Land Transfer Tax:': 'Droits de mutation estimés à la clôture :',
   'Net Land Transfer Tax (Closing):': 'Taxe de mutation nette (à la clôture) :',
+  'UK Stamp Duty (SDLT):': 'Droit de timbre britannique (SDLT) :',
+  'Australian Stamp Duty:': 'Droit de mutation australien :',
+  'Effective Rate': 'Taux effectif',
+  'Effective Rate:': 'Taux effectif :',
+  Relief: 'Allégement',
+  Concession: 'Concession',
+  State: 'État',
+  'State:': 'État :',
   Rebate: 'Remboursement',
   Provincial: 'Provincial',
   Municipal: 'Municipal'

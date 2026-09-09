@@ -841,6 +841,33 @@ input:focus-visible,
   font-weight: 800;
 }
 
+.concentric-ratio-note {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-color);
+  opacity: 0.9;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.opp-cost-explainer {
+  background: rgba(var(--primary-rgb), 0.05);
+  border: 1px solid var(--border-color);
+  border-left: 3px solid var(--primary-color);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text-color);
+  line-height: 1.5;
+  font-size: 0.8rem;
+  opacity: 0.95;
+}
+
+body.dark-mode .opp-cost-explainer {
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--primary-color);
+}
+
 .charts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(100%, 1fr));

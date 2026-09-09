@@ -306,7 +306,25 @@ export const getCalculationsInputs = (
     cmhcProvince: inputs.cmhcProvince?.value || inputs.province?.value || 'ON',
     includeLtt: isMortgage && !!(inputs.includeLtt as HTMLInputElement | null)?.checked,
     lttProvince: inputs.lttProvince?.value || 'ON',
-    lttFirstTimeBuyer: !!(inputs.lttFirstTimeBuyer as HTMLInputElement | null)?.checked
+    lttFirstTimeBuyer: !!(inputs.lttFirstTimeBuyer as HTMLInputElement | null)?.checked,
+    country:
+      inputs.countrySelect?.value ||
+      (inputs.country as HTMLInputElement | HTMLSelectElement | null)?.value ||
+      'semi',
+    ukFirstTimeBuyer:
+      !!(inputs.ukFirstTimeBuyer as HTMLInputElement | null)?.checked ||
+      !!(inputs.lttFirstTimeBuyer as HTMLInputElement | null)?.checked,
+    auFirstTimeBuyer:
+      !!(inputs.auFirstTimeBuyer as HTMLInputElement | null)?.checked ||
+      !!(inputs.lttFirstTimeBuyer as HTMLInputElement | null)?.checked,
+    isAdditionalProperty: !!(inputs.isAdditionalProperty as HTMLInputElement | null)?.checked,
+    auState:
+      (inputs.auState as HTMLSelectElement | null)?.value ||
+      (['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'].includes(
+        inputs.lttProvince?.value || ''
+      )
+        ? inputs.lttProvince?.value
+        : 'NSW')
   };
 };
 
@@ -382,6 +400,20 @@ export const profileToInputs = (
     cmhcProvince: String(profileInputs.cmhcProvince || profileInputs.province || 'ON'),
     includeLtt: lttOn,
     lttProvince: String(profileInputs.lttProvince || 'ON'),
-    lttFirstTimeBuyer: profileInputs.lttFirstTimeBuyer === true
+    lttFirstTimeBuyer: profileInputs.lttFirstTimeBuyer === true,
+    country: String(profileInputs.countrySelect || profileInputs.country || 'semi'),
+    ukFirstTimeBuyer:
+      profileInputs.ukFirstTimeBuyer === true || profileInputs.lttFirstTimeBuyer === true,
+    auFirstTimeBuyer:
+      profileInputs.auFirstTimeBuyer === true || profileInputs.lttFirstTimeBuyer === true,
+    isAdditionalProperty: profileInputs.isAdditionalProperty === true,
+    auState: String(
+      profileInputs.auState ||
+        (['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'].includes(
+          String(profileInputs.lttProvince || '')
+        )
+          ? profileInputs.lttProvince
+          : 'NSW')
+    )
   };
 };

@@ -480,14 +480,16 @@ export const generateMortgageSchedule = (
   const paidOff = balance <= 0.009;
   const isToronto = inputs.lttProvince === 'ON-TORONTO';
   const lttProv = isToronto ? 'ON' : inputs.lttProvince || 'ON';
-  const lttResult = inputs.includeLtt
-    ? calculateCanadianLandTransferTax(
-        safeHomePrice,
-        lttProv,
-        isToronto,
-        !!inputs.lttFirstTimeBuyer
-      )
-    : undefined;
+  const isCanadian = !inputs.country || inputs.country === 'semi' || inputs.country === 'CA';
+  const lttResult =
+    inputs.includeLtt && isCanadian
+      ? calculateCanadianLandTransferTax(
+          safeHomePrice,
+          lttProv,
+          isToronto,
+          !!inputs.lttFirstTimeBuyer
+        )
+      : undefined;
 
   const ukSdltResult =
     inputs.country === 'monthly-uk' || inputs.country === 'UK'
@@ -507,7 +509,9 @@ export const generateMortgageSchedule = (
     ? calculateClosingTax(
         safeHomePrice,
         inputs.country || 'CA',
-        inputs.lttProvince || 'ON',
+        inputs.country === 'monthly-au' || inputs.country === 'AU'
+          ? inputs.auState || inputs.lttProvince || 'NSW'
+          : inputs.lttProvince || 'ON',
         !!inputs.lttFirstTimeBuyer || !!inputs.ukFirstTimeBuyer || !!inputs.auFirstTimeBuyer,
         !!inputs.isAdditionalProperty
       )

@@ -1710,6 +1710,71 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         const caLuxury = calculateClosingTax(3500000, 'CA', 'ON-TORONTO', false);
         expect(caLuxury.taxAmount).toBe(152950);
       });
+
+      it('should compute UK SDLT and AU Duty in generateMortgageSchedule summary', () => {
+        const ukSchedule = generateMortgageSchedule({
+          homePrice: 500000,
+          downPayment: 100000,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 4.5,
+          amortizationYears: 25,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 7,
+          extraPayment: 0,
+          startDate: '2026-01-01',
+          rateShockEnabled: false,
+          termRates: {},
+          country: 'monthly-uk',
+          includeLtt: true,
+          ukFirstTimeBuyer: true
+        });
+
+        expect(ukSchedule.summary.ukSdltResult).toBeDefined();
+        expect(ukSchedule.summary.ukSdltResult?.sdltAmount).toBe(3750);
+        expect(ukSchedule.summary.closingTaxResult?.regionType).toBe('UK_SDLT');
+        expect(ukSchedule.summary.closingTaxResult?.taxAmount).toBe(3750);
+
+        const auSchedule = generateMortgageSchedule({
+          homePrice: 600000,
+          downPayment: 120000,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 4.5,
+          amortizationYears: 25,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 7,
+          extraPayment: 0,
+          startDate: '2026-01-01',
+          rateShockEnabled: false,
+          termRates: {},
+          country: 'monthly-au',
+          includeLtt: true,
+          auState: 'NSW',
+          auFirstTimeBuyer: false
+        });
+
+        expect(auSchedule.summary.australianDutyResult).toBeDefined();
+        expect(auSchedule.summary.australianDutyResult?.transferDuty).toBe(21730);
+        expect(auSchedule.summary.closingTaxResult?.regionType).toBe('AU_DUTY');
+        expect(auSchedule.summary.closingTaxResult?.taxAmount).toBe(21730);
+      });
     });
 
     describe('Statutory Rate Guards & Mandates Sanity Tests', () => {

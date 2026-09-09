@@ -253,6 +253,49 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(parsed.rateShockEnabled).toBe(false);
       expect(parsed.goalSolverEnabled).toBe(true);
       expect(parsed.termRates).toEqual({ 5: 6.0 });
+      expect(parsed.country).toBe('semi');
+    });
+
+    it('should extract country and regional closing tax fields correctly', () => {
+      inputs.countrySelect = document.createElement('select');
+      const optUk = document.createElement('option');
+      optUk.value = 'monthly-uk';
+      inputs.countrySelect.appendChild(optUk);
+      inputs.countrySelect.value = 'monthly-uk';
+
+      inputs.includeLtt = document.createElement('input');
+      (inputs.includeLtt as HTMLInputElement).type = 'checkbox';
+      (inputs.includeLtt as HTMLInputElement).checked = true;
+
+      inputs.lttFirstTimeBuyer = document.createElement('input');
+      (inputs.lttFirstTimeBuyer as HTMLInputElement).type = 'checkbox';
+      (inputs.lttFirstTimeBuyer as HTMLInputElement).checked = true;
+
+      inputs.isAdditionalProperty = document.createElement('input');
+      (inputs.isAdditionalProperty as HTMLInputElement).type = 'checkbox';
+      (inputs.isAdditionalProperty as HTMLInputElement).checked = false;
+
+      const ukParsed = getCalculationsInputs('mortgage', inputs, {});
+      expect(ukParsed.country).toBe('monthly-uk');
+      expect(ukParsed.ukFirstTimeBuyer).toBe(true);
+      expect(ukParsed.isAdditionalProperty).toBe(false);
+
+      // Australia test
+      const optAu = document.createElement('option');
+      optAu.value = 'monthly-au';
+      inputs.countrySelect.appendChild(optAu);
+      inputs.countrySelect.value = 'monthly-au';
+
+      inputs.lttProvince = document.createElement('select');
+      const optVic = document.createElement('option');
+      optVic.value = 'VIC';
+      inputs.lttProvince.appendChild(optVic);
+      inputs.lttProvince.value = 'VIC';
+
+      const auParsed = getCalculationsInputs('mortgage', inputs, {});
+      expect(auParsed.country).toBe('monthly-au');
+      expect(auParsed.auFirstTimeBuyer).toBe(true);
+      expect(auParsed.auState).toBe('VIC');
     });
   });
 
@@ -413,6 +456,35 @@ describe('Form Validation & Parsing (form.ts)', () => {
       expect(resultInputs.includeLtt).toBe(true);
       expect(resultInputs.lttProvince).toBe('ON-TORONTO');
       expect(resultInputs.lttFirstTimeBuyer).toBe(true);
+      expect(resultInputs.country).toBe('semi');
+    });
+
+    it('should correctly hydrate UK and Australian closing tax fields from profile', () => {
+      const ukProfile = {
+        homePrice: '600000',
+        downPayment: '120000',
+        countrySelect: 'monthly-uk',
+        includeLtt: true,
+        ukFirstTimeBuyer: true,
+        isAdditionalProperty: false
+      };
+      const ukInputs = profileToInputs(ukProfile, {}, 'mortgage');
+      expect(ukInputs.country).toBe('monthly-uk');
+      expect(ukInputs.ukFirstTimeBuyer).toBe(true);
+      expect(ukInputs.isAdditionalProperty).toBe(false);
+
+      const auProfile = {
+        homePrice: '750000',
+        downPayment: '150000',
+        countrySelect: 'monthly-au',
+        includeLtt: true,
+        lttProvince: 'VIC',
+        lttFirstTimeBuyer: true
+      };
+      const auInputs = profileToInputs(auProfile, {}, 'mortgage');
+      expect(auInputs.country).toBe('monthly-au');
+      expect(auInputs.auFirstTimeBuyer).toBe(true);
+      expect(auInputs.auState).toBe('VIC');
     });
   });
 });
