@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { getBaselineCacheKey, invalidateBaselineCache } from '../src/js/index.js';
 import {
+  getBaselineCacheKey,
+  invalidateBaselineCache,
+  getCachedBaselineSchedule,
   generateMortgageSchedule,
   generateLoanSchedule,
   generateCCSchedule
@@ -233,6 +235,17 @@ describe('Simulation Memoization & Redundancy Elimination', () => {
       const baseCC = generateCCSchedule(ccInputs, true);
       const actCC = generateCCSchedule(ccInputs, false);
       expect(actCC.summary.totalInterest).toBe(baseCC.summary.totalInterest);
+    });
+
+    it('getCachedBaselineSchedule returns cached reference and refreshes after invalidation', () => {
+      const res1 = getCachedBaselineSchedule('mortgage', 'p1', baseMortgageInputs, 'en');
+      const res2 = getCachedBaselineSchedule('mortgage', 'p1', baseMortgageInputs, 'en');
+      expect(res1).toBe(res2); // Exactly identical object reference from cache
+
+      invalidateBaselineCache();
+      const res3 = getCachedBaselineSchedule('mortgage', 'p1', baseMortgageInputs, 'en');
+      expect(res3).not.toBe(res1); // New instance computed after cache invalidation
+      expect(res3.summary.totalInterest).toBe(res1.summary.totalInterest);
     });
   });
 });

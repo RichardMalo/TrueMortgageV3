@@ -1809,3 +1809,120 @@ export const calculateMultiDebtCascade = (
     schedule: strategy === 'avalanche' ? avalancheRes.schedule : snowballRes.schedule
   };
 };
+
+// Baseline & Comparison Schedule Memoization Cache
+let cachedBaselineKey = '';
+let cachedBaseData: ScheduleResult | null = null;
+let cachedCompKey = '';
+let cachedCompData: ScheduleResult | null = null;
+
+export const getBaselineCacheKey = (
+  mode: string,
+  profileId: string,
+  inp: Inputs,
+  lang: string = 'en'
+): string => {
+  if (mode === 'mortgage') {
+    return [
+      profileId,
+      'mtg',
+      inp.homePrice,
+      inp.downPayment,
+      inp.annualRate,
+      inp.amortizationYears,
+      inp.termYears,
+      inp.compounding,
+      inp.province,
+      inp.country,
+      inp.includeCmhc,
+      inp.cmhcProvince,
+      inp.includeLtt,
+      inp.lttProvince,
+      inp.lttFirstTimeBuyer,
+      inp.ukFirstTimeBuyer,
+      inp.auFirstTimeBuyer,
+      inp.auState,
+      inp.isAdditionalProperty,
+      inp.taxRate,
+      inp.insRate,
+      inp.hoaRate,
+      inp.pmiRate,
+      inp.startDate,
+      inp.rateShockEnabled,
+      JSON.stringify(inp.termRates || {}),
+      lang
+    ].join('|');
+  }
+  if (mode === 'loan') {
+    return [
+      profileId,
+      'loan',
+      inp.loanAmount,
+      inp.homePrice,
+      inp.downPayment,
+      inp.annualRate,
+      inp.amortizationYears,
+      inp.termYears,
+      inp.loanOriginationFee,
+      inp.loanOriginationFeeEnabled,
+      inp.startDate,
+      lang
+    ].join('|');
+  }
+  return [
+    profileId,
+    'cc',
+    inp.ccBalance,
+    inp.annualRate,
+    inp.province,
+    inp.ccMinPercent,
+    inp.ccMinPrincipalPct,
+    inp.ccMinFlat,
+    inp.ccCompounding,
+    inp.startDate,
+    lang
+  ].join('|');
+};
+
+export const invalidateBaselineCache = () => {
+  cachedBaselineKey = '';
+  cachedBaseData = null;
+  cachedCompKey = '';
+  cachedCompData = null;
+};
+
+export const getCachedBaselineSchedule = (
+  mode: string,
+  profileId: string,
+  inputs: Inputs,
+  lang: string = 'en'
+): ScheduleResult => {
+  const baselineKey = getBaselineCacheKey(mode, profileId, inputs, lang);
+  if (cachedBaseData && cachedBaselineKey === baselineKey) {
+    return cachedBaseData;
+  }
+  const result =
+    mode === 'mortgage'
+      ? generateMortgageSchedule(inputs, true)
+      : mode === 'loan'
+        ? generateLoanSchedule(inputs, true)
+        : generateCCSchedule(inputs, true);
+  cachedBaselineKey = baselineKey;
+  cachedBaseData = result;
+  return result;
+};
+
+export const getCachedComparisonSchedule = (
+  compProfileId: string,
+  compProfile: unknown,
+  computeFn: () => ScheduleResult
+): ScheduleResult => {
+  const compKey = `${compProfileId}|${JSON.stringify(compProfile)}`;
+  if (cachedCompData && cachedCompKey === compKey) {
+    return cachedCompData;
+  }
+  const result = computeFn();
+  cachedCompKey = compKey;
+  cachedCompData = result;
+  return result;
+};

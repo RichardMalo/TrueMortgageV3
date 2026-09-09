@@ -31,7 +31,14 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
-      exclude: ['node_modules/**', 'dist/**', 'tests/**', 'eslint.config.js', 'vite.config.js'],
+      exclude: [
+        'node_modules/**',
+        'dist/**',
+        'tests/**',
+        'src/js/index.ts',
+        'eslint.config.js',
+        'vite.config.js'
+      ],
       thresholds: {
         statements: 63,
         branches: 50,

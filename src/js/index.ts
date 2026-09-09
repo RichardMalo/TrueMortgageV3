@@ -12,7 +12,11 @@ import {
   generateCCSchedule,
   generateLoanSchedule,
   calculateMilestones,
-  getRowDateLabel
+  getRowDateLabel,
+  getBaselineCacheKey,
+  getCachedBaselineSchedule,
+  getCachedComparisonSchedule,
+  invalidateBaselineCache
 } from './math.js';
 import {
   renderCharts,
@@ -166,87 +170,6 @@ const els = {
   masterBtns: document.querySelectorAll('.mode-btn')
 };
 
-// Baseline & Comparison Schedule Memoization Cache
-let cachedBaselineKey = '';
-let cachedBaseData: ScheduleResult | null = null;
-let cachedCompKey = '';
-let cachedCompData: ScheduleResult | null = null;
-
-export const getBaselineCacheKey = (
-  mode: string,
-  profileId: string,
-  inp: Inputs,
-  lang: string = 'en'
-): string => {
-  if (mode === 'mortgage') {
-    return [
-      profileId,
-      'mtg',
-      inp.homePrice,
-      inp.downPayment,
-      inp.annualRate,
-      inp.amortizationYears,
-      inp.termYears,
-      inp.compounding,
-      inp.province,
-      inp.country,
-      inp.includeCmhc,
-      inp.cmhcProvince,
-      inp.includeLtt,
-      inp.lttProvince,
-      inp.lttFirstTimeBuyer,
-      inp.ukFirstTimeBuyer,
-      inp.auFirstTimeBuyer,
-      inp.auState,
-      inp.isAdditionalProperty,
-      inp.taxRate,
-      inp.insRate,
-      inp.hoaRate,
-      inp.pmiRate,
-      inp.startDate,
-      inp.rateShockEnabled,
-      JSON.stringify(inp.termRates || {}),
-      lang
-    ].join('|');
-  }
-  if (mode === 'loan') {
-    return [
-      profileId,
-      'loan',
-      inp.loanAmount,
-      inp.homePrice,
-      inp.downPayment,
-      inp.annualRate,
-      inp.amortizationYears,
-      inp.termYears,
-      inp.loanOriginationFee,
-      inp.loanOriginationFeeEnabled,
-      inp.startDate,
-      lang
-    ].join('|');
-  }
-  return [
-    profileId,
-    'cc',
-    inp.ccBalance,
-    inp.annualRate,
-    inp.province,
-    inp.ccMinPercent,
-    inp.ccMinPrincipalPct,
-    inp.ccMinFlat,
-    inp.ccCompounding,
-    inp.startDate,
-    lang
-  ].join('|');
-};
-
-export const invalidateBaselineCache = () => {
-  cachedBaselineKey = '';
-  cachedBaseData = null;
-  cachedCompKey = '';
-  cachedCompData = null;
-};
-
 // Central calculation execution pipeline
 const calculate = (e?: Event) => {
   if (e) e.preventDefault();
@@ -327,25 +250,12 @@ const calculate = (e?: Event) => {
     els.containers.oppCost.classList.toggle('hidden', !inputs.useOppCost);
   }
 
-  const baselineKey = getBaselineCacheKey(
+  const baseData = getCachedBaselineSchedule(
     state.currentMode,
     String(state.activeProfileId),
     inputs,
     state.language || 'en'
   );
-  let baseData: ScheduleResult;
-  if (cachedBaseData && cachedBaselineKey === baselineKey) {
-    baseData = cachedBaseData;
-  } else {
-    baseData =
-      state.currentMode === 'mortgage'
-        ? generateMortgageSchedule(inputs, true)
-        : state.currentMode === 'loan'
-          ? generateLoanSchedule(inputs, true)
-          : generateCCSchedule(inputs, true);
-    cachedBaselineKey = baselineKey;
-    cachedBaseData = baseData;
-  }
 
   const actData = hasStrat
     ? state.currentMode === 'mortgage'
@@ -528,24 +438,18 @@ const calculate = (e?: Event) => {
     state.profiles[state.comparisonProfileId]
   ) {
     const compProfile = state.profiles[state.comparisonProfileId]!;
-    const compKey = `${state.comparisonProfileId}|${JSON.stringify(compProfile)}`;
-    if (cachedCompData && cachedCompKey === compKey) {
-      compData = cachedCompData;
-    } else {
+    compData = getCachedComparisonSchedule(state.comparisonProfileId, compProfile, () => {
       const compInputs = profileToInputs(
         compProfile.inputs as unknown as Record<string, string | boolean | number | undefined>,
         compProfile.termRates || {},
         compProfile.currentMode || 'mortgage'
       );
-      compData =
-        compProfile.currentMode === 'mortgage'
-          ? generateMortgageSchedule(compInputs, false)
-          : compProfile.currentMode === 'loan'
-            ? generateLoanSchedule(compInputs, false)
-            : generateCCSchedule(compInputs, false);
-      cachedCompKey = compKey;
-      cachedCompData = compData;
-    }
+      return compProfile.currentMode === 'mortgage'
+        ? generateMortgageSchedule(compInputs, false)
+        : compProfile.currentMode === 'loan'
+          ? generateLoanSchedule(compInputs, false)
+          : generateCCSchedule(compInputs, false);
+    });
   }
 
   const totalActualLifetimePaidToBank = actData.summary.totalInterest + principalBorrowAmount;
