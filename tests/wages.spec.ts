@@ -383,6 +383,72 @@ describe('renderBankWages (wages-viz.ts)', () => {
       );
     });
 
+    it('labels a partial start year as "Year 0 to 1" followed by "Year 1" for the next year', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1000, dateLabel: 'Sep 15, 2025' },
+        { calendarYear: 2025, interest: 1000, dateLabel: 'Oct 15, 2025' },
+        { calendarYear: 2026, interest: 900, dateLabel: 'Jan 15, 2026' },
+        { calendarYear: 2027, interest: 800, dateLabel: 'Jan 15, 2027' }
+      ]);
+      renderBankWages(makeState('calendar'), makeEls('0', '0', '2025-09-01'), result);
+
+      const yearCards = container.querySelectorAll('.debt-calendar-year-card');
+      expect(yearCards).toHaveLength(3);
+
+      const title0 = yearCards[0]!.querySelector('.debt-calendar-year-title')?.textContent;
+      const title1 = yearCards[1]!.querySelector('.debt-calendar-year-title')?.textContent;
+      const title2 = yearCards[2]!.querySelector('.debt-calendar-year-title')?.textContent;
+
+      expect(title0).toBe('Year 0 to 1 • 2025');
+      expect(title1).toBe('Year 1 • 2026');
+      expect(title2).toBe('Year 2 • 2027');
+    });
+
+    it('labels partial start year as "Année 0 à 1" in French followed by "Année 1"', () => {
+      setLanguageState('fr');
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1000, dateLabel: '15 sept. 2025' },
+        { calendarYear: 2026, interest: 900, dateLabel: '15 janv. 2026' }
+      ]);
+      renderBankWages(makeState('calendar'), makeEls('0', '0', '2025-09-01'), result);
+
+      const yearCards = container.querySelectorAll('.debt-calendar-year-card');
+      const title0 = yearCards[0]!.querySelector('.debt-calendar-year-title')?.textContent;
+      const title1 = yearCards[1]!.querySelector('.debt-calendar-year-title')?.textContent;
+
+      expect(title0).toBe('Année 0 à 1 • 2025');
+      expect(title1).toBe('Année 1 • 2026');
+    });
+
+    it('labels a full start year (starting in January) as Year 1 followed by Year 2', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1000, dateLabel: 'Jan 15, 2025' },
+        { calendarYear: 2026, interest: 900, dateLabel: 'Jan 15, 2026' }
+      ]);
+      renderBankWages(makeState('calendar'), makeEls('0', '0', '2025-01-01'), result);
+
+      const yearCards = container.querySelectorAll('.debt-calendar-year-card');
+      const title0 = yearCards[0]!.querySelector('.debt-calendar-year-title')?.textContent;
+      const title1 = yearCards[1]!.querySelector('.debt-calendar-year-title')?.textContent;
+
+      expect(title0).toBe('Year 1 • 2025');
+      expect(title1).toBe('Year 2 • 2026');
+    });
+
+    it('generates filter buttons starting with Y0–Y5 when first year is partial and spans > 5 years', () => {
+      const rows = [];
+      // Partial 2025 starting in Sep
+      rows.push({ calendarYear: 2025, interest: 1000, dateLabel: 'Sep 15, 2025' });
+      for (let y = 2026; y <= 2032; y++) {
+        rows.push({ calendarYear: y, interest: 1000, dateLabel: `Jan 15, ${y}` });
+      }
+      const result = makeScheduleResult(rows, 1);
+      renderBankWages(makeState('calendar'), makeEls('0', '0', '2025-09-01'), result);
+
+      const filterBtns = container.querySelectorAll('.debt-calendar-filter-btn');
+      expect(filterBtns[1]?.textContent).toBe('Y0–Y5');
+    });
+
     it('renders exactly 12 month boxes for every year card', () => {
       const result = makeScheduleResult([
         { calendarYear: 2025, interest: 1000, dateLabel: 'Jan 15, 2025' },

@@ -371,6 +371,7 @@ export const renderDebtCalendar = (
   interface YearDebtItem {
     calendarYear: number;
     loanYearIndex: number;
+    displayYearLabel?: string;
     principal: number;
     interest: number;
     totalPaid: number;
@@ -394,7 +395,7 @@ export const renderDebtCalendar = (
       }));
       yearlyMap.set(yr, {
         calendarYear: yr,
-        loanYearIndex: Math.floor((row.period - 1) / periodsPerYear) + 1,
+        loanYearIndex: 1,
         principal: 0,
         interest: 0,
         totalPaid: 0,
@@ -424,6 +425,24 @@ export const renderDebtCalendar = (
 
   const years = Array.from(yearlyMap.values()).sort((a, b) => a.calendarYear - b.calendarYear);
   if (years.length === 0) return;
+
+  const isFirstYearPartial =
+    years.length > 0 && years[0]!.months.findIndex((m) => m.hasPayment) > 0;
+
+  years.forEach((y, idx) => {
+    if (isFirstYearPartial) {
+      if (idx === 0) {
+        y.loanYearIndex = 0;
+        y.displayYearLabel = isFr ? 'Année 0 à 1' : 'Year 0 to 1';
+      } else {
+        y.loanYearIndex = idx;
+        y.displayYearLabel = isFr ? `Année ${idx}` : `Year ${idx}`;
+      }
+    } else {
+      y.loanYearIndex = idx + 1;
+      y.displayYearLabel = isFr ? `Année ${idx + 1}` : `Year ${idx + 1}`;
+    }
+  });
 
   // Lifetime summary
   let lifetimePrincipal = 0;
@@ -506,9 +525,12 @@ export const renderDebtCalendar = (
       { label: t('All Years'), value: 'all', match: () => true }
     ];
 
+    const startYear = isFirstYearPartial ? 0 : 1;
+    const maxYear = isFirstYearPartial ? years.length - 1 : years.length;
     const chunkSize = 5;
-    for (let start = 1; start <= years.length; start += chunkSize) {
-      const end = Math.min(start + chunkSize - 1, years.length);
+
+    for (let start = startYear; start <= maxYear; start += chunkSize) {
+      const end = Math.min(start + chunkSize - (start === 0 ? 0 : 1), maxYear);
       const label = isFr ? `A${start}–A${end}` : `Y${start}–Y${end}`;
       const s = start;
       const e = end;
@@ -517,6 +539,9 @@ export const renderDebtCalendar = (
         value: `${s}-${e}`,
         match: (loanYear) => loanYear >= s && loanYear <= e
       });
+      if (start === 0) {
+        start = 1;
+      }
     }
 
     filterOptions.forEach((opt) => {
@@ -604,15 +629,12 @@ export const renderDebtCalendar = (
 
     const yearTitle = document.createElement('h4');
     yearTitle.className = 'debt-calendar-year-title';
-    yearTitle.textContent = isFr
-      ? `Année ${yData.loanYearIndex} • ${yData.calendarYear}`
-      : `Year ${yData.loanYearIndex} • ${yData.calendarYear}`;
+    yearTitle.textContent = `${yData.displayYearLabel} • ${yData.calendarYear}`;
 
     titleArea.appendChild(yearTitle);
 
     const yearStats = document.createElement('div');
     yearStats.className = 'debt-calendar-year-stats';
-
     const statEq = document.createElement('span');
     statEq.className = 'year-stat-equity';
     const sEqDot = document.createElement('span');
@@ -742,8 +764,8 @@ export const renderDebtCalendar = (
           : `(${mItem.paymentCount} ${mItem.paymentCount > 1 ? 'payments' : 'payment'})`;
 
         const tooltipText = isFr
-          ? `${mFullName} ${yData.calendarYear} (Année ${yData.loanYearIndex}) ${pmtCountStr}\n─────────────────────────────\nVotre part (capital) : ${formatCurrency(mItem.principal)} (${equityPct}%)\nIntérêts bancaires : ${formatCurrency(mItem.interest)} (${interestPct}%)\nTotal payé : ${formatCurrency(mItem.totalPaid)}\nSolde restant : ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 REMBOURSÉ !' : ''}`
-          : `${mFullName} ${yData.calendarYear} (Year ${yData.loanYearIndex}) ${pmtCountStr}\n─────────────────────────────\nOwned by You (Principal): ${formatCurrency(mItem.principal)} (${equityPct}%)\nBank Interest: ${formatCurrency(mItem.interest)} (${interestPct}%)\nTotal Paid: ${formatCurrency(mItem.totalPaid)}\nEnding Balance: ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 LOAN PAID OFF!' : ''}`;
+          ? `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\nVotre part (capital) : ${formatCurrency(mItem.principal)} (${equityPct}%)\nIntérêts bancaires : ${formatCurrency(mItem.interest)} (${interestPct}%)\nTotal payé : ${formatCurrency(mItem.totalPaid)}\nSolde restant : ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 REMBOURSÉ !' : ''}`
+          : `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\nOwned by You (Principal): ${formatCurrency(mItem.principal)} (${equityPct}%)\nBank Interest: ${formatCurrency(mItem.interest)} (${interestPct}%)\nTotal Paid: ${formatCurrency(mItem.totalPaid)}\nEnding Balance: ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 LOAN PAID OFF!' : ''}`;
 
         monthBox.title = tooltipText;
         monthBox.setAttribute(
