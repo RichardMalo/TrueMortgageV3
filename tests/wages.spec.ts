@@ -483,10 +483,14 @@ describe('renderBankWages (wages-viz.ts)', () => {
       expect(yearCards[4]!.style.display).toBe('block');
       expect(yearCards[5]!.style.display).toBe('none');
 
+      const durationBadge = container.querySelector('.debt-calendar-duration-badge');
+      expect(durationBadge?.textContent).toContain('5 Years Shown');
+
       // Click "All Years" filter
       const allBtn = filterBtns[0] as HTMLButtonElement;
       allBtn.click();
       expect(yearCards[5]!.style.display).toBe('block');
+      expect(durationBadge?.textContent).toContain('8 Years');
     });
 
     it('renderDebtCalendar returns early when schedule is empty', () => {

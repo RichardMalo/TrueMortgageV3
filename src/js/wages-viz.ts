@@ -468,7 +468,8 @@ export const renderDebtCalendar = (
   const eqStrong = document.createElement('strong');
   eqStrong.textContent = `${lifetimeEquityPct}%`;
   equitySpan.appendChild(eqStrong);
-  equitySpan.appendChild(document.createTextNode(` (${formatCurrency(lifetimePrincipal)})`));
+  const eqValText = document.createTextNode(` (${formatCurrency(lifetimePrincipal)})`);
+  equitySpan.appendChild(eqValText);
 
   const sepSpan = document.createElement('span');
   sepSpan.className = 'pill-sep';
@@ -484,7 +485,8 @@ export const renderDebtCalendar = (
   const intStrong = document.createElement('strong');
   intStrong.textContent = `${lifetimeInterestPct}%`;
   intSpan.appendChild(intStrong);
-  intSpan.appendChild(document.createTextNode(` (${formatCurrency(lifetimeInterest)})`));
+  const intValText = document.createTextNode(` (${formatCurrency(lifetimeInterest)})`);
+  intSpan.appendChild(intValText);
 
   splitPill.appendChild(equitySpan);
   splitPill.appendChild(sepSpan);
@@ -528,11 +530,49 @@ export const renderDebtCalendar = (
         filterContainer.querySelectorAll('.debt-calendar-filter-btn').forEach((b) => {
           b.classList.toggle('active', b.getAttribute('data-filter') === activeFilter);
         });
+
+        // Expand or contract visible cards according to the selection
         wrapper.querySelectorAll<HTMLElement>('.debt-calendar-year-card').forEach((card) => {
           const cardLoanYear = Number(card.getAttribute('data-loan-year') || '1');
           const isVisible = opt.match(cardLoanYear);
           card.style.display = isVisible ? 'block' : 'none';
         });
+
+        // Dynamically update summary metrics and duration badge for the active selection
+        let selPrincipal = 0;
+        let selInterest = 0;
+        let visibleCount = 0;
+        let visiblePayments = 0;
+
+        years.forEach((y) => {
+          if (opt.match(y.loanYearIndex)) {
+            selPrincipal += y.principal;
+            selInterest += y.interest;
+            visibleCount += 1;
+            y.months.forEach((m) => {
+              visiblePayments += m.paymentCount;
+            });
+          }
+        });
+
+        const selTotal = selPrincipal + selInterest;
+        const selEquityPct = selTotal > 0 ? Math.round((selPrincipal / selTotal) * 100) : 0;
+        const selInterestPct = 100 - selEquityPct;
+
+        if (opt.value === 'all') {
+          durationBadge.textContent = isFr
+            ? `${years.length} ${years.length > 1 ? 'ans' : 'an'} (${schedule.length} paiements)`
+            : `${years.length} ${years.length > 1 ? 'Years' : 'Year'} (${schedule.length} Payments)`;
+        } else {
+          durationBadge.textContent = isFr
+            ? `${visibleCount} ${visibleCount > 1 ? 'ans' : 'an'} affichés (${visiblePayments} paiements)`
+            : `${visibleCount} ${visibleCount > 1 ? 'Years' : 'Year'} Shown (${visiblePayments} Payments)`;
+        }
+
+        eqStrong.textContent = `${selEquityPct}%`;
+        eqValText.nodeValue = ` (${formatCurrency(selPrincipal)})`;
+        intStrong.textContent = `${selInterestPct}%`;
+        intValText.nodeValue = ` (${formatCurrency(selInterest)})`;
       });
       filterContainer.appendChild(btn);
     });
