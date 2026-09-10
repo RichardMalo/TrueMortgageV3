@@ -1421,6 +1421,356 @@ body.dark-mode .wage-toggle-btn.active {
   box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
 }
 
+/* Multi-Year Calendar View of Debt */
+.debt-calendar-wrapper {
+  width: 100%;
+  max-height: 540px;
+  overflow-y: auto;
+  padding-right: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-color) transparent;
+}
+
+.debt-calendar-wrapper::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debt-calendar-wrapper::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.debt-calendar-wrapper::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+.debt-calendar-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--card-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+
+body.dark-mode .debt-calendar-sticky-header {
+  background: rgba(21, 30, 50, 0.9);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.debt-calendar-summary-metrics {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.debt-calendar-duration-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+
+.debt-calendar-lifetime-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: var(--text-color);
+  flex-wrap: wrap;
+}
+
+.debt-calendar-lifetime-pill .pill-sep {
+  opacity: 0.3;
+}
+
+.indicator-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.equity-dot {
+  background-color: var(--accent-color);
+  box-shadow: 0 0 6px rgba(52, 211, 153, 0.5);
+}
+
+.interest-dot {
+  background-color: var(--danger-color);
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.5);
+}
+
+.debt-calendar-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.debt-calendar-filter-btn {
+  padding: 4px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.2s var(--spring-easing);
+}
+
+.debt-calendar-filter-btn:hover {
+  opacity: 1;
+  border-color: var(--primary-color);
+}
+
+.debt-calendar-filter-btn.active {
+  background: var(--primary-color);
+  color: #ffffff;
+  border-color: var(--primary-color);
+  opacity: 1;
+  box-shadow: 0 2px 8px rgba(var(--primary-rgb), 0.3);
+}
+
+.debt-calendar-years-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.debt-calendar-year-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+body.dark-mode .debt-calendar-year-card {
+  background: rgba(15, 23, 42, 0.5);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.debt-calendar-year-card:hover {
+  border-color: rgba(var(--primary-rgb), 0.4);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
+}
+
+.debt-calendar-year-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.debt-calendar-year-title {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--text-color);
+  letter-spacing: -0.01em;
+}
+
+.debt-calendar-year-stats {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  color: var(--text-color);
+  flex-wrap: wrap;
+}
+
+.debt-calendar-year-bar {
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 12px;
+}
+
+body.dark-mode .debt-calendar-year-bar {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.year-bar-equity {
+  height: 100%;
+  background: var(--accent-color);
+  transition: width 0.3s ease;
+}
+
+.year-bar-interest {
+  height: 100%;
+  background: var(--danger-color);
+  transition: width 0.3s ease;
+}
+
+/* 12-Month Grid */
+.debt-calendar-months-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 6px;
+  width: 100%;
+}
+
+@media (max-width: 960px) {
+  .debt-calendar-months-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
+
+@media (max-width: 520px) {
+  .debt-calendar-months-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+}
+
+/* Month Box */
+.debt-calendar-month-box {
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 3px;
+  min-height: 72px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  position: relative;
+  transition:
+    transform 0.25s var(--spring-easing),
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+  user-select: none;
+}
+
+body.dark-mode .debt-calendar-month-box {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.debt-calendar-month-box:hover,
+.debt-calendar-month-box:focus {
+  transform: translateY(-3px) scale(1.04);
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 16px rgba(var(--primary-rgb), 0.2);
+  outline: none;
+  z-index: 2;
+}
+
+body.dark-mode .debt-calendar-month-box:hover,
+body.dark-mode .debt-calendar-month-box:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.3);
+}
+
+.debt-calendar-month-box.month-inactive {
+  opacity: 0.3;
+  border-style: dashed;
+  cursor: default;
+}
+
+.debt-calendar-month-box.month-inactive:hover {
+  transform: none;
+  border-color: var(--border-color);
+  box-shadow: none;
+}
+
+.debt-calendar-month-box.month-paidoff {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 12px rgba(52, 211, 153, 0.25);
+}
+
+.month-box-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-color);
+  opacity: 0.75;
+}
+
+.month-box-empty {
+  font-size: 0.75rem;
+  color: var(--text-color);
+  opacity: 0.35;
+  margin: auto 0;
+}
+
+.month-box-pct {
+  font-size: 0.68rem;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--text-color);
+}
+
+.month-paidoff-badge {
+  position: absolute;
+  top: -6px;
+  right: -4px;
+  font-size: 0.75rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Vertical Meter */
+.debt-calendar-meter {
+  width: 8px;
+  height: 28px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 3px 0;
+}
+
+body.dark-mode .debt-calendar-meter {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.debt-calendar-meter .meter-segment {
+  width: 100%;
+  transition: height 0.3s ease;
+}
+
+.debt-calendar-meter .meter-interest {
+  background: var(--danger-color);
+}
+
+.debt-calendar-meter .meter-equity {
+  background: var(--accent-color);
+}
+
 body.mode-mortgage .cc-only,
 body.mode-mortgage .loan-only {
   display: none !important;

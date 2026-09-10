@@ -153,6 +153,15 @@ export const dictionary: Record<string, string> = {
   'Bank Wages': 'Salaires de la banque',
   'Rent Equivalent': 'Équivalent loyer',
   'Rent + Tax & Insurance': 'Loyer + Taxe et assurance',
+  'Calendar View of Debt': 'Calendrier de la dette',
+  'Calendar View of Debt: Owned vs Bank Interest':
+    'Calendrier de la dette : Propriété vs Intérêts bancaires',
+  'Multi-year calendar breakdown showing each month proportion owned by you (equity & principal) versus interest paid to the bank.':
+    'Calendrier pluriannuel détaillant pour chaque mois la proportion détenue par vous (capital) par rapport aux intérêts versés à la banque.',
+  'Owned by You': 'Votre part (capital)',
+  'Bank Interest': 'Intérêts bancaires',
+  'All Years': 'Toutes les années',
+  'Paid Off': 'Remboursé',
 
   // Milestones
   'Chronological Milestone Roadmap': 'Feuille de route chronologique des étapes clés',
