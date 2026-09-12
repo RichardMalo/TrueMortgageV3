@@ -165,7 +165,7 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
   if (tooltipEl) {
     if (isDaysOwned) {
       tooltipEl.textContent = t(
-        'Visualizes each month as a 30-day timeline dividing bank interest days from days you truly own your home. Watch your freedom day advance earlier every year.'
+        'Visualizes each month using its exact calendar days, dividing bank interest days from days you truly own your home. Watch your freedom day advance earlier every year.'
       );
     } else if (isCalendar) {
       tooltipEl.textContent = t(
@@ -824,6 +824,7 @@ export const renderDaysOwnedCalendar = (
 
   interface MonthDaysOwnedItem {
     monthIndex: number;
+    daysInMonth: number;
     hasPayment: boolean;
     principal: number;
     extra: number;
@@ -858,6 +859,7 @@ export const renderDaysOwnedCalendar = (
     if (!yearlyMap.has(yr)) {
       const months: MonthDaysOwnedItem[] = Array.from({ length: 12 }, (_, i) => ({
         monthIndex: i,
+        daysInMonth: new Date(yr, i + 1, 0).getDate(),
         hasPayment: false,
         principal: 0,
         extra: 0,
@@ -926,11 +928,13 @@ export const renderDaysOwnedCalendar = (
       y.displayYearLabel = isFr ? `Année ${idx + 1}` : `Year ${idx + 1}`;
     }
 
-    // Compute monthly bank days, owned days, and freedom day
+    // Compute monthly bank days, owned days, and freedom day using exact calendar days of the month
     let yearBankDaysSum = 0;
     let yearOwnedDaysSum = 0;
+    let activeMonthCount = 0;
 
     y.months.forEach((mItem) => {
+      const dCount = mItem.daysInMonth;
       if (!mItem.hasPayment) {
         mItem.bankDays = 0;
         mItem.ownedDays = 0;
@@ -938,18 +942,19 @@ export const renderDaysOwnedCalendar = (
         return;
       }
 
+      activeMonthCount++;
       const totalEquity = mItem.principal + mItem.extra;
       const total = totalEquity + mItem.interest;
 
       if (total <= 0 || (mItem.isPaidOff && totalEquity > 0 && mItem.interest <= 0.001)) {
         mItem.bankDays = 0;
-        mItem.ownedDays = 30;
+        mItem.ownedDays = dCount;
         mItem.freedomDay = 1;
       } else {
         const interestRatio = mItem.interest / total;
-        mItem.bankDays = Math.min(30, Math.max(0, Math.round(30 * interestRatio)));
-        mItem.ownedDays = 30 - mItem.bankDays;
-        mItem.freedomDay = mItem.bankDays >= 30 ? 30 : mItem.bankDays + 1;
+        mItem.bankDays = Math.min(dCount, Math.max(0, Math.round(dCount * interestRatio)));
+        mItem.ownedDays = dCount - mItem.bankDays;
+        mItem.freedomDay = mItem.bankDays >= dCount ? dCount : mItem.bankDays + 1;
       }
 
       yearBankDaysSum += mItem.bankDays;
@@ -960,11 +965,11 @@ export const renderDaysOwnedCalendar = (
     y.totalOwnedDays = yearOwnedDaysSum;
 
     // Year average freedom day
-    const yearTotalPaid = y.principal + y.extra + y.interest;
-    if (yearTotalPaid > 0) {
-      const yearInterestRatio = y.interest / yearTotalPaid;
-      const yearAvgBank = Math.min(30, Math.max(0, Math.round(30 * yearInterestRatio)));
-      y.avgFreedomDay = yearAvgBank >= 30 ? 30 : yearAvgBank + 1;
+    if (activeMonthCount > 0) {
+      y.avgFreedomDay = Math.min(
+        31,
+        Math.max(1, Math.round(yearBankDaysSum / activeMonthCount) + 1)
+      );
     } else {
       y.avgFreedomDay = 1;
     }
@@ -973,14 +978,12 @@ export const renderDaysOwnedCalendar = (
   // Lifetime summary metrics
   let lifetimeBankDays = 0;
   let lifetimeOwnedDays = 0;
-  let lifetimePrincipalPaid = 0;
-  let lifetimeInterestPaid = 0;
+  let totalActiveMonths = 0;
 
   years.forEach((y) => {
     lifetimeBankDays += y.totalBankDays;
     lifetimeOwnedDays += y.totalOwnedDays;
-    lifetimePrincipalPaid += y.principal + y.extra;
-    lifetimeInterestPaid += y.interest;
+    totalActiveMonths += y.months.filter((m) => m.hasPayment).length;
   });
 
   const lifetimeTotalDays = lifetimeBankDays + lifetimeOwnedDays;
@@ -988,10 +991,9 @@ export const renderDaysOwnedCalendar = (
     lifetimeTotalDays > 0 ? Math.round((lifetimeBankDays / lifetimeTotalDays) * 100) : 0;
   const lifetimeOwnedPct = 100 - lifetimeBankPct;
 
-  const totalCost = lifetimePrincipalPaid + lifetimeInterestPaid;
   const lifetimeAvgFreedomDay =
-    totalCost > 0
-      ? Math.min(30, Math.max(1, Math.round(30 * (lifetimeInterestPaid / totalCost)) + 1))
+    totalActiveMonths > 0
+      ? Math.min(31, Math.max(1, Math.round(lifetimeBankDays / totalActiveMonths) + 1))
       : 1;
 
   // Root wrapper
@@ -1278,12 +1280,13 @@ export const renderDaysOwnedCalendar = (
           monthBox.appendChild(celebrationBadge);
         }
 
-        // 30-Day Timeline Bar
+        // Month Timeline Bar
         const bar = document.createElement('div');
         bar.className = 'days-owned-bar';
 
-        const bankPct = (mItem.bankDays / 30) * 100;
-        const ownedPct = (mItem.ownedDays / 30) * 100;
+        const dCount = mItem.daysInMonth;
+        const bankPct = (mItem.bankDays / dCount) * 100;
+        const ownedPct = (mItem.ownedDays / dCount) * 100;
 
         const segBank = document.createElement('div');
         segBank.className = 'days-segment-bank';
@@ -1297,20 +1300,20 @@ export const renderDaysOwnedCalendar = (
         bar.appendChild(segOwned);
 
         // Freedom crossover dividing marker
-        if (mItem.bankDays > 0 && mItem.bankDays < 30) {
+        if (mItem.bankDays > 0 && mItem.bankDays < dCount) {
           const divider = document.createElement('div');
           divider.className = 'freedom-divider-marker';
           divider.style.left = `${bankPct}%`;
           bar.appendChild(divider);
         }
 
-        // Tactile tick marks at Day 10 and Day 20
+        // Tactile tick marks at Day 10 and Day 20 proportional to actual month length
         const tick10 = document.createElement('div');
         tick10.className = 'days-bar-tick';
-        tick10.style.left = '33.33%';
+        tick10.style.left = `${(10 / dCount) * 100}%`;
         const tick20 = document.createElement('div');
         tick20.className = 'days-bar-tick';
-        tick20.style.left = '66.66%';
+        tick20.style.left = `${(20 / dCount) * 100}%`;
         bar.appendChild(tick10);
         bar.appendChild(tick20);
 
@@ -1352,13 +1355,13 @@ export const renderDaysOwnedCalendar = (
 
         const totalEquityPaid = mItem.principal + mItem.extra;
         const tooltipText = isFr
-          ? `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Jour de liberté : Jour ${mItem.freedomDay}\n🏦 Jours banque : Jours 1 à ${mItem.bankDays} (${mItem.bankDays} jours • ${formatCurrency(mItem.interest)})\n🏡 Vos jours : Jours ${mItem.freedomDay} à 30 (${mItem.ownedDays} jours • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Versement supplémentaire : +${formatCurrency(mItem.extra)}\n` : ''}Total payé : ${formatCurrency(mItem.totalPaid)}\nSolde restant : ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 PRÊT REMBOURSÉ !' : ''}`
-          : `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Freedom Day: Day ${mItem.freedomDay}\n🏦 Bank Days: Days 1–${mItem.bankDays} (${mItem.bankDays} days • ${formatCurrency(mItem.interest)})\n🏡 Your Days: Days ${mItem.freedomDay}–30 (${mItem.ownedDays} days • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Extra Payment: +${formatCurrency(mItem.extra)} directly to equity\n` : ''}Total Paid: ${formatCurrency(mItem.totalPaid)}\nEnding Balance: ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 LOAN PAID OFF!' : ''}`;
+          ? `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Jour de liberté : Jour ${mItem.freedomDay}\n🏦 Jours banque : Jours 1 à ${mItem.bankDays} (${mItem.bankDays} jours • ${formatCurrency(mItem.interest)})\n🏡 Vos jours : Jours ${mItem.freedomDay} à ${dCount} (${mItem.ownedDays} jours • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Versement supplémentaire : +${formatCurrency(mItem.extra)}\n` : ''}Total payé : ${formatCurrency(mItem.totalPaid)}\nSolde restant : ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 PRÊT REMBOURSÉ !' : ''}`
+          : `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Freedom Day: Day ${mItem.freedomDay}\n🏦 Bank Days: Days 1–${mItem.bankDays} (${mItem.bankDays} days • ${formatCurrency(mItem.interest)})\n🏡 Your Days: Days ${mItem.freedomDay}–${dCount} (${mItem.ownedDays} days • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Extra Payment: +${formatCurrency(mItem.extra)} directly to equity\n` : ''}Total Paid: ${formatCurrency(mItem.totalPaid)}\nEnding Balance: ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 LOAN PAID OFF!' : ''}`;
 
         monthBox.title = tooltipText;
         monthBox.setAttribute(
           'aria-label',
-          `${mFullName} ${yData.calendarYear}: Freedom Day ${mItem.freedomDay}, ${mItem.bankDays} bank days, ${mItem.ownedDays} days owned`
+          `${mFullName} ${yData.calendarYear}: Freedom Day ${mItem.freedomDay}, ${mItem.bankDays} bank days, ${mItem.ownedDays} days owned of ${dCount} days`
         );
       }
 

@@ -575,7 +575,9 @@ describe('renderBankWages (wages-viz.ts)', () => {
       renderBankWages(makeState('days-owned'), makeEls(), result);
 
       expect(titleEl.textContent).toBe('Calendar Days Owned Horizon: The Time-Share Model');
-      expect(tooltipEl.textContent).toContain('Visualizes each month as a 30-day timeline');
+      expect(tooltipEl.textContent).toContain(
+        'Visualizes each month using its exact calendar days'
+      );
     });
 
     it('sets the title and tooltip for days-owned mode in French', () => {
@@ -587,7 +589,7 @@ describe('renderBankWages (wages-viz.ts)', () => {
         'Horizon des jours détenus au calendrier : Le modèle du temps partagé'
       );
       expect(tooltipEl.textContent).toContain(
-        'Visualise chaque mois comme une barre chronologique'
+        'Visualise chaque mois selon son nombre réel de jours calendaires'
       );
     });
 
@@ -644,8 +646,38 @@ describe('renderBankWages (wages-viz.ts)', () => {
       expect(monthBoxes).toHaveLength(12);
     });
 
-    it('accurately calculates early year Day 23 Freedom Day (Days 1-22 bank, 23-30 owned)', () => {
-      // Early year: Interest = 2200, Principal = 800 (Total = 3000, 2200/3000 = 73.33% -> 22 bank days, 8 owned days)
+    it('accurately calculates realistic calendar days in April (30-day month)', () => {
+      // April (30 days): Interest = 2200, Principal = 800 (Total = 3000, 2200/3000 = 73.33% -> 22 bank days, 8 owned days)
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 2200, principal: 800, dateLabel: 'Apr 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const aprBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[3]!;
+      expect(aprBox.classList.contains('month-active')).toBe(true);
+
+      const freedomBadge = aprBox.querySelector('.freedom-badge');
+      expect(freedomBadge?.textContent).toBe('Day 23');
+
+      const bankText = aprBox.querySelector('.days-bank-text');
+      expect(bankText?.textContent).toBe('22d');
+
+      const ownedText = aprBox.querySelector('.days-owned-text');
+      expect(ownedText?.textContent).toBe('8d');
+
+      const segBank = aprBox.querySelector<HTMLElement>('.days-segment-bank');
+      const segOwned = aprBox.querySelector<HTMLElement>('.days-segment-owned');
+      expect(segBank?.style.width).toBe(`${(22 / 30) * 100}%`);
+      expect(segOwned?.style.width).toBe(`${(8 / 30) * 100}%`);
+
+      const divider = aprBox.querySelector<HTMLElement>('.freedom-divider-marker');
+      expect(divider).not.toBeNull();
+      expect(divider?.style.left).toBe(`${(22 / 30) * 100}%`);
+      expect(aprBox.title).toContain('Days 23–30');
+    });
+
+    it('accurately calculates realistic calendar days in January (31-day month)', () => {
+      // January (31 days): Interest = 2200, Principal = 800 (Total = 3000, 2200/3000 * 31 = 22.73 -> 23 bank days, 8 owned days)
       const result = makeScheduleResult([
         { calendarYear: 2025, interest: 2200, principal: 800, dateLabel: 'Jan 15, 2025' }
       ]);
@@ -655,63 +687,71 @@ describe('renderBankWages (wages-viz.ts)', () => {
       expect(janBox.classList.contains('month-active')).toBe(true);
 
       const freedomBadge = janBox.querySelector('.freedom-badge');
-      expect(freedomBadge?.textContent).toBe('Day 23');
+      expect(freedomBadge?.textContent).toBe('Day 24');
 
       const bankText = janBox.querySelector('.days-bank-text');
-      expect(bankText?.textContent).toBe('22d');
+      expect(bankText?.textContent).toBe('23d');
 
       const ownedText = janBox.querySelector('.days-owned-text');
       expect(ownedText?.textContent).toBe('8d');
 
       const segBank = janBox.querySelector<HTMLElement>('.days-segment-bank');
       const segOwned = janBox.querySelector<HTMLElement>('.days-segment-owned');
-      expect(segBank?.style.width).toBe(`${(22 / 30) * 100}%`);
-      expect(segOwned?.style.width).toBe(`${(8 / 30) * 100}%`);
-
-      const divider = janBox.querySelector<HTMLElement>('.freedom-divider-marker');
-      expect(divider).not.toBeNull();
-      expect(divider?.style.left).toBe(`${(22 / 30) * 100}%`);
+      expect(segBank?.style.width).toBe(`${(23 / 31) * 100}%`);
+      expect(segOwned?.style.width).toBe(`${(8 / 31) * 100}%`);
+      expect(janBox.title).toContain('Days 24–31');
     });
 
-    it('accurately calculates later year Day 9 Freedom Day (Days 1-8 bank, 9-30 owned)', () => {
-      // Later year: Interest = 800, Principal = 2200 (Total = 3000, 800/3000 = 26.67% -> 8 bank days, 22 owned days)
+    it('accurately depicts February with 28 days (and 29 days in a leap year), NEVER 30 days', () => {
+      // Standard year 2025: February has 28 days
+      const result2025 = makeScheduleResult([
+        { calendarYear: 2025, interest: 1500, principal: 1500, dateLabel: 'Feb 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result2025);
+
+      const febBox2025 = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[1]!;
+      expect(febBox2025.querySelector('.days-bank-text')?.textContent).toBe('14d');
+      expect(febBox2025.querySelector('.days-owned-text')?.textContent).toBe('14d'); // 14 + 14 = 28 days!
+      expect(febBox2025.querySelector('.freedom-badge')?.textContent).toBe('Day 15');
+      expect(febBox2025.title).toContain('Days 15–28');
+      expect(febBox2025.title).not.toContain('30');
+
+      // Leap year 2028: February has 29 days
+      const result2028 = makeScheduleResult([
+        { calendarYear: 2028, interest: 1500, principal: 1500, dateLabel: 'Feb 15, 2028' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result2028);
+
+      const febBox2028 = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[1]!;
+      // 29 * 0.5 = 14.5 -> round = 15 bank days, 14 owned days
+      expect(febBox2028.querySelector('.days-bank-text')?.textContent).toBe('15d');
+      expect(febBox2028.querySelector('.days-owned-text')?.textContent).toBe('14d'); // 15 + 14 = 29 days!
+      expect(febBox2028.querySelector('.freedom-badge')?.textContent).toBe('Day 16');
+      expect(febBox2028.title).toContain('Days 16–29');
+    });
+
+    it('handles paid-off month with celebration badge and full month days owned', () => {
+      // February 2025 payoff: 0 bank days, 28 owned days
       const result = makeScheduleResult([
-        { calendarYear: 2025, interest: 800, principal: 2200, dateLabel: 'Jan 15, 2025' }
+        { calendarYear: 2025, interest: 0, principal: 1500, balance: 0, dateLabel: 'Feb 15, 2025' }
       ]);
       renderBankWages(makeState('days-owned'), makeEls(), result);
 
-      const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
-      const freedomBadge = janBox.querySelector('.freedom-badge');
-      expect(freedomBadge?.textContent).toBe('Day 9');
+      const febBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[1]!;
+      expect(febBox.classList.contains('month-paidoff')).toBe(true);
 
-      const bankText = janBox.querySelector('.days-bank-text');
-      expect(bankText?.textContent).toBe('8d');
-
-      const ownedText = janBox.querySelector('.days-owned-text');
-      expect(ownedText?.textContent).toBe('22d');
-    });
-
-    it('handles paid-off month with celebration badge and Day 1 freedom', () => {
-      const result = makeScheduleResult([
-        { calendarYear: 2025, interest: 0, principal: 1500, balance: 0, dateLabel: 'Jan 15, 2025' }
-      ]);
-      renderBankWages(makeState('days-owned'), makeEls(), result);
-
-      const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
-      expect(janBox.classList.contains('month-paidoff')).toBe(true);
-
-      const freedomBadge = janBox.querySelector('.freedom-badge');
+      const freedomBadge = febBox.querySelector('.freedom-badge');
       expect(freedomBadge?.textContent).toBe('Day 1');
       expect(freedomBadge?.classList.contains('paidoff-tag')).toBe(true);
 
-      const paidoffBadge = janBox.querySelector('.month-paidoff-badge');
+      const paidoffBadge = febBox.querySelector('.month-paidoff-badge');
       expect(paidoffBadge?.textContent).toBe('🎉');
 
-      const bankText = janBox.querySelector('.days-bank-text');
+      const bankText = febBox.querySelector('.days-bank-text');
       expect(bankText?.textContent).toBe('0d');
 
-      const ownedText = janBox.querySelector('.days-owned-text');
-      expect(ownedText?.textContent).toBe('30d');
+      const ownedText = febBox.querySelector('.days-owned-text');
+      expect(ownedText?.textContent).toBe('28d');
     });
 
     it('marks inactive month without payments with placeholder dash', () => {
@@ -728,7 +768,7 @@ describe('renderBankWages (wages-viz.ts)', () => {
     });
 
     it('incorporates extra payments into equity and shows the lightning bolt badge', () => {
-      // Interest = 1500, Principal = 500, Extra = 1000 -> Total equity = 1500, Total = 3000 -> 15 bank days, 15 owned days, Freedom Day 16
+      // January (31 days): Interest = 1500, Principal = 500, Extra = 1000 -> Total equity = 1500, Total = 3000 -> 15.5 -> 16 bank days, 15 owned days, Freedom Day 17
       const result = makeScheduleResult([
         {
           calendarYear: 2025,
@@ -742,14 +782,15 @@ describe('renderBankWages (wages-viz.ts)', () => {
 
       const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
       const freedomBadge = janBox.querySelector('.freedom-badge');
-      expect(freedomBadge?.textContent).toBe('Day 16');
+      expect(freedomBadge?.textContent).toBe('Day 17');
 
       const extraBadge = janBox.querySelector('.days-extra-badge');
       expect(extraBadge).not.toBeNull();
       expect(extraBadge?.textContent).toBe('⚡');
     });
 
-    it('renders timeline ruler ticks at 33.33% and 66.66% in active months', () => {
+    it('renders timeline ruler ticks at realistic Day 10 and Day 20 positions', () => {
+      // In January (31 days)
       const result = makeScheduleResult([
         { calendarYear: 2025, interest: 1000, principal: 1000, dateLabel: 'Jan 15, 2025' }
       ]);
@@ -758,8 +799,8 @@ describe('renderBankWages (wages-viz.ts)', () => {
       const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
       const ticks = janBox.querySelectorAll('.days-bar-tick');
       expect(ticks).toHaveLength(2);
-      expect((ticks[0] as HTMLElement).style.left).toBe('33.33%');
-      expect((ticks[1] as HTMLElement).style.left).toBe('66.66%');
+      expect((ticks[0] as HTMLElement).style.left).toBe(`${(10 / 31) * 100}%`);
+      expect((ticks[1] as HTMLElement).style.left).toBe(`${(20 / 31) * 100}%`);
     });
 
     it('renders multi-year filter buttons and filters cards when loan spans > 5 years', () => {
