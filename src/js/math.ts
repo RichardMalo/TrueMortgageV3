@@ -20,6 +20,34 @@ import {
   CMHC_PROVINCE_PST_RATES
 } from './constants.js';
 
+/**
+ * Pre-indexes scheduled lump sums by payment number for O(1) instant retrieval during simulation loops.
+ */
+export const buildLumpSumsMap = (
+  lumpSums?: Array<{ paymentNumber: number; amount: number }>
+): Map<number, number> | null => {
+  if (!lumpSums || lumpSums.length === 0) return null;
+  const map = new Map<number, number>();
+  for (let k = 0; k < lumpSums.length; k++) {
+    const item = lumpSums[k]!;
+    const amt = Math.max(0, item.amount || 0);
+    if (amt > 0) {
+      map.set(item.paymentNumber, (map.get(item.paymentNumber) || 0) + amt);
+    }
+  }
+  return map.size > 0 ? map : null;
+};
+
+/**
+ * Fast calendar day-of-month lookup without allocating Date objects.
+ */
+const daysInMonth = (year: number, monthIndex: number): number => {
+  if (monthIndex === 1) {
+    return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0 ? 29 : 28;
+  }
+  return monthIndex === 3 || monthIndex === 5 || monthIndex === 8 || monthIndex === 10 ? 30 : 31;
+};
+
 export interface CmhcCalculationResult {
   insuranceRate: number;
   insuranceAmount: number;
@@ -336,6 +364,23 @@ export const generateMortgageSchedule = (
   const periodicHOA = (Math.max(0, inputs.hoaRate || 0) * 12) / periodsPerYear;
   const pmiDropThreshold = safeHomePrice * PMI_LTV_THRESHOLD;
 
+  const basePeriodicRate =
+    inputs.compounding === 'semi'
+      ? Math.pow(1 + safeRate / 100 / 2, 2 / periodsPerYear) - 1
+      : safeRate / 100 / periodsPerYear;
+  let activePeriodicRate = basePeriodicRate;
+
+  const annualPmiRate = inputs.pmiRate || 0;
+  const basePeriodicPMI =
+    inputs.compounding !== 'semi' && safeHomePrice > 0 && annualPmiRate > 0
+      ? (principal * (Math.min(100, Math.max(0, annualPmiRate)) / 100)) / periodsPerYear
+      : 0;
+
+  const lumpSumsMap = !isBaseline ? buildLumpSumsMap(inputs.lumpSums) : null;
+  const hasLumpSumInArrayAt1 = lumpSumsMap?.has(1) ?? false;
+  const defaultLumpSum1 =
+    !isBaseline && !hasLumpSumInArrayAt1 ? Math.max(0, inputs.lumpSum || 0) : 0;
+
   let balance = principal;
   let totalInterest = 0;
   let totalPrincipal = 0;
@@ -343,10 +388,12 @@ export const generateMortgageSchedule = (
   let totalEscrow = 0;
   const schedule: ScheduleRow[] = [];
   let currentDate: Date | null = null;
+  let scratchDate: Date | null = null;
   if (!summaryOnly && inputs.startDate) {
     const parsed = new Date(inputs.startDate + 'T00:00:00');
     if (!isNaN(parsed.getTime())) {
       currentDate = parsed;
+      scratchDate = new Date(parsed.getTime());
     }
   }
   const maxPeriods = Math.ceil(safeAmort * periodsPerYear) + periodsPerYear * 25;
@@ -359,9 +406,8 @@ export const generateMortgageSchedule = (
     if (balance <= 0.009) break;
     periodsToPayoff = i;
 
-    let activeAnnualRate = safeRate;
-
     if (inputs.rateShockEnabled && termYears > 0) {
+      let activeAnnualRate = safeRate;
       const termPeriods = Math.round(termYears * periodsPerYear);
       const isTermRenewal = i - 1 > 0 && (i - 1) % termPeriods === 0;
       const termIndex = Math.floor((i - 1) / termPeriods);
@@ -391,35 +437,25 @@ export const generateMortgageSchedule = (
           periodicPayment = getMonthlyPayment(balance, renewalPeriodicRate, remainingPeriods);
         }
       }
+      activePeriodicRate =
+        inputs.compounding === 'semi'
+          ? Math.pow(1 + activeAnnualRate / 100 / 2, 2 / periodsPerYear) - 1
+          : activeAnnualRate / 100 / periodsPerYear;
     }
 
-    const activePeriodicRate =
-      inputs.compounding === 'semi'
-        ? Math.pow(1 + activeAnnualRate / 100 / 2, 2 / periodsPerYear) - 1
-        : activeAnnualRate / 100 / periodsPerYear;
-
-    const annualPmiRate = inputs.pmiRate || 0;
-    const periodicPMI =
-      inputs.compounding !== 'semi' &&
-      safeHomePrice > 0 &&
-      balance > pmiDropThreshold &&
-      annualPmiRate > 0
-        ? (principal * (Math.min(100, Math.max(0, annualPmiRate)) / 100)) / periodsPerYear
-        : 0;
+    const periodicPMI = basePeriodicPMI > 0 && balance > pmiDropThreshold ? basePeriodicPMI : 0;
     const periodicEscrow = periodicTax + periodicInsurance + periodicHOA + periodicPMI;
     const interestPortion = Math.round(balance * activePeriodicRate * 100) / 100;
     let principalPortion = Math.round((periodicPayment - interestPortion) * 100) / 100;
     let currentExtraPayment = userExtra;
-    const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
-    if (i === 1 && !isBaseline && !hasLumpSumInArray) {
-      currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
+    if (i === 1) {
+      currentExtraPayment += defaultLumpSum1;
     }
-    if (inputs.lumpSums && !isBaseline) {
-      inputs.lumpSums.forEach((item) => {
-        if (item.paymentNumber === i) {
-          currentExtraPayment += Math.max(0, item.amount || 0);
-        }
-      });
+    if (lumpSumsMap) {
+      const scheduledAmt = lumpSumsMap.get(i);
+      if (scheduledAmt !== undefined) {
+        currentExtraPayment += scheduledAmt;
+      }
     }
 
     const terminalTolerance = Math.min(2.0, Math.max(0.01, 0.05 * periodicPayment));
@@ -451,7 +487,15 @@ export const generateMortgageSchedule = (
         dateLabel: dLbl,
         yearVal: yLbl,
         calendarYear
-      } = getRowDateLabel(currentDate, i, freq, periodsPerYear, 'P', inputs.lang || 'en');
+      } = getRowDateLabel(
+        currentDate,
+        i,
+        freq,
+        periodsPerYear,
+        'P',
+        inputs.lang || 'en',
+        scratchDate
+      );
 
       schedule.push({
         period: i,
@@ -575,6 +619,10 @@ export const generateCCSchedule = (
   }
 
   const userExtra = isBaseline ? 0 : Math.max(0, inputs.extraPayment || 0);
+  const lumpSumsMap = !isBaseline ? buildLumpSumsMap(inputs.lumpSums) : null;
+  const hasLumpSumInArrayAt1 = lumpSumsMap?.has(1) ?? false;
+  const defaultLumpSum1 =
+    !isBaseline && !hasLumpSumInArrayAt1 ? Math.max(0, inputs.lumpSum || 0) : 0;
 
   let balance = principal;
   let totalInterest = 0;
@@ -582,10 +630,12 @@ export const generateCCSchedule = (
   let totalExtraPaid = 0;
   const schedule: ScheduleRow[] = [];
   let currentDate: Date | null = null;
+  let scratchDate: Date | null = null;
   if (!summaryOnly && inputs.startDate) {
     const parsed = new Date(inputs.startDate + 'T00:00:00');
     if (!isNaN(parsed.getTime())) {
       currentDate = parsed;
+      scratchDate = new Date(parsed.getTime());
     }
   }
   const maxMonthsLimit = MAX_CC_PAYOFF_MONTHS;
@@ -617,16 +667,14 @@ export const generateCCSchedule = (
     }
 
     let currentExtraPayment = userExtra;
-    const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === i);
-    if (i === 1 && !isBaseline && !hasLumpSumInArray) {
-      currentExtraPayment += Math.max(0, inputs.lumpSum || 0);
+    if (i === 1) {
+      currentExtraPayment += defaultLumpSum1;
     }
-    if (inputs.lumpSums && !isBaseline) {
-      inputs.lumpSums.forEach((item) => {
-        if (item.paymentNumber === i) {
-          currentExtraPayment += Math.max(0, item.amount || 0);
-        }
-      });
+    if (lumpSumsMap) {
+      const scheduledAmt = lumpSumsMap.get(i);
+      if (scheduledAmt !== undefined) {
+        currentExtraPayment += scheduledAmt;
+      }
     }
 
     if (regularPrincipal + currentExtraPayment > balance) {
@@ -652,7 +700,7 @@ export const generateCCSchedule = (
         dateLabel: dLbl,
         yearVal: yLbl,
         calendarYear
-      } = getRowDateLabel(currentDate, i, 'monthly', 12, 'M', inputs.lang || 'en');
+      } = getRowDateLabel(currentDate, i, 'monthly', 12, 'M', inputs.lang || 'en', scratchDate);
 
       schedule.push({
         period: i,
@@ -1037,6 +1085,12 @@ export const generateLoanSchedule = (
   }
 
   const userExtra = isBaseline ? 0 : Math.max(0, inputs.extraPayment || 0);
+  const lumpSumsMap = !isBaseline ? buildLumpSumsMap(inputs.lumpSums) : null;
+  const hasLumpSumInArrayAt1 = lumpSumsMap?.has(1) ?? false;
+  const defaultLumpSum1 =
+    !isBaseline && inputs.lumpSum && inputs.lumpSum > 0 && !hasLumpSumInArrayAt1
+      ? inputs.lumpSum
+      : 0;
 
   let balance = loanAmount;
   let totalInterest = 0;
@@ -1044,10 +1098,12 @@ export const generateLoanSchedule = (
   let totalExtraPaid = 0;
   const schedule: ScheduleRow[] = [];
   let currentDate: Date | null = null;
+  let scratchDate: Date | null = null;
   if (!summaryOnly && inputs.startDate) {
     const parsed = new Date(inputs.startDate + 'T00:00:00');
     if (!isNaN(parsed.getTime())) {
       currentDate = parsed;
+      scratchDate = new Date(parsed.getTime());
     }
   }
 
@@ -1062,16 +1118,13 @@ export const generateLoanSchedule = (
     }
 
     let extra = userExtra;
-    const hasLumpSumInArray = inputs.lumpSums?.some((item) => item.paymentNumber === period);
-
-    if (!isBaseline && inputs.lumpSum && inputs.lumpSum > 0 && period === 1 && !hasLumpSumInArray) {
-      extra += inputs.lumpSum;
+    if (period === 1) {
+      extra += defaultLumpSum1;
     }
-
-    if (!isBaseline && inputs.lumpSums && inputs.lumpSums.length > 0) {
-      const matched = inputs.lumpSums.filter((item) => item.paymentNumber === period);
-      for (const item of matched) {
-        extra += item.amount;
+    if (lumpSumsMap) {
+      const scheduledAmt = lumpSumsMap.get(period);
+      if (scheduledAmt !== undefined) {
+        extra += scheduledAmt;
       }
     }
 
@@ -1095,7 +1148,8 @@ export const generateLoanSchedule = (
         freq,
         periodsPerYear,
         'M',
-        inputs.lang || 'en'
+        inputs.lang || 'en',
+        scratchDate
       );
       schedule.push({
         period,
@@ -1172,19 +1226,23 @@ export const getRowDateLabel = (
   freq: string,
   periodsPerYear: number,
   fallbackPrefix = 'P',
-  lang = 'en'
+  lang = 'en',
+  reusableDate?: Date | null
 ): { dateLabel: string; yearVal: number; calendarYear: number } => {
   let dateLabel = `${fallbackPrefix}${period}`;
   let yearVal = period / periodsPerYear;
   let calendarYear = new Date().getFullYear() + Math.floor((period - 1) / periodsPerYear);
 
   if (startDate) {
-    const d = new Date(startDate.getTime());
+    const d = reusableDate ? reusableDate : new Date(startDate.getTime());
+    if (reusableDate) {
+      d.setTime(startDate.getTime());
+    }
     const startDay = startDate.getDate();
     if (freq === 'monthly') {
       d.setDate(1);
       d.setMonth(d.getMonth() + (period - 1));
-      const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+      const lastDay = daysInMonth(d.getFullYear(), d.getMonth());
       d.setDate(Math.min(startDay, lastDay));
     } else if (freq === 'semi-monthly') {
       const halfIndex = period - 1;
@@ -1192,7 +1250,7 @@ export const getRowDateLabel = (
         const monthsToAdd = Math.floor(halfIndex / 2);
         d.setDate(1);
         d.setMonth(d.getMonth() + monthsToAdd);
-        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        const lastDay = daysInMonth(d.getFullYear(), d.getMonth());
         d.setDate(
           halfIndex % 2 === 1 ? Math.min(startDay + 15, lastDay) : Math.min(startDay, lastDay)
         );
@@ -1200,7 +1258,7 @@ export const getRowDateLabel = (
         const monthsToAdd = Math.floor((halfIndex + 1) / 2);
         d.setDate(1);
         d.setMonth(d.getMonth() + monthsToAdd);
-        const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+        const lastDay = daysInMonth(d.getFullYear(), d.getMonth());
         d.setDate(
           halfIndex % 2 === 1 ? Math.min(startDay - 15, lastDay) : Math.min(startDay, lastDay)
         );
@@ -1694,13 +1752,28 @@ export const calculateMultiDebtCascade = (
     }));
 
     // Sort order: Avalanche = rate desc, Snowball = balance asc
+    if (strat === 'avalanche') {
+      activeDebts.sort((a, b) => b.rate - a.rate);
+    }
     const getTargetDebt = () => {
-      const remaining = activeDebts.filter((d) => d.balance > 0.009);
-      if (remaining.length === 0) return null;
       if (strat === 'avalanche') {
-        return remaining.sort((a, b) => b.rate - a.rate)[0]!;
+        for (let idx = 0; idx < activeDebts.length; idx++) {
+          if (activeDebts[idx]!.balance > 0.009) {
+            return activeDebts[idx]!;
+          }
+        }
+        return null;
       } else {
-        return remaining.sort((a, b) => a.balance - b.balance)[0]!;
+        let target: (typeof activeDebts)[0] | null = null;
+        for (let idx = 0; idx < activeDebts.length; idx++) {
+          const d = activeDebts[idx]!;
+          if (d.balance > 0.009) {
+            if (!target || d.balance < target.balance) {
+              target = d;
+            }
+          }
+        }
+        return target;
       }
     };
 
@@ -1810,12 +1883,6 @@ export const calculateMultiDebtCascade = (
   };
 };
 
-// Baseline & Comparison Schedule Memoization Cache
-let cachedBaselineKey = '';
-let cachedBaseData: ScheduleResult | null = null;
-let cachedCompKey = '';
-let cachedCompData: ScheduleResult | null = null;
-
 export const getBaselineCacheKey = (
   mode: string,
   profileId: string,
@@ -1884,11 +1951,14 @@ export const getBaselineCacheKey = (
   ].join('|');
 };
 
+// Baseline & Comparison Schedule Memoization Cache
+const MAX_CACHE_ENTRIES = 16;
+const baselineCache = new Map<string, ScheduleResult>();
+const compCache = new Map<string, ScheduleResult>();
+
 export const invalidateBaselineCache = () => {
-  cachedBaselineKey = '';
-  cachedBaseData = null;
-  cachedCompKey = '';
-  cachedCompData = null;
+  baselineCache.clear();
+  compCache.clear();
 };
 
 export const getCachedBaselineSchedule = (
@@ -1898,8 +1968,9 @@ export const getCachedBaselineSchedule = (
   lang: string = 'en'
 ): ScheduleResult => {
   const baselineKey = getBaselineCacheKey(mode, profileId, inputs, lang);
-  if (cachedBaseData && cachedBaselineKey === baselineKey) {
-    return cachedBaseData;
+  const cached = baselineCache.get(baselineKey);
+  if (cached) {
+    return cached;
   }
   const result =
     mode === 'mortgage'
@@ -1907,8 +1978,11 @@ export const getCachedBaselineSchedule = (
       : mode === 'loan'
         ? generateLoanSchedule(inputs, true)
         : generateCCSchedule(inputs, true);
-  cachedBaselineKey = baselineKey;
-  cachedBaseData = result;
+  if (baselineCache.size >= MAX_CACHE_ENTRIES) {
+    const firstKey = baselineCache.keys().next().value;
+    if (firstKey !== undefined) baselineCache.delete(firstKey);
+  }
+  baselineCache.set(baselineKey, result);
   return result;
 };
 
@@ -1918,11 +1992,15 @@ export const getCachedComparisonSchedule = (
   computeFn: () => ScheduleResult
 ): ScheduleResult => {
   const compKey = `${compProfileId}|${JSON.stringify(compProfile)}`;
-  if (cachedCompData && cachedCompKey === compKey) {
-    return cachedCompData;
+  const cached = compCache.get(compKey);
+  if (cached) {
+    return cached;
   }
   const result = computeFn();
-  cachedCompKey = compKey;
-  cachedCompData = result;
+  if (compCache.size >= MAX_CACHE_ENTRIES) {
+    const firstKey = compCache.keys().next().value;
+    if (firstKey !== undefined) compCache.delete(firstKey);
+  }
+  compCache.set(compKey, result);
   return result;
 };

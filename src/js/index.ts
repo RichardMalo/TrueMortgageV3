@@ -703,6 +703,8 @@ const updateScheduledLumpSumDatesInPlace = () => {
   });
 };
 
+const scheduledLumpSumSavingsCache = new Map<string, number>();
+
 const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleResult) => {
   const container = els.containers.lumpSumsContainer;
   if (!container) return;
@@ -725,6 +727,33 @@ const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleR
       return;
     }
 
+    const cacheKey = [
+      mode,
+      inputs.homePrice,
+      inputs.downPayment,
+      inputs.loanAmount,
+      inputs.ccBalance,
+      inputs.annualRate,
+      inputs.amortizationYears,
+      inputs.termYears,
+      inputs.frequency,
+      inputs.compounding,
+      inputs.extraPayment,
+      inputs.lumpSum,
+      inputs.startDate,
+      inputs.rateShockEnabled,
+      currentId,
+      currentItem.amount,
+      currentItem.paymentNumber,
+      actData.summary.totalInterest
+    ].join('|');
+
+    if (scheduledLumpSumSavingsCache.has(cacheKey)) {
+      const cachedSavings = scheduledLumpSumSavingsCache.get(cacheKey)!;
+      updateKineticText(savingsBox, cachedSavings);
+      return;
+    }
+
     const listWithoutThisItem = (inputs.lumpSums || []).filter((item) => item.id !== currentId);
     const inputsWithoutThisItem = {
       ...inputs,
@@ -741,6 +770,10 @@ const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleR
     }
 
     const savings = Math.max(0, freeData.summary.totalInterest - actData.summary.totalInterest);
+    if (scheduledLumpSumSavingsCache.size > 100) {
+      scheduledLumpSumSavingsCache.clear();
+    }
+    scheduledLumpSumSavingsCache.set(cacheKey, savings);
     updateKineticText(savingsBox, savings);
   });
 };
