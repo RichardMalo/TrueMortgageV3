@@ -158,6 +158,18 @@ export const dictionary: Record<string, string> = {
     'Calendrier de la dette : Propriété vs Intérêts bancaires',
   'Multi-year calendar breakdown showing each month proportion owned by you (equity & principal) versus interest paid to the bank.':
     'Calendrier pluriannuel détaillant pour chaque mois la proportion détenue par vous (capital) par rapport aux intérêts versés à la banque.',
+  'Calendar Days Owned': 'Jours détenus au calendrier',
+  'Calendar Days Owned Horizon: The Time-Share Model':
+    'Horizon des jours détenus au calendrier : Le modèle du temps partagé',
+  'Visualizes each month as a 30-day timeline dividing bank interest days from days you truly own your home. Watch your freedom day advance earlier every year.':
+    'Visualise chaque mois comme une barre chronologique de 30 jours divisant les jours pour la banque des jours où vous êtes pleinement propriétaire. Observez votre jour de liberté financière avancer chaque année.',
+  'Freedom Day': 'Jour de liberté',
+  'Bank Days': 'Jours pour la banque',
+  'Your Days': 'Vos jours',
+  'Days Owned': 'Jours acquis',
+  'Days Bank': 'Jours banque',
+  'Total Days Owned': 'Total des jours acquis',
+  'Avg Freedom Day': 'Jour de liberté moyen',
   'Owned by You': 'Votre part (capital)',
   'Bank Interest': 'Intérêts bancaires',
   'All Years': 'Toutes les années',

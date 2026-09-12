@@ -222,7 +222,7 @@ export interface Profile {
   language?: 'en' | 'fr';
   termRates: Record<number, number>;
   customizedYears: Record<number, boolean>;
-  bankWagesView: 'wages' | 'rent' | 'rent-tax-ins' | 'calendar';
+  bankWagesView: 'wages' | 'rent' | 'rent-tax-ins' | 'calendar' | 'days-owned';
   inputs: ProfileInputs;
 }
 
@@ -238,7 +238,7 @@ export interface AppState {
   comparisonProfileId: string | null;
   compareModeActive: boolean;
   profiles: Record<string, Profile>;
-  bankWagesView: 'wages' | 'rent' | 'rent-tax-ins' | 'calendar';
+  bankWagesView: 'wages' | 'rent' | 'rent-tax-ins' | 'calendar' | 'days-owned';
   chartsOrder?: (string | null)[];
   strategyOrder?: (string | null)[];
   currentTargetYears?: number;

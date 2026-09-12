@@ -145,9 +145,12 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
   const isRent = state.bankWagesView === 'rent';
   const isRentTaxIns = state.bankWagesView === 'rent-tax-ins';
   const isCalendar = state.bankWagesView === 'calendar';
+  const isDaysOwned = state.bankWagesView === 'days-owned';
 
   if (titleEl) {
-    if (isCalendar) {
+    if (isDaysOwned) {
+      titleEl.textContent = t('Calendar Days Owned Horizon: The Time-Share Model');
+    } else if (isCalendar) {
       titleEl.textContent = t('Calendar View of Debt: Owned vs Bank Interest');
     } else if (isRentTaxIns) {
       titleEl.textContent = t(
@@ -160,7 +163,11 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
     }
   }
   if (tooltipEl) {
-    if (isCalendar) {
+    if (isDaysOwned) {
+      tooltipEl.textContent = t(
+        'Visualizes each month as a 30-day timeline dividing bank interest days from days you truly own your home. Watch your freedom day advance earlier every year.'
+      );
+    } else if (isCalendar) {
       tooltipEl.textContent = t(
         'Multi-year calendar breakdown showing each month proportion owned by you (equity & principal) versus interest paid to the bank.'
       );
@@ -181,6 +188,11 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
 
   const schedule = actData.schedule;
   if (!schedule || schedule.length === 0) return;
+
+  if (isDaysOwned) {
+    renderDaysOwnedCalendar(container, state, els, actData);
+    return;
+  }
 
   if (isCalendar) {
     renderDebtCalendar(container, state, els, actData);
@@ -771,6 +783,582 @@ export const renderDebtCalendar = (
         monthBox.setAttribute(
           'aria-label',
           `${mFullName} ${yData.calendarYear}: ${equityPct}% owned by you, ${interestPct}% bank interest`
+        );
+      }
+
+      monthsGrid.appendChild(monthBox);
+    });
+
+    yearCard.appendChild(monthsGrid);
+    yearsList.appendChild(yearCard);
+  });
+
+  wrapper.appendChild(yearsList);
+  container.appendChild(wrapper);
+};
+
+/**
+ * Renders the "Calendar Days Owned" Horizon (The Time-Share Model).
+ * Treats each month as a 30-day timeline bar, partitioning each month
+ * into Bank Interest Days vs Borrower Equity Days, demarcated by Freedom Day.
+ *
+ * @param container - The target container element in DOM.
+ * @param _state - The shared AppState store.
+ * @param els - Centralized DOM elements mapping object.
+ * @param actData - The active ScheduleResult containing computed schedule.
+ */
+export const renderDaysOwnedCalendar = (
+  container: HTMLElement,
+  _state: AppState,
+  els: AppElements,
+  actData: ScheduleResult
+) => {
+  container.innerHTML = '';
+  const schedule = actData.schedule;
+  if (!schedule || schedule.length === 0) return;
+
+  const isFr = currentLanguage() === 'fr';
+  const periodsPerYear = actData.summary?.periodsPerYear || 12;
+  const startDateStr = els.inputs?.date?.value || '';
+  const freq = els.inputs?.frequency?.value || 'monthly';
+
+  interface MonthDaysOwnedItem {
+    monthIndex: number;
+    hasPayment: boolean;
+    principal: number;
+    extra: number;
+    interest: number;
+    totalPaid: number;
+    paymentCount: number;
+    lastBalance: number;
+    isPaidOff: boolean;
+    bankDays: number;
+    ownedDays: number;
+    freedomDay: number;
+  }
+
+  interface YearDaysOwnedItem {
+    calendarYear: number;
+    loanYearIndex: number;
+    displayYearLabel?: string;
+    principal: number;
+    extra: number;
+    interest: number;
+    totalPaid: number;
+    totalBankDays: number;
+    totalOwnedDays: number;
+    avgFreedomDay: number;
+    months: MonthDaysOwnedItem[];
+  }
+
+  const yearlyMap = new Map<number, YearDaysOwnedItem>();
+
+  for (const row of schedule) {
+    const yr = row.calendarYear;
+    if (!yearlyMap.has(yr)) {
+      const months: MonthDaysOwnedItem[] = Array.from({ length: 12 }, (_, i) => ({
+        monthIndex: i,
+        hasPayment: false,
+        principal: 0,
+        extra: 0,
+        interest: 0,
+        totalPaid: 0,
+        paymentCount: 0,
+        lastBalance: 0,
+        isPaidOff: false,
+        bankDays: 0,
+        ownedDays: 0,
+        freedomDay: 1
+      }));
+      yearlyMap.set(yr, {
+        calendarYear: yr,
+        loanYearIndex: 1,
+        principal: 0,
+        extra: 0,
+        interest: 0,
+        totalPaid: 0,
+        totalBankDays: 0,
+        totalOwnedDays: 0,
+        avgFreedomDay: 1,
+        months
+      });
+    }
+
+    const yItem = yearlyMap.get(yr)!;
+    const mIdx = getMonthIndexFromRow(row, periodsPerYear, startDateStr, freq);
+    const mItem = yItem.months[mIdx]!;
+
+    const rowPrincipalPaid = row.principal + (row.extra || 0);
+    mItem.hasPayment = true;
+    mItem.principal += row.principal;
+    mItem.extra += row.extra || 0;
+    mItem.interest += row.interest;
+    mItem.totalPaid += rowPrincipalPaid + row.interest;
+    mItem.paymentCount += 1;
+    mItem.lastBalance = row.balance;
+    if (row.balance <= 0.001) {
+      mItem.isPaidOff = true;
+    }
+
+    yItem.principal += row.principal;
+    yItem.extra += row.extra || 0;
+    yItem.interest += row.interest;
+    yItem.totalPaid += rowPrincipalPaid + row.interest;
+  }
+
+  const years = Array.from(yearlyMap.values()).sort((a, b) => a.calendarYear - b.calendarYear);
+  if (years.length === 0) return;
+
+  const isFirstYearPartial =
+    years.length > 0 && years[0]!.months.findIndex((m) => m.hasPayment) > 0;
+
+  years.forEach((y, idx) => {
+    if (isFirstYearPartial) {
+      if (idx === 0) {
+        y.loanYearIndex = 0;
+        y.displayYearLabel = isFr ? 'Année 0 à 1' : 'Year 0 to 1';
+      } else {
+        y.loanYearIndex = idx;
+        y.displayYearLabel = isFr ? `Année ${idx}` : `Year ${idx}`;
+      }
+    } else {
+      y.loanYearIndex = idx + 1;
+      y.displayYearLabel = isFr ? `Année ${idx + 1}` : `Year ${idx + 1}`;
+    }
+
+    // Compute monthly bank days, owned days, and freedom day
+    let yearBankDaysSum = 0;
+    let yearOwnedDaysSum = 0;
+
+    y.months.forEach((mItem) => {
+      if (!mItem.hasPayment) {
+        mItem.bankDays = 0;
+        mItem.ownedDays = 0;
+        mItem.freedomDay = 1;
+        return;
+      }
+
+      const totalEquity = mItem.principal + mItem.extra;
+      const total = totalEquity + mItem.interest;
+
+      if (total <= 0 || (mItem.isPaidOff && totalEquity > 0 && mItem.interest <= 0.001)) {
+        mItem.bankDays = 0;
+        mItem.ownedDays = 30;
+        mItem.freedomDay = 1;
+      } else {
+        const interestRatio = mItem.interest / total;
+        mItem.bankDays = Math.min(30, Math.max(0, Math.round(30 * interestRatio)));
+        mItem.ownedDays = 30 - mItem.bankDays;
+        mItem.freedomDay = mItem.bankDays >= 30 ? 30 : mItem.bankDays + 1;
+      }
+
+      yearBankDaysSum += mItem.bankDays;
+      yearOwnedDaysSum += mItem.ownedDays;
+    });
+
+    y.totalBankDays = yearBankDaysSum;
+    y.totalOwnedDays = yearOwnedDaysSum;
+
+    // Year average freedom day
+    const yearTotalPaid = y.principal + y.extra + y.interest;
+    if (yearTotalPaid > 0) {
+      const yearInterestRatio = y.interest / yearTotalPaid;
+      const yearAvgBank = Math.min(30, Math.max(0, Math.round(30 * yearInterestRatio)));
+      y.avgFreedomDay = yearAvgBank >= 30 ? 30 : yearAvgBank + 1;
+    } else {
+      y.avgFreedomDay = 1;
+    }
+  });
+
+  // Lifetime summary metrics
+  let lifetimeBankDays = 0;
+  let lifetimeOwnedDays = 0;
+  let lifetimePrincipalPaid = 0;
+  let lifetimeInterestPaid = 0;
+
+  years.forEach((y) => {
+    lifetimeBankDays += y.totalBankDays;
+    lifetimeOwnedDays += y.totalOwnedDays;
+    lifetimePrincipalPaid += y.principal + y.extra;
+    lifetimeInterestPaid += y.interest;
+  });
+
+  const lifetimeTotalDays = lifetimeBankDays + lifetimeOwnedDays;
+  const lifetimeBankPct =
+    lifetimeTotalDays > 0 ? Math.round((lifetimeBankDays / lifetimeTotalDays) * 100) : 0;
+  const lifetimeOwnedPct = 100 - lifetimeBankPct;
+
+  const totalCost = lifetimePrincipalPaid + lifetimeInterestPaid;
+  const lifetimeAvgFreedomDay =
+    totalCost > 0
+      ? Math.min(30, Math.max(1, Math.round(30 * (lifetimeInterestPaid / totalCost)) + 1))
+      : 1;
+
+  // Root wrapper
+  const wrapper = document.createElement('div');
+  wrapper.className = 'days-owned-wrapper';
+
+  // Sticky top summary bar
+  const summaryBar = document.createElement('div');
+  summaryBar.className = 'debt-calendar-sticky-header';
+
+  // Left: Summary metrics
+  const metricsDiv = document.createElement('div');
+  metricsDiv.className = 'debt-calendar-summary-metrics';
+
+  const durationBadge = document.createElement('span');
+  durationBadge.className = 'debt-calendar-duration-badge';
+  durationBadge.textContent = isFr
+    ? `${years.length} ${years.length > 1 ? 'ans' : 'an'} (${schedule.length} paiements)`
+    : `${years.length} ${years.length > 1 ? 'Years' : 'Year'} (${schedule.length} Payments)`;
+
+  const splitPill = document.createElement('div');
+  splitPill.className = 'debt-calendar-lifetime-pill';
+
+  const bankSpan = document.createElement('span');
+  bankSpan.className = 'pill-interest';
+  const bankDot = document.createElement('span');
+  bankDot.className = 'indicator-dot interest-dot';
+  bankSpan.appendChild(bankDot);
+  bankSpan.appendChild(document.createTextNode(` ${t('Bank Days')}: `));
+  const bankStrong = document.createElement('strong');
+  bankStrong.textContent = `${lifetimeBankDays}d (${lifetimeBankPct}%)`;
+  bankSpan.appendChild(bankStrong);
+
+  const sepSpan = document.createElement('span');
+  sepSpan.className = 'pill-sep';
+  sepSpan.textContent = '•';
+
+  const ownedSpan = document.createElement('span');
+  ownedSpan.className = 'pill-equity';
+  const ownedDot = document.createElement('span');
+  ownedDot.className = 'indicator-dot equity-dot';
+  ownedSpan.appendChild(ownedDot);
+  ownedSpan.appendChild(document.createTextNode(` ${t('Days Owned')}: `));
+  const ownedStrong = document.createElement('strong');
+  ownedStrong.textContent = `${lifetimeOwnedDays}d (${lifetimeOwnedPct}%)`;
+  ownedSpan.appendChild(ownedStrong);
+
+  const sepSpan2 = document.createElement('span');
+  sepSpan2.className = 'pill-sep';
+  sepSpan2.textContent = '•';
+
+  const freedomSpan = document.createElement('span');
+  freedomSpan.className = 'pill-freedom';
+  freedomSpan.appendChild(document.createTextNode(`🗓️ ${t('Avg Freedom Day')}: `));
+  const freedomStrong = document.createElement('strong');
+  freedomStrong.textContent = `Day ${lifetimeAvgFreedomDay}`;
+  freedomSpan.appendChild(freedomStrong);
+
+  splitPill.appendChild(bankSpan);
+  splitPill.appendChild(sepSpan);
+  splitPill.appendChild(ownedSpan);
+  splitPill.appendChild(sepSpan2);
+  splitPill.appendChild(freedomSpan);
+
+  metricsDiv.appendChild(durationBadge);
+  metricsDiv.appendChild(splitPill);
+  summaryBar.appendChild(metricsDiv);
+
+  // Multi-year filter buttons if loan spans > 5 years
+  let activeFilter = 'all';
+  const filterContainer = document.createElement('div');
+  filterContainer.className = 'debt-calendar-filter-group';
+
+  if (years.length > 5) {
+    const filterOptions: { label: string; value: string; match: (idx: number) => boolean }[] = [
+      { label: t('All Years'), value: 'all', match: () => true }
+    ];
+
+    const startYear = isFirstYearPartial ? 0 : 1;
+    const maxYear = isFirstYearPartial ? years.length - 1 : years.length;
+    const chunkSize = 5;
+
+    for (let start = startYear; start <= maxYear; start += chunkSize) {
+      const end = Math.min(start + chunkSize - (start === 0 ? 0 : 1), maxYear);
+      const label = isFr ? `A${start}–A${end}` : `Y${start}–Y${end}`;
+      const s = start;
+      const e = end;
+      filterOptions.push({
+        label,
+        value: `${s}-${e}`,
+        match: (loanYear) => loanYear >= s && loanYear <= e
+      });
+      if (start === 0) {
+        start = 1;
+      }
+    }
+
+    filterOptions.forEach((opt) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = `debt-calendar-filter-btn ${opt.value === activeFilter ? 'active' : ''}`;
+      btn.textContent = opt.label;
+      btn.setAttribute('data-filter', opt.value);
+      btn.addEventListener('click', () => {
+        activeFilter = opt.value;
+        filterContainer.querySelectorAll('.debt-calendar-filter-btn').forEach((b) => {
+          b.classList.toggle('active', b.getAttribute('data-filter') === activeFilter);
+        });
+
+        // Toggle card visibility
+        wrapper.querySelectorAll<HTMLElement>('.days-owned-year-card').forEach((card) => {
+          const cardLoanYear = Number(card.getAttribute('data-loan-year') || '1');
+          const isVisible = opt.match(cardLoanYear);
+          card.style.display = isVisible ? 'block' : 'none';
+        });
+
+        // Recalculate summary metrics for active filter selection
+        let selBankDays = 0;
+        let selOwnedDays = 0;
+        let visibleCount = 0;
+        let visiblePayments = 0;
+
+        years.forEach((y) => {
+          if (opt.match(y.loanYearIndex)) {
+            selBankDays += y.totalBankDays;
+            selOwnedDays += y.totalOwnedDays;
+            visibleCount += 1;
+            y.months.forEach((m) => {
+              visiblePayments += m.paymentCount;
+            });
+          }
+        });
+
+        const selTotalDays = selBankDays + selOwnedDays;
+        const selBankPct = selTotalDays > 0 ? Math.round((selBankDays / selTotalDays) * 100) : 0;
+        const selOwnedPct = 100 - selBankPct;
+
+        if (opt.value === 'all') {
+          durationBadge.textContent = isFr
+            ? `${years.length} ${years.length > 1 ? 'ans' : 'an'} (${schedule.length} paiements)`
+            : `${years.length} ${years.length > 1 ? 'Years' : 'Year'} (${schedule.length} Payments)`;
+        } else {
+          durationBadge.textContent = isFr
+            ? `${visibleCount} ${visibleCount > 1 ? 'ans' : 'an'} affichés (${visiblePayments} paiements)`
+            : `${visibleCount} ${visibleCount > 1 ? 'Years' : 'Year'} Shown (${visiblePayments} Payments)`;
+        }
+
+        bankStrong.textContent = `${selBankDays}d (${selBankPct}%)`;
+        ownedStrong.textContent = `${selOwnedDays}d (${selOwnedPct}%)`;
+      });
+      filterContainer.appendChild(btn);
+    });
+
+    summaryBar.appendChild(filterContainer);
+  }
+
+  wrapper.appendChild(summaryBar);
+
+  // Year Cards List
+  const yearsList = document.createElement('div');
+  yearsList.className = 'debt-calendar-years-list';
+
+  const monthDisplayNames = isFr ? MONTHS_DISPLAY_FR : MONTHS_EN;
+  const monthFullNames = isFr ? MONTHS_FULL_FR : MONTHS_FULL_EN;
+
+  years.forEach((yData) => {
+    const yearCard = document.createElement('div');
+    yearCard.className = 'days-owned-year-card';
+    yearCard.setAttribute('data-loan-year', String(yData.loanYearIndex));
+
+    // Year Header
+    const yearHeader = document.createElement('div');
+    yearHeader.className = 'days-owned-year-header';
+
+    const titleArea = document.createElement('div');
+    titleArea.className = 'days-owned-year-title-area';
+
+    const yearTitle = document.createElement('h4');
+    yearTitle.className = 'days-owned-year-title';
+    yearTitle.textContent = `${yData.displayYearLabel} • ${yData.calendarYear}`;
+    titleArea.appendChild(yearTitle);
+
+    const yearStats = document.createElement('div');
+    yearStats.className = 'days-owned-year-stats';
+
+    const freedomTag = document.createElement('span');
+    freedomTag.className = 'freedom-tag';
+    freedomTag.textContent = `🗓️ ${t('Freedom Day')}: Day ${yData.avgFreedomDay}`;
+    yearStats.appendChild(freedomTag);
+
+    const statDays = document.createElement('span');
+    statDays.className = 'year-stat-days';
+    statDays.textContent = `🏦 ${yData.totalBankDays}d • 🏡 ${yData.totalOwnedDays}d`;
+    yearStats.appendChild(statDays);
+
+    yearHeader.appendChild(titleArea);
+    yearHeader.appendChild(yearStats);
+    yearCard.appendChild(yearHeader);
+
+    // Slim Year Progress Timeline Bar
+    const yearBar = document.createElement('div');
+    yearBar.className = 'days-owned-year-bar';
+    const totalYearDays = yData.totalBankDays + yData.totalOwnedDays;
+    const yearBankPct = totalYearDays > 0 ? (yData.totalBankDays / totalYearDays) * 100 : 0;
+    const yearOwnedPct = totalYearDays > 0 ? (yData.totalOwnedDays / totalYearDays) * 100 : 100;
+
+    const bankSegment = document.createElement('div');
+    bankSegment.className = 'year-bar-bank-segment';
+    bankSegment.style.width = `${yearBankPct}%`;
+
+    const ownedSegment = document.createElement('div');
+    ownedSegment.className = 'year-bar-owned-segment';
+    ownedSegment.style.width = `${yearOwnedPct}%`;
+
+    const yearDivider = document.createElement('div');
+    yearDivider.className = 'freedom-divider-marker';
+    yearDivider.style.left = `${yearBankPct}%`;
+
+    yearBar.appendChild(bankSegment);
+    yearBar.appendChild(ownedSegment);
+    if (yearBankPct > 0 && yearBankPct < 100) {
+      yearBar.appendChild(yearDivider);
+    }
+    yearCard.appendChild(yearBar);
+
+    // 12-Month Grid
+    const monthsGrid = document.createElement('div');
+    monthsGrid.className = 'days-owned-months-grid';
+
+    yData.months.forEach((mItem, mIdx) => {
+      const monthBox = document.createElement('div');
+      monthBox.className = 'days-owned-month-box';
+      const mName = monthDisplayNames[mIdx] || `M${mIdx + 1}`;
+      const mFullName = monthFullNames[mIdx] || mName;
+
+      // Top row
+      const topRow = document.createElement('div');
+      topRow.className = 'days-month-top';
+
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'days-month-label';
+      labelSpan.textContent = mName;
+      topRow.appendChild(labelSpan);
+
+      if (!mItem.hasPayment) {
+        monthBox.classList.add('month-inactive');
+        const inactiveTag = document.createElement('span');
+        inactiveTag.className = 'freedom-badge';
+        inactiveTag.textContent = '—';
+        topRow.appendChild(inactiveTag);
+        monthBox.appendChild(topRow);
+
+        const emptyBar = document.createElement('div');
+        emptyBar.className = 'days-owned-bar';
+        monthBox.appendChild(emptyBar);
+
+        const bottomRow = document.createElement('div');
+        bottomRow.className = 'days-month-bottom';
+        bottomRow.textContent = '—';
+        monthBox.appendChild(bottomRow);
+
+        const inactiveTitle = isFr
+          ? `${mFullName} ${yData.calendarYear}\n${t('No payment scheduled')}`
+          : `${mFullName} ${yData.calendarYear}\nNo payment scheduled`;
+        monthBox.title = inactiveTitle;
+        monthBox.setAttribute('aria-label', inactiveTitle);
+      } else {
+        monthBox.classList.add('month-active');
+        if (mItem.isPaidOff) {
+          monthBox.classList.add('month-paidoff');
+        }
+
+        const badge = document.createElement('span');
+        badge.className = `freedom-badge ${mItem.isPaidOff ? 'paidoff-tag' : ''}`;
+        badge.textContent = `Day ${mItem.freedomDay}`;
+        topRow.appendChild(badge);
+        monthBox.appendChild(topRow);
+
+        if (mItem.isPaidOff) {
+          const celebrationBadge = document.createElement('span');
+          celebrationBadge.className = 'month-paidoff-badge';
+          celebrationBadge.textContent = '🎉';
+          celebrationBadge.title = isFr ? 'Prêt remboursé !' : 'Loan Paid Off!';
+          monthBox.appendChild(celebrationBadge);
+        }
+
+        // 30-Day Timeline Bar
+        const bar = document.createElement('div');
+        bar.className = 'days-owned-bar';
+
+        const bankPct = (mItem.bankDays / 30) * 100;
+        const ownedPct = (mItem.ownedDays / 30) * 100;
+
+        const segBank = document.createElement('div');
+        segBank.className = 'days-segment-bank';
+        segBank.style.width = `${bankPct}%`;
+
+        const segOwned = document.createElement('div');
+        segOwned.className = 'days-segment-owned';
+        segOwned.style.width = `${ownedPct}%`;
+
+        bar.appendChild(segBank);
+        bar.appendChild(segOwned);
+
+        // Freedom crossover dividing marker
+        if (mItem.bankDays > 0 && mItem.bankDays < 30) {
+          const divider = document.createElement('div');
+          divider.className = 'freedom-divider-marker';
+          divider.style.left = `${bankPct}%`;
+          bar.appendChild(divider);
+        }
+
+        // Tactile tick marks at Day 10 and Day 20
+        const tick10 = document.createElement('div');
+        tick10.className = 'days-bar-tick';
+        tick10.style.left = '33.33%';
+        const tick20 = document.createElement('div');
+        tick20.className = 'days-bar-tick';
+        tick20.style.left = '66.66%';
+        bar.appendChild(tick10);
+        bar.appendChild(tick20);
+
+        monthBox.appendChild(bar);
+
+        // Bottom row
+        const bottomRow = document.createElement('div');
+        bottomRow.className = 'days-month-bottom';
+
+        const bankText = document.createElement('span');
+        bankText.className = 'days-bank-text';
+        bankText.textContent = `${mItem.bankDays}d`;
+
+        const rightArea = document.createElement('span');
+        rightArea.className = 'days-owned-text';
+        rightArea.textContent = `${mItem.ownedDays}d`;
+
+        if (mItem.extra > 0) {
+          const extraBadge = document.createElement('span');
+          extraBadge.className = 'days-extra-badge';
+          extraBadge.textContent = '⚡';
+          extraBadge.title = isFr
+            ? `Versement supplémentaire appliqué (+${formatCurrency(mItem.extra)})`
+            : `Extra payment applied (+${formatCurrency(mItem.extra)})`;
+          rightArea.appendChild(extraBadge);
+        }
+
+        bottomRow.appendChild(bankText);
+        bottomRow.appendChild(rightArea);
+        monthBox.appendChild(bottomRow);
+
+        // Accessibility & narrative tooltip
+        monthBox.setAttribute('tabindex', '0');
+        monthBox.setAttribute('role', 'button');
+
+        const pmtCountStr = isFr
+          ? `(${mItem.paymentCount} ${mItem.paymentCount > 1 ? 'paiements' : 'paiement'})`
+          : `(${mItem.paymentCount} ${mItem.paymentCount > 1 ? 'payments' : 'payment'})`;
+
+        const totalEquityPaid = mItem.principal + mItem.extra;
+        const tooltipText = isFr
+          ? `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Jour de liberté : Jour ${mItem.freedomDay}\n🏦 Jours banque : Jours 1 à ${mItem.bankDays} (${mItem.bankDays} jours • ${formatCurrency(mItem.interest)})\n🏡 Vos jours : Jours ${mItem.freedomDay} à 30 (${mItem.ownedDays} jours • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Versement supplémentaire : +${formatCurrency(mItem.extra)}\n` : ''}Total payé : ${formatCurrency(mItem.totalPaid)}\nSolde restant : ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 PRÊT REMBOURSÉ !' : ''}`
+          : `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Freedom Day: Day ${mItem.freedomDay}\n🏦 Bank Days: Days 1–${mItem.bankDays} (${mItem.bankDays} days • ${formatCurrency(mItem.interest)})\n🏡 Your Days: Days ${mItem.freedomDay}–30 (${mItem.ownedDays} days • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Extra Payment: +${formatCurrency(mItem.extra)} directly to equity\n` : ''}Total Paid: ${formatCurrency(mItem.totalPaid)}\nEnding Balance: ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 LOAN PAID OFF!' : ''}`;
+
+        monthBox.title = tooltipText;
+        monthBox.setAttribute(
+          'aria-label',
+          `${mFullName} ${yData.calendarYear}: Freedom Day ${mItem.freedomDay}, ${mItem.bankDays} bank days, ${mItem.ownedDays} days owned`
         );
       }
 

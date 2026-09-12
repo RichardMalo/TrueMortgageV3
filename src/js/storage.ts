@@ -11,7 +11,7 @@ export interface AppSettings {
   complexity: 'simple' | 'advanced';
   language?: 'en' | 'fr';
   labelFormat: 'date' | 'period';
-  bankWagesView: 'wages' | 'rent' | 'rent-tax-ins' | 'calendar';
+  bankWagesView: 'wages' | 'rent' | 'rent-tax-ins' | 'calendar' | 'days-owned';
   chartsOrder?: (string | null)[];
   strategyOrder?: (string | null)[];
   hiddenCards?: string[];
@@ -293,8 +293,10 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
       }
       return years;
     })(),
-    bankWagesView: ['wages', 'rent', 'rent-tax-ins', 'calendar'].includes(String(p.bankWagesView))
-      ? (p.bankWagesView as 'wages' | 'rent' | 'rent-tax-ins' | 'calendar')
+    bankWagesView: ['wages', 'rent', 'rent-tax-ins', 'calendar', 'days-owned'].includes(
+      String(p.bankWagesView)
+    )
+      ? (p.bankWagesView as 'wages' | 'rent' | 'rent-tax-ins' | 'calendar' | 'days-owned')
       : 'wages',
     inputs: {} as ProfileInputs
   };
@@ -788,7 +790,9 @@ export const loadSettingsFromStorage = (
       state.complexity = settings.complexity === 'advanced' ? 'advanced' : 'simple';
       state.language = settings.language === 'fr' ? 'fr' : 'en';
       state.labelFormat = settings.labelFormat === 'period' ? 'period' : 'date';
-      state.bankWagesView = ['rent', 'rent-tax-ins', 'calendar'].includes(settings.bankWagesView)
+      state.bankWagesView = ['rent', 'rent-tax-ins', 'calendar', 'days-owned'].includes(
+        settings.bankWagesView
+      )
         ? settings.bankWagesView
         : 'wages';
       state.chartsOrder = settings.chartsOrder;
