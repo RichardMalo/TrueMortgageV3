@@ -3231,6 +3231,7 @@ body:not(.dark-mode) .scenario-sidebar {
   }
   .header-controls-right {
     width: 100%;
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
@@ -3243,7 +3244,7 @@ body:not(.dark-mode) .scenario-sidebar {
     display: flex;
   }
   .header-controls-right .mode-btn {
-    flex: 1;
+    flex: 1 1 auto;
     text-align: center;
     justify-content: center;
   }
@@ -3253,6 +3254,14 @@ body:not(.dark-mode) .scenario-sidebar {
     align-items: center;
     gap: 12px;
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-controls-right .mode-btn {
+    padding: 8px 6px !important;
+    font-size: 0.78rem !important;
+    white-space: nowrap;
   }
 }
 

@@ -1,5 +1,5 @@
 // TrueMortgageV3 Service Worker for Offline PWA Capabilities
-const CACHE_NAME = 'truemortgage-v3-cache-v1';
+const CACHE_NAME = 'truemortgage-v3-cache-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -28,15 +28,17 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((cacheName) => cacheName !== CACHE_NAME)
-          .map((cacheName) => caches.delete(cacheName))
-      );
-    })
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName !== CACHE_NAME)
+            .map((cacheName) => caches.delete(cacheName))
+        );
+      })
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
@@ -45,6 +47,38 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (!url.protocol.startsWith('http')) return;
 
+  // For HTML navigation requests, use Network-First strategy to guarantee fresh updates
+  const isHtmlRequest =
+    event.request.mode === 'navigate' ||
+    (event.request.headers.get('accept') &&
+      event.request.headers.get('accept').includes('text/html'));
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (
+            networkResponse &&
+            networkResponse.status === 200 &&
+            (networkResponse.type === 'basic' || networkResponse.type === 'cors')
+          ) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match('./index.html').then((cached) => {
+            return cached || caches.match('./');
+          });
+        })
+    );
+    return;
+  }
+
+  // For all other assets, check cache first, falling back to network
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
@@ -65,21 +99,13 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          // Fallback to offline index.html if navigation request fails
-          if (event.request.mode === 'navigate') {
-            return caches.match('./index.html').then((cached) => {
-              return cached || caches.match('./');
-            });
-          }
-          return caches.match(event.request).then((cached) => {
-            return (
-              cached ||
-              new Response('Offline', {
-                status: 503,
-                statusText: 'Service Unavailable'
-              })
-            );
-          });
+          return (
+            cachedResponse ||
+            new Response('Offline', {
+              status: 503,
+              statusText: 'Service Unavailable'
+            })
+          );
         });
     })
   );

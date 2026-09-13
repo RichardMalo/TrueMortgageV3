@@ -1563,11 +1563,28 @@ const bootApp = () => {
     handleProfileSwitch(state.activeProfileId as string);
   }, 100);
 
-  // Register Service Worker for offline PWA caching
+  // Register Service Worker for offline PWA caching with instant update checking
   if ('serviceWorker' in navigator && !import.meta.env.DEV) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch((err) => {
-        console.warn('Service worker registration failed:', err);
+      const hadController = Boolean(navigator.serviceWorker.controller);
+
+      navigator.serviceWorker
+        .register('./sw.js')
+        .then((registration) => {
+          // Immediately check for sw.js byte changes on the server
+          registration.update().catch(() => {});
+        })
+        .catch((err) => {
+          console.warn('Service worker registration failed:', err);
+        });
+
+      // Only auto-reload if an existing active controller was replaced by an update
+      let refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (hadController && !refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
       });
     });
   }
