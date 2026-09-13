@@ -116,6 +116,7 @@ export interface ScheduleRow {
   period: number;
   year: number;
   calendarYear: number;
+  calendarMonth?: number;
   dateLabel: string;
   ltv: number;
   payment: number;

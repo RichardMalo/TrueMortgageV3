@@ -68,7 +68,8 @@ export const setupShareFunctionality = (
     statusEl: HTMLElement | null,
     action: 'save' | 'blob'
   ): Promise<{ blob?: Blob; filename: string; modeName: string } | null> => {
-    const isMortgage = state.currentMode === 'mortgage';
+    const mode = (state.currentMode || 'mortgage') as 'mortgage' | 'cc' | 'loan';
+    const isMortgage = mode === 'mortgage';
     const inputs = getInputs();
     if (statusEl) {
       statusEl.style.display = 'block';
@@ -77,8 +78,8 @@ export const setupShareFunctionality = (
     }
 
     const { actualData, baseData } = getLatestSchedules();
-    const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData);
-    const modeName = isMortgage ? 'Mortgage' : 'CreditCard';
+    const reportHtml = generateReportHtml(inputs, isMortgage, actualData, baseData, mode);
+    const modeName = mode === 'mortgage' ? 'Mortgage' : mode === 'loan' ? 'Loan' : 'CreditCard';
     const now = new Date();
     const localDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
     const filename = `Debt_Strategy_Report_${modeName}_${localDate}.pdf`;

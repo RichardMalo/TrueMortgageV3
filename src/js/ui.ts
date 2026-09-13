@@ -845,7 +845,14 @@ export const renderScheduledLumpSumRows = (
         dateBadge.textContent = t('Invalid payment #');
         dateBadge.style.color = '#ef4444';
       } else {
-        const { dateLabel } = getRowDateLabel(parsedDate, pmtNum, frequency, periodsPerYear, 'P');
+        const { dateLabel } = getRowDateLabel(
+          parsedDate,
+          pmtNum,
+          frequency,
+          periodsPerYear,
+          'P',
+          currentLanguage() === 'fr'
+        );
         dateBadge.textContent = dateLabel;
         dateBadge.style.color = 'var(--primary-color)';
       }

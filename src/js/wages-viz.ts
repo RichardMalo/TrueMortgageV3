@@ -83,6 +83,10 @@ export const getMonthIndexFromRow = (
   startDateStr?: string,
   freq = 'monthly'
 ): number => {
+  if (row.calendarMonth !== undefined && row.calendarMonth >= 0 && row.calendarMonth < 12) {
+    return row.calendarMonth;
+  }
+
   if (row.dateLabel) {
     const lowerLabel = row.dateLabel.toLowerCase();
     for (let i = 0; i < 12; i++) {
@@ -480,11 +484,12 @@ export const renderDebtCalendar = (
   const metricsDiv = document.createElement('div');
   metricsDiv.className = 'debt-calendar-summary-metrics';
 
+  const loanYears = Math.round((schedule.length / periodsPerYear) * 10) / 10;
   const durationBadge = document.createElement('span');
   durationBadge.className = 'debt-calendar-duration-badge';
   durationBadge.textContent = isFr
-    ? `${years.length} ${years.length > 1 ? 'ans' : 'an'} (${schedule.length} paiements)`
-    : `${years.length} ${years.length > 1 ? 'Years' : 'Year'} (${schedule.length} Payments)`;
+    ? `${loanYears} ${loanYears > 1 ? 'ans' : 'an'} (${schedule.length} paiements)`
+    : `${loanYears} ${loanYears > 1 ? 'Years' : 'Year'} (${schedule.length} Payments)`;
 
   const splitPill = document.createElement('div');
   splitPill.className = 'debt-calendar-lifetime-pill';
@@ -1008,11 +1013,12 @@ export const renderDaysOwnedCalendar = (
   const metricsDiv = document.createElement('div');
   metricsDiv.className = 'debt-calendar-summary-metrics';
 
+  const loanYears = Math.round((schedule.length / periodsPerYear) * 10) / 10;
   const durationBadge = document.createElement('span');
   durationBadge.className = 'debt-calendar-duration-badge';
   durationBadge.textContent = isFr
-    ? `${years.length} ${years.length > 1 ? 'ans' : 'an'} (${schedule.length} paiements)`
-    : `${years.length} ${years.length > 1 ? 'Years' : 'Year'} (${schedule.length} Payments)`;
+    ? `${loanYears} ${loanYears > 1 ? 'ans' : 'an'} (${schedule.length} paiements)`
+    : `${loanYears} ${loanYears > 1 ? 'Years' : 'Year'} (${schedule.length} Payments)`;
 
   const splitPill = document.createElement('div');
   splitPill.className = 'debt-calendar-lifetime-pill';
@@ -1049,7 +1055,10 @@ export const renderDaysOwnedCalendar = (
   freedomSpan.className = 'pill-freedom';
   freedomSpan.appendChild(document.createTextNode(`🗓️ ${t('Avg Freedom Day')}: `));
   const freedomStrong = document.createElement('strong');
-  freedomStrong.textContent = `Day ${lifetimeAvgFreedomDay}`;
+  const dayWord = isFr ? 'Jour' : 'Day';
+  const noneWord = isFr ? 'Aucun' : 'None';
+  freedomStrong.textContent =
+    lifetimeOwnedDays === 0 ? noneWord : `${dayWord} ${lifetimeAvgFreedomDay}`;
   freedomSpan.appendChild(freedomStrong);
 
   splitPill.appendChild(bankSpan);
@@ -1181,7 +1190,11 @@ export const renderDaysOwnedCalendar = (
 
     const freedomTag = document.createElement('span');
     freedomTag.className = 'freedom-tag';
-    freedomTag.textContent = `🗓️ ${t('Freedom Day')}: Day ${yData.avgFreedomDay}`;
+    const dayWord = isFr ? 'Jour' : 'Day';
+    const noneWord = isFr ? 'Aucun' : 'None';
+    const avgFreedomText =
+      yData.totalOwnedDays === 0 ? noneWord : `${dayWord} ${yData.avgFreedomDay}`;
+    freedomTag.textContent = `🗓️ ${t('Freedom Day')}: ${avgFreedomText}`;
     yearStats.appendChild(freedomTag);
 
     const statDays = document.createElement('span');
@@ -1266,9 +1279,12 @@ export const renderDaysOwnedCalendar = (
           monthBox.classList.add('month-paidoff');
         }
 
+        const dCount = mItem.daysInMonth;
         const badge = document.createElement('span');
         badge.className = `freedom-badge ${mItem.isPaidOff ? 'paidoff-tag' : ''}`;
-        badge.textContent = `Day ${mItem.freedomDay}`;
+        const dayWord = isFr ? 'Jour' : 'Day';
+        const noneWord = isFr ? 'Aucun' : 'None';
+        badge.textContent = mItem.bankDays >= dCount ? noneWord : `${dayWord} ${mItem.freedomDay}`;
         topRow.appendChild(badge);
         monthBox.appendChild(topRow);
 
@@ -1284,7 +1300,6 @@ export const renderDaysOwnedCalendar = (
         const bar = document.createElement('div');
         bar.className = 'days-owned-bar';
 
-        const dCount = mItem.daysInMonth;
         const bankPct = (mItem.bankDays / dCount) * 100;
         const ownedPct = (mItem.ownedDays / dCount) * 100;
 
@@ -1354,14 +1369,45 @@ export const renderDaysOwnedCalendar = (
           : `(${mItem.paymentCount} ${mItem.paymentCount > 1 ? 'payments' : 'payment'})`;
 
         const totalEquityPaid = mItem.principal + mItem.extra;
+
+        let freedomDayNarrative: string;
+        let bankDaysNarrative: string;
+        let yourDaysNarrative: string;
+
+        if (mItem.bankDays === 0) {
+          freedomDayNarrative = isFr ? 'Jour 1' : 'Day 1';
+          bankDaysNarrative = isFr
+            ? `Aucun (0 jour • ${formatCurrency(mItem.interest)})`
+            : `None (0 days • ${formatCurrency(mItem.interest)})`;
+          yourDaysNarrative = isFr
+            ? `Jours 1 à ${dCount} (${mItem.ownedDays} jours • ${formatCurrency(totalEquityPaid)})`
+            : `Days 1–${dCount} (${mItem.ownedDays} days • ${formatCurrency(totalEquityPaid)})`;
+        } else if (mItem.bankDays >= dCount) {
+          freedomDayNarrative = noneWord;
+          bankDaysNarrative = isFr
+            ? `Jours 1 à ${dCount} (${mItem.bankDays} jours • ${formatCurrency(mItem.interest)})`
+            : `Days 1–${dCount} (${mItem.bankDays} days • ${formatCurrency(mItem.interest)})`;
+          yourDaysNarrative = isFr
+            ? `Aucun (0 jour • ${formatCurrency(totalEquityPaid)})`
+            : `None (0 days • ${formatCurrency(totalEquityPaid)})`;
+        } else {
+          freedomDayNarrative = `${dayWord} ${mItem.freedomDay}`;
+          bankDaysNarrative = isFr
+            ? `Jours 1 à ${mItem.bankDays} (${mItem.bankDays} jours • ${formatCurrency(mItem.interest)})`
+            : `Days 1–${mItem.bankDays} (${mItem.bankDays} days • ${formatCurrency(mItem.interest)})`;
+          yourDaysNarrative = isFr
+            ? `Jours ${mItem.freedomDay} à ${dCount} (${mItem.ownedDays} jours • ${formatCurrency(totalEquityPaid)})`
+            : `Days ${mItem.freedomDay}–${dCount} (${mItem.ownedDays} days • ${formatCurrency(totalEquityPaid)})`;
+        }
+
         const tooltipText = isFr
-          ? `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Jour de liberté : Jour ${mItem.freedomDay}\n🏦 Jours banque : Jours 1 à ${mItem.bankDays} (${mItem.bankDays} jours • ${formatCurrency(mItem.interest)})\n🏡 Vos jours : Jours ${mItem.freedomDay} à ${dCount} (${mItem.ownedDays} jours • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Versement supplémentaire : +${formatCurrency(mItem.extra)}\n` : ''}Total payé : ${formatCurrency(mItem.totalPaid)}\nSolde restant : ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 PRÊT REMBOURSÉ !' : ''}`
-          : `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Freedom Day: Day ${mItem.freedomDay}\n🏦 Bank Days: Days 1–${mItem.bankDays} (${mItem.bankDays} days • ${formatCurrency(mItem.interest)})\n🏡 Your Days: Days ${mItem.freedomDay}–${dCount} (${mItem.ownedDays} days • ${formatCurrency(totalEquityPaid)})\n${mItem.extra > 0 ? `⚡ Extra Payment: +${formatCurrency(mItem.extra)} directly to equity\n` : ''}Total Paid: ${formatCurrency(mItem.totalPaid)}\nEnding Balance: ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 LOAN PAID OFF!' : ''}`;
+          ? `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Jour de liberté : ${freedomDayNarrative}\n🏦 Jours banque : ${bankDaysNarrative}\n🏡 Vos jours : ${yourDaysNarrative}\n${mItem.extra > 0 ? `⚡ Versement supplémentaire : +${formatCurrency(mItem.extra)}\n` : ''}Total payé : ${formatCurrency(mItem.totalPaid)}\nSolde restant : ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 PRÊT REMBOURSÉ !' : ''}`
+          : `${mFullName} ${yData.calendarYear} (${yData.displayYearLabel}) ${pmtCountStr}\n─────────────────────────────\n🗓️ Freedom Day: ${freedomDayNarrative}\n🏦 Bank Days: ${bankDaysNarrative}\n🏡 Your Days: ${yourDaysNarrative}\n${mItem.extra > 0 ? `⚡ Extra Payment: +${formatCurrency(mItem.extra)} directly to equity\n` : ''}Total Paid: ${formatCurrency(mItem.totalPaid)}\nEnding Balance: ${formatCurrency(mItem.lastBalance)}${mItem.isPaidOff ? '\n🎉 LOAN PAID OFF!' : ''}`;
 
         monthBox.title = tooltipText;
         monthBox.setAttribute(
           'aria-label',
-          `${mFullName} ${yData.calendarYear}: Freedom Day ${mItem.freedomDay}, ${mItem.bankDays} bank days, ${mItem.ownedDays} days owned of ${dCount} days`
+          `${mFullName} ${yData.calendarYear}: Freedom Day ${freedomDayNarrative}, ${mItem.bankDays} bank days, ${mItem.ownedDays} days owned of ${dCount} days`
         );
       }
 

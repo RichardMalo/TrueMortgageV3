@@ -71,6 +71,49 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
     await expect(page.locator('#settingsTrigger')).toBeFocused();
   });
 
+  test('settings menu should be positioned within viewport boundaries across various screen sizes', async ({
+    page
+  }) => {
+    const viewports = [
+      { width: 1920, height: 1080 },
+      { width: 1366, height: 768 },
+      { width: 1024, height: 768 },
+      { width: 768, height: 1024 },
+      { width: 390, height: 844 },
+      { width: 375, height: 667 },
+      { width: 360, height: 740 }
+    ];
+
+    for (const vp of viewports) {
+      await page.setViewportSize(vp);
+      await page.goto('/');
+
+      // Ensure menu is closed initially
+      const settingsDropdown = page.locator('#settings-dropdown');
+      if (await settingsDropdown.evaluate((el) => el.classList.contains('active'))) {
+        await page.click('#settingsTrigger');
+      }
+      const triggerBox = await page.locator('#settingsTrigger').boundingBox();
+      expect(triggerBox).not.toBeNull();
+      expect(triggerBox!.x + triggerBox!.width).toBeLessThanOrEqual(vp.width);
+
+      await page.click('#settingsTrigger');
+      const settingsMenu = page.locator('#settingsMenu');
+      await expect(settingsMenu).toBeVisible();
+
+      const box = await settingsMenu.boundingBox();
+      expect(box).not.toBeNull();
+      // Menu must not overflow the right edge of viewport
+      expect(box!.x + box!.width).toBeLessThanOrEqual(vp.width);
+      // Menu must not overflow the left edge of viewport
+      expect(box!.x).toBeGreaterThanOrEqual(0);
+
+      // Verify interactive item inside settings menu can be clicked without issue
+      const syncOpt = page.locator('#settingsOptSync');
+      await expect(syncOpt).toBeVisible();
+    }
+  });
+
   test('should calculate correct figures when inputs change', async ({ page }) => {
     const homePriceInput = page.locator('#homePrice');
     const downPaymentInput = page.locator('#downPayment');

@@ -53,7 +53,21 @@ export const solveRequiredMonthly = (
   mode: 'mortgage' | 'cc' | 'loan',
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.paidOff !== false && baseData.summary.periodsToPayoff <= targetPeriods) {
+  const basePeriodsPerYear = baseData.summary.periodsPerYear || 12;
+  const activePeriodsPerYear =
+    mode === 'cc'
+      ? 12
+      : inputs.frequency === 'weekly'
+        ? 52
+        : inputs.frequency === 'bi-weekly' || inputs.frequency === 'accelerated-bi-weekly'
+          ? 26
+          : inputs.frequency === 'semi-monthly'
+            ? 24
+            : 12;
+  const baseYears = baseData.summary.periodsToPayoff / basePeriodsPerYear;
+  const targetYears = targetPeriods / activePeriodsPerYear;
+
+  if (baseData.summary.paidOff !== false && baseYears <= targetYears) {
     return 0;
   }
 
@@ -100,7 +114,21 @@ export const solveRequiredLumpSum = (
   mode: 'mortgage' | 'cc' | 'loan',
   baseData: ScheduleResult
 ): number => {
-  if (baseData.summary.paidOff !== false && baseData.summary.periodsToPayoff <= targetPeriods) {
+  const basePeriodsPerYear = baseData.summary.periodsPerYear || 12;
+  const activePeriodsPerYear =
+    mode === 'cc'
+      ? 12
+      : inputs.frequency === 'weekly'
+        ? 52
+        : inputs.frequency === 'bi-weekly' || inputs.frequency === 'accelerated-bi-weekly'
+          ? 26
+          : inputs.frequency === 'semi-monthly'
+            ? 24
+            : 12;
+  const baseYears = baseData.summary.periodsToPayoff / basePeriodsPerYear;
+  const targetYears = targetPeriods / activePeriodsPerYear;
+
+  if (baseData.summary.paidOff !== false && baseYears <= targetYears) {
     return 0;
   }
 
@@ -167,10 +195,10 @@ export const renderGoalSolver = (
     return;
   }
 
-  const periodsPerYear = baseData.summary.periodsPerYear || 12;
+  const baselinePeriodsPerYear = baseData.summary.periodsPerYear || 12;
   const baselinePayoff = baseData.summary.periodsToPayoff;
   const baselineYears = isFinite(baselinePayoff)
-    ? Math.max(1, Math.floor(baselinePayoff / periodsPerYear))
+    ? Math.max(1, Math.floor(baselinePayoff / baselinePeriodsPerYear))
     : 30;
 
   // If baseline payoff is too short, hide solver card
@@ -199,8 +227,8 @@ export const renderGoalSolver = (
     return;
 
   const isFr = currentLanguage() === 'fr';
-  const isMortgage = mode === 'mortgage';
-  const freq = isMortgage ? inputs.frequency : 'monthly';
+  const isMortgageOrLoan = mode === 'mortgage' || mode === 'loan';
+  const freq = isMortgageOrLoan ? inputs.frequency : 'monthly';
   let freqLabel = t('Required Monthly Extra');
   let freqUnit = isFr ? '/mois' : '/mo';
   let btnText = t('Apply to Monthly');
@@ -246,7 +274,8 @@ export const renderGoalSolver = (
       ? `${targetYears} ${targetYears === 1 ? 'an' : 'ans'}`
       : `${targetYears} ${targetYears === 1 ? 'Year' : 'Years'}`;
 
-    const targetPeriods = targetYears * periodsPerYear;
+    const activePeriodsPerYear = actData.summary.periodsPerYear || 12;
+    const targetPeriods = targetYears * activePeriodsPerYear;
 
     solvedMonthly = solveRequiredMonthly(targetPeriods, inputs, mode, baseData);
     solvedLumpSum = solveRequiredLumpSum(targetPeriods, inputs, mode, baseData);

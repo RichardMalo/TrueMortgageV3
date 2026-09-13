@@ -18,12 +18,22 @@ export const generateReportHtml = (
   inputs: Inputs,
   isMortgage: boolean,
   actualData: ScheduleResult,
-  baseData: ScheduleResult
+  baseData: ScheduleResult,
+  mode?: 'mortgage' | 'cc' | 'loan'
 ): string => {
+  const currentMode = mode || (isMortgage ? 'mortgage' : 'cc');
+  const isMortgageMode = currentMode === 'mortgage';
+  const isLoan = currentMode === 'loan';
   const isFr = currentLanguage() === 'fr';
   const reportDate = new Date().toLocaleString(isFr ? 'fr-CA' : undefined);
 
-  const startingPrincipal = isMortgage ? inputs.homePrice - inputs.downPayment : inputs.ccBalance;
+  const startingPrincipal = isMortgageMode
+    ? inputs.homePrice - inputs.downPayment
+    : isLoan
+      ? inputs.loanAmount !== undefined
+        ? inputs.loanAmount
+        : inputs.homePrice - inputs.downPayment
+      : inputs.ccBalance;
   const balanceVal = formatCurrency(startingPrincipal);
 
   const isPayoffFinite = Number.isFinite(actualData.summary.periodsToPayoff);
@@ -35,44 +45,47 @@ export const generateReportHtml = (
 
   let payoffVal = isFr ? 'Non remboursé' : 'Unpaid';
   if (isPayoffFinite) {
-    const yrsLabel = isFr ? (yrs_paid > 1 ? 'ans' : 'an') : yrs_paid > 1 ? 'Years' : 'Year';
+    const isNonMonthly = (isMortgageMode || isLoan) && inputs.frequency !== 'monthly';
     let frequencyLabel: string;
     if (isFr) {
-      frequencyLabel =
-        isMortgage && inputs.frequency !== 'monthly'
-          ? rem_paid > 1
-            ? 'périodes'
-            : 'période'
-          : 'mois';
+      frequencyLabel = isNonMonthly ? (rem_paid > 1 ? 'périodes' : 'période') : 'mois';
     } else {
-      frequencyLabel =
-        isMortgage && inputs.frequency !== 'monthly'
-          ? rem_paid > 1
-            ? 'Periods'
-            : 'Period'
-          : rem_paid > 1
-            ? 'Months'
-            : 'Month';
+      frequencyLabel = isNonMonthly
+        ? rem_paid > 1
+          ? 'Periods'
+          : 'Period'
+        : rem_paid === 1
+          ? 'Month'
+          : 'Months';
     }
-    payoffVal = `${yrs_paid} ${yrsLabel}, ${rem_paid} ${frequencyLabel}`;
+    const yrsLabel = isFr ? (yrs_paid > 1 ? 'ans' : 'an') : yrs_paid > 1 ? 'Years' : 'Year';
+    if (yrs_paid > 0 && rem_paid > 0) {
+      payoffVal = `${yrs_paid} ${yrsLabel}, ${rem_paid} ${frequencyLabel}`;
+    } else if (yrs_paid > 0) {
+      payoffVal = `${yrs_paid} ${yrsLabel}`;
+    } else {
+      payoffVal = `${rem_paid} ${frequencyLabel}`;
+    }
   }
 
   const savedVal = formatCurrency(
     baseData.summary.totalInterest - actualData.summary.totalInterest
   );
   const actualLifetimeVal = formatCurrency(actualData.summary.totalInterest + startingPrincipal);
-  const dailyVampireVal = isMortgage
-    ? 'N/A'
-    : formatCurrency(inputs.ccBalance * (inputs.annualRate / 100 / 365));
+  const dailyVampireVal =
+    isMortgageMode || isLoan
+      ? 'N/A'
+      : formatCurrency(inputs.ccBalance * (inputs.annualRate / 100 / 365));
 
   const termPer = Math.ceil(inputs.termYears * actualData.summary.periodsPerYear);
-  const termBalanceVal = isMortgage
-    ? formatCurrency(
-        termPer < actualData.schedule.length
-          ? actualData.schedule[Math.max(0, termPer - 1)]!.balance
-          : 0
-      )
-    : 'N/A';
+  const termBalanceVal =
+    isMortgageMode || isLoan
+      ? formatCurrency(
+          termPer < actualData.schedule.length
+            ? actualData.schedule[Math.max(0, termPer - 1)]!.balance
+            : 0
+        )
+      : 'N/A';
 
   // Sanitizing variables prior to HTML string interpolation
   const balance = escapeHtml(balanceVal);
@@ -89,7 +102,7 @@ export const generateReportHtml = (
     </div>
   `;
 
-  if (isMortgage) {
+  if (isMortgageMode) {
     strategyParams += `
       <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
         <span>${t('Home Price:')}</span><strong>${escapeHtml(formatCurrency(inputs.homePrice))}</strong>
@@ -130,6 +143,21 @@ export const generateReportHtml = (
         `;
       }
     }
+  } else if (isLoan) {
+    strategyParams += `
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span>${t('Loan Amount:')}</span><strong>${escapeHtml(formatCurrency(startingPrincipal))}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span>${t('Amortization Period:')}</span><strong>${escapeHtml(String(inputs.amortizationYears))} ${isFr ? 'ans' : 'Yrs'}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span>${t('Payment Frequency:')}</span><strong>${escapeHtml(t(inputs.frequency))}</strong>
+      </div>
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <span>${t('Extra Payment:')}</span><strong>${escapeHtml(formatCurrency(inputs.extraPayment))}/${isFr ? 'pér' : 'pd'}</strong>
+      </div>
+    `;
   } else {
     let minRuleText: string;
     if (inputs.province === 'QC') {
@@ -159,7 +187,7 @@ export const generateReportHtml = (
     .slice(0, 12)
     .map((row: ScheduleRow) => {
       const eTd =
-        inputs.usePiti && isMortgage
+        inputs.usePiti && isMortgageMode
           ? `<td style="padding: 6px !important; border-bottom: 1px solid #cbd5e1 !important; font-size: 9px !important; color: #334155 !important; background: none !important;">${escapeHtml(formatCurrency(row.escrow))}</td>`
           : '';
       return `
@@ -199,7 +227,7 @@ export const generateReportHtml = (
         </div>
         <div style="text-align: right;">
           <span style="background: rgba(37, 99, 235, 0.1); color: #2563eb; padding: 5px 12px; border-radius: 12px; font-weight: 700; font-size: 12px; text-transform: uppercase;">
-            ${t(isMortgage ? 'Mortgage Plan' : 'Credit Card Plan')}
+            ${t(isMortgageMode ? 'Mortgage Plan' : isLoan ? 'Loan Plan' : 'Credit Card Plan')}
           </span>
         </div>
       </div>
@@ -236,7 +264,7 @@ export const generateReportHtml = (
           <h3 style="font-size: 13px; font-weight: 800; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 0; margin-bottom: 12px; color: #1e293b;">${t('METRIC SUMMARY')}</h3>
           <div style="font-size: 11px; color: #475569;">
             ${
-              isMortgage
+              isMortgageMode || isLoan
                 ? `
               <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                 <span>${t('Refinancing Term Balance:')}</span><strong>${termBalance}</strong>
@@ -245,19 +273,19 @@ export const generateReportHtml = (
                 <span>${t('Compounding Style:')}</span><strong>${t(inputs.compounding === 'semi' ? 'Canadian Semi-Annual' : 'US Monthly')}</strong>
               </div>
               ${
-                actualData.summary.closingTaxResult?.regionType === 'UK_SDLT'
+                isMortgageMode && actualData.summary.closingTaxResult?.regionType === 'UK_SDLT'
                   ? `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                   <span>${t('UK Stamp Duty (SDLT):')}</span><strong style="color: #059669;">${formatCurrency(actualData.summary.closingTaxResult.taxAmount)}</strong>
                 </div>
               `
-                  : actualData.summary.closingTaxResult?.regionType === 'AU_DUTY'
+                  : isMortgageMode && actualData.summary.closingTaxResult?.regionType === 'AU_DUTY'
                     ? `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                   <span>${t('Australian Stamp Duty:')}</span><strong style="color: #059669;">${formatCurrency(actualData.summary.closingTaxResult.taxAmount)}</strong>
                 </div>
               `
-                    : actualData.summary.lttResult
+                    : isMortgageMode && actualData.summary.lttResult
                       ? `
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                   <span>${t('Net Land Transfer Tax (Closing):')}</span><strong style="color: #059669;">${formatCurrency(actualData.summary.lttResult.totalLtt)}</strong>

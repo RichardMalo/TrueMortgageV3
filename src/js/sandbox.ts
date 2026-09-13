@@ -39,9 +39,13 @@ export const renderSandboxList = (
         ? isFr
           ? 'Carte de crédit'
           : 'Credit Card'
-        : isFr
-          ? 'Hypothèque'
-          : 'Mortgage';
+        : p.currentMode === 'loan'
+          ? isFr
+            ? 'Prêt'
+            : 'Loan'
+          : isFr
+            ? 'Hypothèque'
+            : 'Mortgage';
     const tagComp =
       p.complexity === 'advanced' ? (isFr ? 'Avancé' : 'Advanced') : isFr ? 'Simple' : 'Simple';
     const cloneTitle = isFr ? 'Cloner le scénario' : 'Clone Scenario';

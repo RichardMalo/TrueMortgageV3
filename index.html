@@ -147,212 +147,253 @@
               </div>
             </nav>
 
-            <!-- Sandbox button -->
-            <button
-              type="button"
-              class="dropdown-trigger settings-trigger round-icon-btn"
-              id="sandboxTrigger"
-              title="Scenario Sandbox"
-              aria-label="Open Scenario Sandbox Sidebar"
-            >
-              <span class="text-lg">📂</span>
-            </button>
-
-            <!-- Shortcuts Help button -->
-            <button
-              type="button"
-              class="dropdown-trigger settings-trigger round-icon-btn"
-              id="shortcutsTrigger"
-              title="Keyboard Shortcuts (?)"
-              aria-label="Open Keyboard Shortcuts Modal"
-            >
-              <span class="text-lg">⌨️</span>
-            </button>
-
-            <!-- Settings Gear button -->
-            <div class="custom-dropdown settings-dropdown-wrapper" id="settings-dropdown">
+            <div class="header-actions-group">
+              <!-- Sandbox button -->
               <button
                 type="button"
                 class="dropdown-trigger settings-trigger round-icon-btn"
-                id="settingsTrigger"
-                title="Engine Tools & Settings"
-                aria-label="Open Engine Tools and Settings Menu"
-                aria-haspopup="true"
-                aria-expanded="false"
+                id="sandboxTrigger"
+                title="Scenario Sandbox"
+                aria-label="Open Scenario Sandbox Sidebar"
               >
-                <span class="gear-icon text-lg inline-block">⚙️</span>
+                <span class="text-lg">📂</span>
               </button>
-              <div
-                class="dropdown-menu settings-menu"
-                id="settingsMenu"
-                role="menu"
-                aria-labelledby="settingsTrigger"
+
+              <!-- Shortcuts Help button -->
+              <button
+                type="button"
+                class="dropdown-trigger settings-trigger round-icon-btn"
+                id="shortcutsTrigger"
+                title="Keyboard Shortcuts (?)"
+                aria-label="Open Keyboard Shortcuts Modal"
               >
-                <div class="settings-menu-header">Portability & Sync</div>
-                <button type="button" class="settings-item" id="settingsOptSync">
-                  <span>🔑</span> Secure Sync & Portability
-                </button>
-                <button type="button" class="settings-item" id="settingsOptLayout">
-                  <span>📊</span> Customize Dashboard Layout
-                </button>
-                <div class="settings-menu-divider"></div>
-                <div class="settings-menu-header">Engine Logic</div>
-                <button type="button" class="settings-item" id="settingsOptLimits">
-                  <span>⚙️</span> Constraints & Limits
-                </button>
-                <div class="settings-menu-divider"></div>
+                <span class="text-lg">⌨️</span>
+              </button>
 
-                <div class="settings-menu-header">App Preferences</div>
+              <!-- Settings Gear button -->
+              <div class="custom-dropdown settings-dropdown-wrapper" id="settings-dropdown">
+                <button
+                  type="button"
+                  class="dropdown-trigger settings-trigger round-icon-btn"
+                  id="settingsTrigger"
+                  title="Engine Tools & Settings"
+                  aria-label="Open Engine Tools and Settings Menu"
+                  aria-haspopup="true"
+                  aria-expanded="false"
+                >
+                  <span class="gear-icon text-lg inline-block">⚙️</span>
+                </button>
+                <div
+                  class="dropdown-menu settings-menu"
+                  id="settingsMenu"
+                  role="menu"
+                  aria-labelledby="settingsTrigger"
+                >
+                  <div class="settings-menu-header">Portability & Sync</div>
+                  <button type="button" class="settings-item" id="settingsOptSync">
+                    <span>🔑</span> Secure Sync & Portability
+                  </button>
+                  <button type="button" class="settings-item" id="settingsOptLayout">
+                    <span>📊</span> Customize Dashboard Layout
+                  </button>
+                  <div class="settings-menu-divider"></div>
+                  <div class="settings-menu-header">Engine Logic</div>
+                  <button type="button" class="settings-item" id="settingsOptLimits">
+                    <span>⚙️</span> Constraints & Limits
+                  </button>
+                  <div class="settings-menu-divider"></div>
 
-                <!-- Complexity Mode Selector inside dropdown -->
-                <div class="settings-item-row">
-                  <span>Complexity</span>
-                  <div
-                    class="master-mode-selector"
-                    id="complexity-selector"
-                    role="group"
-                    aria-label="Calculator Complexity Mode Selector"
-                  >
-                    <button
-                      class="complexity-btn active"
-                      data-complexity="simple"
-                      aria-pressed="true"
+                  <div class="settings-menu-header">App Preferences</div>
+
+                  <!-- Complexity Mode Selector inside dropdown -->
+                  <div class="settings-item-row">
+                    <span>Complexity</span>
+                    <div
+                      class="master-mode-selector"
+                      id="complexity-selector"
+                      role="group"
+                      aria-label="Calculator Complexity Mode Selector"
                     >
-                      Simple
-                    </button>
-                    <button class="complexity-btn" data-complexity="advanced" aria-pressed="false">
-                      Advanced
-                    </button>
-                  </div>
-                </div>
-
-                <!-- Region Selector inside dropdown -->
-                <div class="settings-item-row flex-col items-stretch gap-8">
-                  <div class="flex justify-between items-center w-full">
-                    <label id="region-label" for="country-select">Region</label>
-                    <select id="country-select" class="sr-only">
-                      <option value="semi">Canada</option>
-                      <option value="monthly">USA</option>
-                      <option value="monthly-uk">UK</option>
-                      <option value="monthly-au">AU</option>
-                      <option value="monthly-nz">NZ</option>
-                    </select>
-                    <div class="custom-dropdown" id="country-dropdown">
                       <button
-                        type="button"
-                        class="dropdown-trigger"
-                        id="country-trigger"
-                        aria-labelledby="region-label country-trigger"
-                        aria-haspopup="listbox"
-                        aria-expanded="false"
+                        class="complexity-btn active"
+                        data-complexity="simple"
+                        aria-pressed="true"
                       >
-                        <img
-                          src="flags/ca.svg"
-                          class="flag-icon"
-                          id="selected-country-flag"
-                          width="20"
-                          height="15"
-                          alt=""
-                        />
-                        <span id="selected-country-text">Canada</span>
-                        <span class="chevron">▼</span>
+                        Simple
                       </button>
-                      <div class="dropdown-menu" role="listbox">
-                        <div
-                          class="dropdown-item selected"
-                          data-value="semi"
-                          role="option"
-                          aria-selected="true"
+                      <button
+                        class="complexity-btn"
+                        data-complexity="advanced"
+                        aria-pressed="false"
+                      >
+                        Advanced
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Region Selector inside dropdown -->
+                  <div class="settings-item-row flex-col items-stretch gap-8">
+                    <div class="flex justify-between items-center w-full">
+                      <label id="region-label" for="country-select">Region</label>
+                      <select id="country-select" class="sr-only">
+                        <option value="semi">Canada</option>
+                        <option value="monthly">USA</option>
+                        <option value="monthly-uk">UK</option>
+                        <option value="monthly-au">AU</option>
+                        <option value="monthly-nz">NZ</option>
+                      </select>
+                      <div class="custom-dropdown" id="country-dropdown">
+                        <button
+                          type="button"
+                          class="dropdown-trigger"
+                          id="country-trigger"
+                          aria-labelledby="region-label country-trigger"
+                          aria-haspopup="listbox"
+                          aria-expanded="false"
                         >
-                          <img src="flags/ca.svg" class="flag-icon" width="20" height="15" alt="" />
-                          <span>Canada</span>
-                        </div>
-                        <div
-                          class="dropdown-item"
-                          data-value="monthly"
-                          role="option"
-                          aria-selected="false"
-                        >
-                          <img src="flags/us.svg" class="flag-icon" width="20" height="15" alt="" />
-                          <span>USA</span>
-                        </div>
-                        <div
-                          class="dropdown-item"
-                          data-value="monthly-uk"
-                          role="option"
-                          aria-selected="false"
-                        >
-                          <img src="flags/gb.svg" class="flag-icon" width="20" height="15" alt="" />
-                          <span>UK</span>
-                        </div>
-                        <div
-                          class="dropdown-item"
-                          data-value="monthly-au"
-                          role="option"
-                          aria-selected="false"
-                        >
-                          <img src="flags/au.svg" class="flag-icon" width="20" height="15" alt="" />
-                          <span>AU</span>
-                        </div>
-                        <div
-                          class="dropdown-item"
-                          data-value="monthly-nz"
-                          role="option"
-                          aria-selected="false"
-                        >
-                          <img src="flags/nz.svg" class="flag-icon" width="20" height="15" alt="" />
-                          <span>NZ</span>
+                          <img
+                            src="flags/ca.svg"
+                            class="flag-icon"
+                            id="selected-country-flag"
+                            width="20"
+                            height="15"
+                            alt=""
+                          />
+                          <span id="selected-country-text">Canada</span>
+                          <span class="chevron">▼</span>
+                        </button>
+                        <div class="dropdown-menu" role="listbox">
+                          <div
+                            class="dropdown-item selected"
+                            data-value="semi"
+                            role="option"
+                            aria-selected="true"
+                          >
+                            <img
+                              src="flags/ca.svg"
+                              class="flag-icon"
+                              width="20"
+                              height="15"
+                              alt=""
+                            />
+                            <span>Canada</span>
+                          </div>
+                          <div
+                            class="dropdown-item"
+                            data-value="monthly"
+                            role="option"
+                            aria-selected="false"
+                          >
+                            <img
+                              src="flags/us.svg"
+                              class="flag-icon"
+                              width="20"
+                              height="15"
+                              alt=""
+                            />
+                            <span>USA</span>
+                          </div>
+                          <div
+                            class="dropdown-item"
+                            data-value="monthly-uk"
+                            role="option"
+                            aria-selected="false"
+                          >
+                            <img
+                              src="flags/gb.svg"
+                              class="flag-icon"
+                              width="20"
+                              height="15"
+                              alt=""
+                            />
+                            <span>UK</span>
+                          </div>
+                          <div
+                            class="dropdown-item"
+                            data-value="monthly-au"
+                            role="option"
+                            aria-selected="false"
+                          >
+                            <img
+                              src="flags/au.svg"
+                              class="flag-icon"
+                              width="20"
+                              height="15"
+                              alt=""
+                            />
+                            <span>AU</span>
+                          </div>
+                          <div
+                            class="dropdown-item"
+                            data-value="monthly-nz"
+                            role="option"
+                            aria-selected="false"
+                          >
+                            <img
+                              src="flags/nz.svg"
+                              class="flag-icon"
+                              width="20"
+                              height="15"
+                              alt=""
+                            />
+                            <span>NZ</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <!-- Dark Mode Toggle inside dropdown -->
-                <div class="settings-item-row">
-                  <span>Appearance</span>
-                  <div
-                    class="mode-toggle squishy-interactive bg-none p-0 shadow-none rounded-none w-auto flex items-center gap-8"
-                  >
-                    <label class="font-semibold text-xs cursor-pointer" for="mode-switch"
-                      >Dark Mode</label
+                  <!-- Dark Mode Toggle inside dropdown -->
+                  <div class="settings-item-row">
+                    <span>Appearance</span>
+                    <div
+                      class="mode-toggle squishy-interactive bg-none p-0 shadow-none rounded-none w-auto flex items-center gap-8"
                     >
-                    <label class="switch">
-                      <input type="checkbox" id="mode-switch" role="switch" aria-checked="false" />
-                      <span class="slider"></span>
-                    </label>
+                      <label class="font-semibold text-xs cursor-pointer" for="mode-switch"
+                        >Dark Mode</label
+                      >
+                      <label class="switch">
+                        <input
+                          type="checkbox"
+                          id="mode-switch"
+                          role="switch"
+                          aria-checked="false"
+                        />
+                        <span class="slider"></span>
+                      </label>
+                    </div>
                   </div>
-                </div>
 
-                <!-- Language Toggle inside dropdown -->
-                <div class="settings-item-row">
-                  <span>Language</span>
-                  <div
-                    class="mode-toggle squishy-interactive bg-none p-0 shadow-none rounded-none w-auto flex items-center gap-8"
-                  >
-                    <label
-                      class="font-semibold text-xs cursor-pointer"
-                      for="language-switch"
-                      id="language-switch-label"
-                      >French</label
+                  <!-- Language Toggle inside dropdown -->
+                  <div class="settings-item-row">
+                    <span>Language</span>
+                    <div
+                      class="mode-toggle squishy-interactive bg-none p-0 shadow-none rounded-none w-auto flex items-center gap-8"
                     >
-                    <label class="switch">
-                      <input
-                        type="checkbox"
-                        id="language-switch"
-                        role="switch"
-                        aria-checked="false"
-                      />
-                      <span class="slider"></span>
-                    </label>
+                      <label
+                        class="font-semibold text-xs cursor-pointer"
+                        for="language-switch"
+                        id="language-switch-label"
+                        >French</label
+                      >
+                      <label class="switch">
+                        <input
+                          type="checkbox"
+                          id="language-switch"
+                          role="switch"
+                          aria-checked="false"
+                        />
+                        <span class="slider"></span>
+                      </label>
+                    </div>
                   </div>
-                </div>
 
-                <div class="settings-menu-divider"></div>
-                <div class="settings-menu-header">System Operations</div>
-                <button type="button" class="settings-item danger-action" id="settingsOptReset">
-                  <span>🔄</span> Reset Application Data
-                </button>
+                  <div class="settings-menu-divider"></div>
+                  <div class="settings-menu-header">System Operations</div>
+                  <button type="button" class="settings-item danger-action" id="settingsOptReset">
+                    <span>🔄</span> Reset Application Data
+                  </button>
+                </div>
               </div>
             </div>
           </div>

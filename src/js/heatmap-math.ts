@@ -87,7 +87,8 @@ export const computeHeatmapGridSync = (
 
       const cellPayoff = res.summary.periodsToPayoff;
       const isCellFinite = Number.isFinite(cellPayoff);
-      const cellYears = isCellFinite ? cellPayoff / periodsPerYear : 99;
+      const cellPeriodsPerYear = res.summary.periodsPerYear || 12;
+      const cellYears = isCellFinite ? cellPayoff / cellPeriodsPerYear : 99;
       const yearsSaved =
         isBaselineFinite && isCellFinite ? Math.max(0, baselineYears - cellYears) : 0;
       const interestSaved =

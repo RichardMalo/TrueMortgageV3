@@ -503,21 +503,32 @@ const calculate = (e?: Event) => {
     const yrs_paid = Math.floor(actData.summary.periodsToPayoff / actData.summary.periodsPerYear);
     const rem_paid = actData.summary.periodsToPayoff % actData.summary.periodsPerYear;
     const isFr = state.language === 'fr';
-    let label: string;
+    const isMortgageOrLoan = isMortgage || state.currentMode === 'loan';
+    const isNonMonthly = isMortgageOrLoan && inputs.frequency !== 'monthly';
+
+    let yrLabel: string;
+    let freqLabel: string;
     if (isFr) {
-      const yrLabel = yrs_paid > 1 ? 'ans' : 'an';
-      let freqLabel = 'mois';
-      if (isMortgage && inputs.frequency !== 'monthly') {
-        freqLabel = rem_paid > 1 ? 'périodes' : 'période';
-      }
-      label = `${yrs_paid} ${yrLabel}, ${rem_paid} ${freqLabel}`;
+      yrLabel = yrs_paid > 1 ? 'ans' : 'an';
+      freqLabel = isNonMonthly ? (rem_paid > 1 ? 'périodes' : 'période') : 'mois';
     } else {
-      const yrLabel = yrs_paid > 1 ? 'Years' : 'Year';
-      let freqLabel = 'Months';
-      if (isMortgage && inputs.frequency !== 'monthly') {
-        freqLabel = rem_paid > 1 ? 'Periods' : 'Period';
-      }
+      yrLabel = yrs_paid > 1 ? 'Years' : 'Year';
+      freqLabel = isNonMonthly
+        ? rem_paid > 1
+          ? 'Periods'
+          : 'Period'
+        : rem_paid === 1
+          ? 'Month'
+          : 'Months';
+    }
+
+    let label: string;
+    if (yrs_paid > 0 && rem_paid > 0) {
       label = `${yrs_paid} ${yrLabel}, ${rem_paid} ${freqLabel}`;
+    } else if (yrs_paid > 0) {
+      label = `${yrs_paid} ${yrLabel}`;
+    } else {
+      label = `${rem_paid} ${freqLabel}`;
     }
     updateKineticText(els.results.paidOffIn, label, false);
   }
@@ -695,7 +706,14 @@ const updateScheduledLumpSumDatesInPlace = () => {
         dateBadge.textContent = 'Invalid payment #';
         dateBadge.style.color = '#ef4444';
       } else {
-        const { dateLabel } = getRowDateLabel(parsedDate, pmtNum, freq, periodsPerYear, 'P');
+        const { dateLabel } = getRowDateLabel(
+          parsedDate,
+          pmtNum,
+          freq,
+          periodsPerYear,
+          'P',
+          state.language === 'fr'
+        );
         dateBadge.textContent = dateLabel;
         dateBadge.style.color = 'var(--primary-color)';
       }

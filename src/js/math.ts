@@ -486,7 +486,8 @@ export const generateMortgageSchedule = (
       const {
         dateLabel: dLbl,
         yearVal: yLbl,
-        calendarYear
+        calendarYear,
+        calendarMonth
       } = getRowDateLabel(
         currentDate,
         i,
@@ -501,6 +502,7 @@ export const generateMortgageSchedule = (
         period: i,
         year: yLbl,
         calendarYear,
+        calendarMonth,
         dateLabel: dLbl,
         ltv: safeHomePrice > 0 ? (balance / safeHomePrice) * 100 : 0,
         payment: principalPortion + interestPortion + periodicEscrow + currentExtraPayment,
@@ -699,13 +701,15 @@ export const generateCCSchedule = (
       const {
         dateLabel: dLbl,
         yearVal: yLbl,
-        calendarYear
+        calendarYear,
+        calendarMonth
       } = getRowDateLabel(currentDate, i, 'monthly', 12, 'M', inputs.lang || 'en', scratchDate);
 
       schedule.push({
         period: i,
         year: yLbl,
         calendarYear,
+        calendarMonth,
         dateLabel: dLbl,
         ltv: 0,
         payment: Math.round((regularPrincipal + interestPortion + currentExtraPayment) * 100) / 100,
@@ -749,7 +753,11 @@ export const generateCCSchedule = (
  * @param periodsPerYear - The number of cycles/periods in one calendar year.
  * @returns A formatted string or null if periods are zero or negative.
  */
-const formatPeriodDelta = (periods: number, periodsPerYear: number): string | null => {
+const formatPeriodDelta = (
+  periods: number,
+  periodsPerYear: number,
+  isFr = false
+): string | null => {
   if (periods <= 0) return null;
   const totalYears = periods / periodsPerYear;
   let yrs = Math.floor(totalYears);
@@ -757,6 +765,16 @@ const formatPeriodDelta = (periods: number, periodsPerYear: number): string | nu
   if (mos === 12) {
     yrs += 1;
     mos = 0;
+  }
+  if (isFr) {
+    const yrStr = yrs > 1 ? 'ans' : 'an';
+    if (yrs > 0) {
+      return `${yrs} ${yrStr}${mos > 0 ? `, ${mos} mois` : ''}`;
+    }
+    if (mos === 0) {
+      return '< 1 mois';
+    }
+    return `${mos} mois`;
   }
   if (yrs > 0) {
     return `${yrs} Year${yrs > 1 ? 's' : ''}${mos > 0 ? `, ${mos} Month${mos > 1 ? 's' : ''}` : ''}`;
@@ -800,7 +818,8 @@ export const calculateMilestones = (
         : Math.max(0, inputs.ccBalance || 0);
   const periodsPerYear = actData.summary.periodsPerYear;
   const isFr = lang === 'fr';
-  const moLabel = isFr ? 'Mois' : 'Month';
+  const cycleLabel =
+    periodsPerYear === 12 ? (isFr ? 'Mois' : 'Month') : isFr ? 'Paiement' : 'Payment';
 
   if (!actSched || actSched.length === 0) return [];
 
@@ -847,7 +866,7 @@ export const calculateMilestones = (
     } else if (actIdx !== -1) {
       const row = actSched[actIdx]!;
       targetDate = row.dateLabel;
-      targetPeriod = `${moLabel} ${row.period}`;
+      targetPeriod = `${cycleLabel} ${row.period}`;
       const pmiAmt = (startingPrincipal * ((inputs.pmiRate || 0) / 100)) / periodsPerYear;
       let savingsStr = '';
       if (inputs.usePiti && inputs.pmiRate > 0) {
@@ -862,7 +881,7 @@ export const calculateMilestones = (
 
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
-        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
+        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear, isFr);
         if (deltaStr) {
           badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
         }
@@ -895,7 +914,7 @@ export const calculateMilestones = (
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
-        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
+        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear, isFr);
         if (deltaStr) {
           badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
         }
@@ -905,7 +924,7 @@ export const calculateMilestones = (
         id: 'equity-mastery',
         title: isFr ? "Maîtrise de l'équité (point de bascule)" : 'Equity Mastery (Tipping Point)',
         date: row.dateLabel,
-        period: `${moLabel} ${row.period}`,
+        period: `${cycleLabel} ${row.period}`,
         desc: isFr
           ? 'Le cycle exact où la contribution au principal dépasse les intérêts payés.'
           : 'The exact cycle where principal contribution exceeds interest paid.',
@@ -928,7 +947,7 @@ export const calculateMilestones = (
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
-        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
+        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear, isFr);
         if (deltaStr) {
           badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
         }
@@ -940,7 +959,7 @@ export const calculateMilestones = (
           ? 'Seuil de rentabilité des intérêts (inversion du levier)'
           : 'Interest Break-Even (Leverage Flip)',
         date: row.dateLabel,
-        period: `${moLabel} ${row.period}`,
+        period: `${cycleLabel} ${row.period}`,
         desc: isFr
           ? 'Le moment où le total du principal payé dépasse les intérêts cumulés.'
           : 'Moment where total principal paid exceeds cumulative interest.',
@@ -963,7 +982,7 @@ export const calculateMilestones = (
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
-        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
+        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear, isFr);
         if (deltaStr) {
           badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
         }
@@ -973,7 +992,7 @@ export const calculateMilestones = (
         id: 'halfway-mark',
         title: isFr ? 'Mi-chemin (dette réduite de moitié)' : 'Halfway Mark (Debt Halved)',
         date: row.dateLabel,
-        period: `${moLabel} ${row.period}`,
+        period: `${cycleLabel} ${row.period}`,
         desc: isFr
           ? 'Le cycle clé où le solde restant est réduit de moitié.'
           : 'The milestone cycle where the outstanding balance is cut exactly in half.',
@@ -996,7 +1015,7 @@ export const calculateMilestones = (
       let badgeText = '';
       if (baseIdx !== -1 && baseIdx > actIdx) {
         const deltaPeriods = baseIdx - actIdx;
-        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear);
+        const deltaStr = formatPeriodDelta(deltaPeriods, periodsPerYear, isFr);
         if (deltaStr) {
           badgeText = isFr ? `Atteint ${deltaStr} plus tôt !` : `Hit ${deltaStr} Sooner!`;
         }
@@ -1006,7 +1025,7 @@ export const calculateMilestones = (
         id: 'financial-freedom',
         title: isFr ? 'Liberté financière (remboursé !)' : 'Financial Freedom (Payoff!)',
         date: row.dateLabel,
-        period: `${moLabel} ${row.period}`,
+        period: `${cycleLabel} ${row.period}`,
         desc: isFr
           ? 'Éradication complète de la dette et libération totale de vos obligations financières.'
           : 'Complete debt eradication and full liability liberation.',
@@ -1113,7 +1132,11 @@ export const generateLoanSchedule = (
   while (balance > 0.001 && period <= maxPeriods) {
     const interest = Math.round(balance * periodicRate * 100) / 100;
     let scheduledPrincipal = Math.round((periodicPayment - interest) * 100) / 100;
-    if (period === totalPeriods || balance <= periodicPayment) {
+    if (
+      period === totalPeriods ||
+      scheduledPrincipal >= balance ||
+      Math.round((balance + interest) * 100) / 100 <= periodicPayment
+    ) {
       scheduledPrincipal = balance;
     }
 
@@ -1155,6 +1178,7 @@ export const generateLoanSchedule = (
         period,
         year: dateInfo.yearVal,
         calendarYear: dateInfo.calendarYear,
+        calendarMonth: dateInfo.calendarMonth,
         dateLabel: dateInfo.dateLabel,
         ltv: 0,
         payment: actualPayment,
@@ -1226,12 +1250,13 @@ export const getRowDateLabel = (
   freq: string,
   periodsPerYear: number,
   fallbackPrefix = 'P',
-  lang = 'en',
+  lang: string | boolean = 'en',
   reusableDate?: Date | null
-): { dateLabel: string; yearVal: number; calendarYear: number } => {
+): { dateLabel: string; yearVal: number; calendarYear: number; calendarMonth: number } => {
   let dateLabel = `${fallbackPrefix}${period}`;
   let yearVal = period / periodsPerYear;
   let calendarYear = new Date().getFullYear() + Math.floor((period - 1) / periodsPerYear);
+  let calendarMonth = (period - 1) % 12;
 
   if (startDate) {
     const d = reusableDate ? reusableDate : new Date(startDate.getTime());
@@ -1252,7 +1277,11 @@ export const getRowDateLabel = (
         d.setMonth(d.getMonth() + monthsToAdd);
         const lastDay = daysInMonth(d.getFullYear(), d.getMonth());
         d.setDate(
-          halfIndex % 2 === 1 ? Math.min(startDay + 15, lastDay) : Math.min(startDay, lastDay)
+          halfIndex % 2 === 1
+            ? startDay === 15
+              ? lastDay
+              : Math.min(startDay + 15, lastDay)
+            : Math.min(startDay, lastDay)
         );
       } else {
         const monthsToAdd = Math.floor((halfIndex + 1) / 2);
@@ -1268,8 +1297,9 @@ export const getRowDateLabel = (
     } else {
       d.setDate(d.getDate() + (period - 1) * 14);
     }
-    const isFr = lang === 'fr';
-    const monthStr = isFr ? MONTHS_FR[d.getMonth()] : MONTHS[d.getMonth()];
+    const isFr = lang === 'fr' || lang === true;
+    const monthIdx = d.getMonth();
+    const monthStr = isFr ? MONTHS_FR[monthIdx] : MONTHS[monthIdx];
     const dayStr = d.getDate();
     const yearStr = d.getFullYear();
 
@@ -1280,11 +1310,18 @@ export const getRowDateLabel = (
     } else {
       dateLabel = `${monthStr} ${dayStr}, ${yearStr}`;
     }
-    yearVal = yearStr + d.getMonth() / 12 + dayStr / 365;
+    const isLeap = (yearStr % 4 === 0 && yearStr % 100 !== 0) || yearStr % 400 === 0;
+    const daysInYear = isLeap ? 366 : 365;
+    const daysBeforeMonth = isLeap
+      ? [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335]
+      : [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+    const dayOfYear = daysBeforeMonth[monthIdx]! + dayStr;
+    yearVal = yearStr + (dayOfYear - 1) / daysInYear;
     calendarYear = yearStr;
+    calendarMonth = monthIdx;
   }
 
-  return { dateLabel, yearVal, calendarYear };
+  return { dateLabel, yearVal, calendarYear, calendarMonth };
 };
 
 export interface CanadianLttResult {
