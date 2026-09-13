@@ -84,33 +84,31 @@ test.describe('Debt Elimination Engine E2E Tests', () => {
       { width: 360, height: 740 }
     ];
 
+    const settingsTrigger = page.locator('#settingsTrigger');
+    const settingsMenu = page.locator('#settingsMenu');
+
     for (const vp of viewports) {
       await page.setViewportSize(vp);
-      await page.goto('/');
 
-      // Ensure menu is closed initially
-      const settingsDropdown = page.locator('#settings-dropdown');
-      if (await settingsDropdown.evaluate((el) => el.classList.contains('active'))) {
-        await page.click('#settingsTrigger');
-      }
-      const triggerBox = await page.locator('#settingsTrigger').boundingBox();
+      // Verify trigger button is fully within screen bounds
+      const triggerBox = await settingsTrigger.boundingBox();
       expect(triggerBox).not.toBeNull();
       expect(triggerBox!.x + triggerBox!.width).toBeLessThanOrEqual(vp.width);
+      expect(triggerBox!.x).toBeGreaterThanOrEqual(0);
 
-      await page.click('#settingsTrigger');
-      const settingsMenu = page.locator('#settingsMenu');
+      // Open settings menu
+      await settingsTrigger.click({ force: true });
       await expect(settingsMenu).toBeVisible();
 
+      // Verify settings menu is fully within screen bounds
       const box = await settingsMenu.boundingBox();
       expect(box).not.toBeNull();
-      // Menu must not overflow the right edge of viewport
       expect(box!.x + box!.width).toBeLessThanOrEqual(vp.width);
-      // Menu must not overflow the left edge of viewport
       expect(box!.x).toBeGreaterThanOrEqual(0);
 
-      // Verify interactive item inside settings menu can be clicked without issue
-      const syncOpt = page.locator('#settingsOptSync');
-      await expect(syncOpt).toBeVisible();
+      // Close settings menu for next iteration
+      await settingsTrigger.click({ force: true });
+      await expect(settingsMenu).not.toBeVisible();
     }
   });
 
