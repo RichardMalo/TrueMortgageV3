@@ -94,6 +94,7 @@ interface CachedChartConfig {
 }
 
 const latestChartConfigs = new Map<string, CachedChartConfig>();
+export const getLatestChartConfig = (elementId: string) => latestChartConfigs.get(elementId);
 const observedElements = new Set<string>();
 const intersectingElements = new Set<string>();
 const renderedVersions = new Map<string, number>();
@@ -731,7 +732,7 @@ const renderPaymentCompositionChart = (
   );
 };
 
-const renderLifetimeBreakdownChart = (
+export const renderLifetimeBreakdownChart = (
   actualData: ScheduleResult,
   inputs: Inputs,
   currentMode: 'mortgage' | 'cc' | 'loan',
@@ -745,6 +746,10 @@ const renderLifetimeBreakdownChart = (
     totalPrincipal: 0,
     totalExtra: 0
   };
+  const regularPrincipal = Math.max(
+    0,
+    Math.round((fData.totalPrincipal - fData.totalExtra) * 100) / 100
+  );
   const tTot: unknown[] = [
     {
       x: [t('Total Cost')],
@@ -755,7 +760,7 @@ const renderLifetimeBreakdownChart = (
     },
     {
       x: [t('Total Cost')],
-      y: [fData.totalPrincipal],
+      y: [regularPrincipal],
       name: t('Principal'),
       type: 'bar',
       marker: { color: CONFIG.colors.principal }
