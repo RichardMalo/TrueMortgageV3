@@ -107,6 +107,7 @@ export const dictionary: Record<string, string> = {
   'Apply to Lump Sum': 'Appliquer au versement forfaitaire',
   'Target is unreachable with extra payments.':
     "L'objectif est inatteignable avec ces versements supplémentaires.",
+  'Goal Already Achieved!': 'Objectif déjà atteint !',
   'Never (Negative Amortization)': 'Jamais (amortissement négatif)',
   'Never (No Payoff)': 'Jamais (aucun remboursement)',
 

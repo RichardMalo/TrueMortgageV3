@@ -85,6 +85,11 @@ export const computeHeatmapGridSync = (
   const isBaselineFinite = Number.isFinite(baselinePayoff);
   const baselineYears = isBaselineFinite ? baselinePayoff / periodsPerYear : 99;
 
+  // Filter out payment 1 items from lumpSums array so inputs.lumpSum is not bypassed
+  const cleanLumpSums = inputs.lumpSums
+    ? inputs.lumpSums.filter((item) => item.paymentNumber !== 1)
+    : undefined;
+
   const grid: GridCell[][] = [];
   let maxSaved = 0;
 
@@ -96,6 +101,7 @@ export const computeHeatmapGridSync = (
 
       const cellInputs: Inputs = {
         ...inputs,
+        lumpSums: cleanLumpSums,
         extraPayment: monthlyExtra,
         lumpSum: lumpSum
       };

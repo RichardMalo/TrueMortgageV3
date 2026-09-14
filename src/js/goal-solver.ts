@@ -226,6 +226,15 @@ export const renderGoalSolver = (
   if (!slider || !readout || !minLabel || !maxLabel || !monthlyValEl || !lumpSumValEl || !errorEl)
     return;
 
+  let achievedEl = document.getElementById('goal-solver-achieved');
+  if (!achievedEl && errorEl.parentNode) {
+    achievedEl = document.createElement('div');
+    achievedEl.id = 'goal-solver-achieved';
+    achievedEl.className = 'goal-solver-achieved hidden';
+    achievedEl.setAttribute('role', 'status');
+    errorEl.parentNode.insertBefore(achievedEl, errorEl);
+  }
+
   const isFr = currentLanguage() === 'fr';
   const isMortgageOrLoan = mode === 'mortgage' || mode === 'loan';
   const freq = isMortgageOrLoan ? inputs.frequency : 'monthly';
@@ -306,12 +315,40 @@ export const renderGoalSolver = (
 
     // Show/hide error when solver determines the target is infeasible
     const actualPayoff = actData.summary.periodsToPayoff;
-    const isAlreadyAchieved = actualPayoff <= targetPeriods;
+    const isAlreadyAchieved =
+      actData.summary.paidOff !== false && isFinite(actualPayoff) && actualPayoff <= targetPeriods;
     const isInfeasible = !isFinite(solvedMonthly) || !isFinite(solvedLumpSum);
+
+    if (achievedEl) {
+      if (isAlreadyAchieved) {
+        const actualYears = actualPayoff / activePeriodsPerYear;
+        const roundedYears = Math.round(actualYears * 10) / 10;
+        const xYears = roundedYears % 1 === 0 ? String(roundedYears) : roundedYears.toFixed(1);
+        const yearWord = xYears === '1' ? 'year' : 'years';
+        const frYearWord = xYears === '1' ? 'an' : 'ans';
+        const frTargetWord = targetYears === 1 ? 'an' : 'ans';
+
+        achievedEl.textContent = isFr
+          ? `Objectif déjà atteint ! Votre stratégie actuelle permet d'atteindre zéro dette en ${xYears} ${frYearWord}, dépassant votre cible de ${targetYears} ${frTargetWord}.`
+          : `Goal Already Achieved! Your current strategy reaches zero debt in ${xYears} ${yearWord}, beating your ${targetYears}-year target.`;
+        achievedEl.classList.remove('hidden');
+      } else {
+        achievedEl.classList.add('hidden');
+      }
+    }
+
     if (isInfeasible && !isAlreadyAchieved) {
       errorEl.classList.remove('hidden');
     } else {
       errorEl.classList.add('hidden');
+    }
+
+    const disableApply = isAlreadyAchieved || isInfeasible;
+    if (applyMonthlyBtn) {
+      applyMonthlyBtn.disabled = disableApply;
+    }
+    if (applyLumpSumBtn) {
+      applyLumpSumBtn.disabled = disableApply;
     }
   };
 
@@ -330,12 +367,14 @@ export const renderGoalSolver = (
 
   if (applyMonthlyBtn) {
     applyMonthlyBtn.onclick = () => {
+      if (applyMonthlyBtn.disabled) return;
       onApply('monthly', Math.max(solvedMonthly, inputs.extraPayment || 0));
     };
   }
 
   if (applyLumpSumBtn) {
     applyLumpSumBtn.onclick = () => {
+      if (applyLumpSumBtn.disabled) return;
       onApply('lumpSum', Math.max(solvedLumpSum, inputs.lumpSum || 0));
     };
   }

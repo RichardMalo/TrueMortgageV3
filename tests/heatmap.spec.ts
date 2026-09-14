@@ -263,6 +263,63 @@ describe('Heatmap Module', () => {
         baseData.summary.totalInterest - expectedSchedule.summary.totalInterest;
       expect(cell100.interestSaved).toBeCloseTo(expectedInterestSaved, 2);
     });
+
+    it('should not let a scheduled lump sum at payment #1 cause a dead-zone on the lump sum axis', () => {
+      const sampleInputs: Inputs = {
+        homePrice: 400000,
+        downPayment: 80000,
+        ccBalance: 0,
+        province: 'ON',
+        annualRate: 5,
+        amortizationYears: 25,
+        termYears: 5,
+        compounding: 'semi',
+        frequency: 'monthly',
+        usePiti: false,
+        taxRate: 0,
+        insRate: 0,
+        hoaRate: 0,
+        pmiRate: 0,
+        useOppCost: false,
+        investRate: 7,
+        extraPayment: 0,
+        startDate: '2025-01-01',
+        rateShockEnabled: false,
+        termRates: {},
+        lumpSums: [
+          { id: 'item-1', paymentNumber: 1, amount: 20000 },
+          { id: 'item-12', paymentNumber: 12, amount: 10000 }
+        ]
+      };
+
+      const baseData = generateMortgageSchedule(sampleInputs, true, true);
+      const balance = 320000;
+      const result = computeHeatmapGridSync('mortgage', sampleInputs, balance, baseData);
+
+      // Verify lump sum axis is active: each column should reflect the cell lump sum amount
+      const row0 = result.grid[0]!;
+      expect(row0[0]!.lumpSum).toBe(0);
+      expect(row0[1]!.lumpSum).toBe(5000);
+      expect(row0[2]!.lumpSum).toBe(10000);
+
+      // Interest savings must increase as lump sum increases across columns
+      expect(row0[1]!.interestSaved).toBeGreaterThan(row0[0]!.interestSaved);
+      expect(row0[2]!.interestSaved).toBeGreaterThan(row0[1]!.interestSaved);
+
+      // Verify that payment #12 scheduled lump sum is preserved in the cell calculation
+      const expectedCellLumpSum5000 = generateMortgageSchedule(
+        {
+          ...sampleInputs,
+          lumpSums: [{ id: 'item-12', paymentNumber: 12, amount: 10000 }],
+          lumpSum: 5000
+        },
+        false,
+        true
+      );
+      const expectedSavings5000 =
+        baseData.summary.totalInterest - expectedCellLumpSum5000.summary.totalInterest;
+      expect(row0[1]!.interestSaved).toBeCloseTo(expectedSavings5000, 2);
+    });
   });
 
   describe('renderHeatmapDOM frequency adaptations', () => {

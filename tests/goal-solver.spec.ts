@@ -1,7 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { solveRequiredMonthly, solveRequiredLumpSum } from '../src/js/goal-solver.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  solveRequiredMonthly,
+  solveRequiredLumpSum,
+  renderGoalSolver
+} from '../src/js/goal-solver.js';
 import { generateMortgageSchedule, generateLoanSchedule } from '../src/js/math.js';
-import { Inputs, ScheduleResult } from '../src/js/types.js';
+import { Inputs, ScheduleResult, AppState, AppElements } from '../src/js/types.js';
+import { setLanguageState } from '../src/js/i18n.js';
 
 describe('Goal Solver logic (goal-solver.ts)', () => {
   const mortgageInputs: Inputs = {
@@ -184,5 +189,337 @@ describe('Goal Solver logic (goal-solver.ts)', () => {
     const baseData = generateMortgageSchedule(mortgageInputs, true);
     expect(solveRequiredMonthly(360, mortgageInputs, 'mortgage', baseData)).toBe(0);
     expect(solveRequiredLumpSum(360, mortgageInputs, 'mortgage', baseData)).toBe(0);
+  });
+});
+
+describe('renderGoalSolver UI & Feedback State', () => {
+  const mortgageInputs: Inputs = {
+    homePrice: 800000,
+    downPayment: 160000,
+    ccBalance: 0,
+    province: 'ON',
+    annualRate: 4.5,
+    amortizationYears: 30,
+    termYears: 5,
+    compounding: 'monthly',
+    frequency: 'monthly',
+    usePiti: false,
+    taxRate: 0,
+    insRate: 0,
+    hoaRate: 0,
+    pmiRate: 0,
+    useOppCost: false,
+    investRate: 0,
+    extraPayment: 0,
+    startDate: '2026-07-01',
+    rateShockEnabled: false,
+    termRates: {}
+  };
+
+  const setupDOM = () => {
+    document.body.innerHTML = `
+      <div id="goal-solver-card">
+        <input type="range" id="goalPayoffSlider" min="1" max="30" value="12" />
+        <span id="goalPayoffReadout">12 Years</span>
+        <span id="goalSliderMin">1 Year</span>
+        <span id="goalSliderMax">30 Years</span>
+        <span id="goalMonthlyLabel">Required Monthly Extra</span>
+        <strong id="goalMonthlyValue">+$0.00<span class="box-unit">/mo</span></strong>
+        <button type="button" class="goal-apply-btn" id="goalApplyMonthlyBtn">Apply to Monthly</button>
+        <strong id="goalLumpSumValue">+$0.00</strong>
+        <button type="button" class="goal-apply-btn" id="goalApplyLumpSumBtn">Apply to Lump Sum</button>
+        <div id="goal-solver-achieved" class="goal-solver-achieved hidden" role="status"></div>
+        <div id="goal-solver-error" class="goal-solver-error hidden"></div>
+      </div>
+    `;
+  };
+
+  beforeEach(() => {
+    setupDOM();
+    setLanguageState('en');
+  });
+
+  afterEach(() => {
+    setLanguageState('en');
+  });
+
+  it('should display positive badge/alert and disable Apply buttons when isAlreadyAchieved is true (e.g. 8 years payoff vs 12 years target)', () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    // Actual data with 8 years (96 monthly periods)
+    const actData: ScheduleResult = {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 96, // 8 years
+        periodsPerYear: 12,
+        totalInterest: 50000,
+        totalPrincipal: 640000,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
+
+    const state: AppState = {
+      isDark: false,
+      currentMode: 'mortgage',
+      complexity: 'advanced',
+      termRates: {},
+      customizedYears: {},
+      labelFormat: 'date',
+      activeProfileId: null,
+      comparisonProfileId: null,
+      compareModeActive: false,
+      profiles: {},
+      bankWagesView: 'wages',
+      showTermMilestone: true,
+      currentTargetYears: 12
+    };
+
+    const onApply = vi.fn();
+    renderGoalSolver(
+      state,
+      {} as unknown as AppElements,
+      actData,
+      baseData,
+      () => mortgageInputs,
+      onApply
+    );
+
+    const achievedEl = document.getElementById('goal-solver-achieved')!;
+    const errorEl = document.getElementById('goal-solver-error')!;
+    const monthlyBtn = document.getElementById('goalApplyMonthlyBtn') as HTMLButtonElement;
+    const lumpSumBtn = document.getElementById('goalApplyLumpSumBtn') as HTMLButtonElement;
+
+    // Check alert visibility and exact feedback message
+    expect(achievedEl.classList.contains('hidden')).toBe(false);
+    expect(achievedEl.textContent).toBe(
+      'Goal Already Achieved! Your current strategy reaches zero debt in 8 years, beating your 12-year target.'
+    );
+    expect(errorEl.classList.contains('hidden')).toBe(true);
+
+    // Check that Apply buttons are disabled
+    expect(monthlyBtn.disabled).toBe(true);
+    expect(lumpSumBtn.disabled).toBe(true);
+
+    // Verify clicking disabled buttons does not trigger onApply
+    monthlyBtn.click();
+    lumpSumBtn.click();
+    expect(onApply).not.toHaveBeenCalled();
+  });
+
+  it('should hide positive badge/alert and enable Apply buttons when isAlreadyAchieved is false', () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    // Actual data: 25 years payoff (300 periods)
+    const actData: ScheduleResult = {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 300, // 25 years
+        periodsPerYear: 12,
+        totalInterest: 200000,
+        totalPrincipal: 640000,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
+
+    const state: AppState = {
+      isDark: false,
+      currentMode: 'mortgage',
+      complexity: 'advanced',
+      termRates: {},
+      customizedYears: {},
+      labelFormat: 'date',
+      activeProfileId: null,
+      comparisonProfileId: null,
+      compareModeActive: false,
+      profiles: {},
+      bankWagesView: 'wages',
+      showTermMilestone: true,
+      currentTargetYears: 15
+    };
+
+    const onApply = vi.fn();
+    renderGoalSolver(
+      state,
+      {} as unknown as AppElements,
+      actData,
+      baseData,
+      () => mortgageInputs,
+      onApply
+    );
+
+    const achievedEl = document.getElementById('goal-solver-achieved')!;
+    const errorEl = document.getElementById('goal-solver-error')!;
+    const monthlyBtn = document.getElementById('goalApplyMonthlyBtn') as HTMLButtonElement;
+    const lumpSumBtn = document.getElementById('goalApplyLumpSumBtn') as HTMLButtonElement;
+
+    expect(achievedEl.classList.contains('hidden')).toBe(true);
+    expect(errorEl.classList.contains('hidden')).toBe(true);
+    expect(monthlyBtn.disabled).toBe(false);
+    expect(lumpSumBtn.disabled).toBe(false);
+
+    monthlyBtn.click();
+    expect(onApply).toHaveBeenCalledWith('monthly', expect.any(Number));
+  });
+
+  it('should dynamically toggle feedback state when slider value changes', async () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    const actData: ScheduleResult = {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 96, // 8 years
+        periodsPerYear: 12,
+        totalInterest: 50000,
+        totalPrincipal: 640000,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
+
+    const state: AppState = {
+      isDark: false,
+      currentMode: 'mortgage',
+      complexity: 'advanced',
+      termRates: {},
+      customizedYears: {},
+      labelFormat: 'date',
+      activeProfileId: null,
+      comparisonProfileId: null,
+      compareModeActive: false,
+      profiles: {},
+      bankWagesView: 'wages',
+      showTermMilestone: true,
+      currentTargetYears: 12
+    };
+
+    const onApply = vi.fn();
+    renderGoalSolver(
+      state,
+      {} as unknown as AppElements,
+      actData,
+      baseData,
+      () => mortgageInputs,
+      onApply
+    );
+
+    const slider = document.getElementById('goalPayoffSlider') as HTMLInputElement;
+    const achievedEl = document.getElementById('goal-solver-achieved')!;
+    const monthlyBtn = document.getElementById('goalApplyMonthlyBtn') as HTMLButtonElement;
+
+    // Initially achieved at 12 years
+    expect(achievedEl.classList.contains('hidden')).toBe(false);
+    expect(monthlyBtn.disabled).toBe(true);
+
+    // User moves slider to 5 years (8 > 5, so not achieved)
+    slider.value = '5';
+    slider.oninput!(new Event('input'));
+    await new Promise((r) => setTimeout(r, 30));
+
+    expect(achievedEl.classList.contains('hidden')).toBe(true);
+    expect(monthlyBtn.disabled).toBe(false);
+
+    // User moves slider back to 8 years (8 <= 8, so achieved)
+    slider.value = '8';
+    slider.oninput!(new Event('input'));
+    await new Promise((r) => setTimeout(r, 30));
+
+    expect(achievedEl.classList.contains('hidden')).toBe(false);
+    expect(achievedEl.textContent).toBe(
+      'Goal Already Achieved! Your current strategy reaches zero debt in 8 years, beating your 8-year target.'
+    );
+    expect(monthlyBtn.disabled).toBe(true);
+  });
+
+  it('should create goal-solver-achieved dynamically if missing from DOM', () => {
+    const el = document.getElementById('goal-solver-achieved');
+    if (el) el.remove();
+
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    const actData: ScheduleResult = {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 96,
+        periodsPerYear: 12,
+        totalInterest: 50000,
+        totalPrincipal: 640000,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
+
+    const state: AppState = {
+      isDark: false,
+      currentMode: 'mortgage',
+      complexity: 'advanced',
+      termRates: {},
+      customizedYears: {},
+      labelFormat: 'date',
+      activeProfileId: null,
+      comparisonProfileId: null,
+      compareModeActive: false,
+      profiles: {},
+      bankWagesView: 'wages',
+      showTermMilestone: true,
+      currentTargetYears: 12
+    };
+
+    renderGoalSolver(
+      state,
+      {} as unknown as AppElements,
+      actData,
+      baseData,
+      () => mortgageInputs,
+      vi.fn()
+    );
+
+    const createdEl = document.getElementById('goal-solver-achieved');
+    expect(createdEl).not.toBeNull();
+    expect(createdEl?.classList.contains('hidden')).toBe(false);
+    expect(createdEl?.textContent).toContain('Goal Already Achieved!');
+  });
+
+  it('should render French feedback when language is French', () => {
+    setLanguageState('fr');
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    const actData: ScheduleResult = {
+      schedule: [],
+      summary: {
+        periodsToPayoff: 96,
+        periodsPerYear: 12,
+        totalInterest: 50000,
+        totalPrincipal: 640000,
+        totalEscrow: 0,
+        paidOff: true
+      }
+    };
+
+    const state: AppState = {
+      isDark: false,
+      currentMode: 'mortgage',
+      complexity: 'advanced',
+      termRates: {},
+      customizedYears: {},
+      labelFormat: 'date',
+      activeProfileId: null,
+      comparisonProfileId: null,
+      compareModeActive: false,
+      profiles: {},
+      bankWagesView: 'wages',
+      showTermMilestone: true,
+      currentTargetYears: 12
+    };
+
+    renderGoalSolver(
+      state,
+      {} as unknown as AppElements,
+      actData,
+      baseData,
+      () => mortgageInputs,
+      vi.fn()
+    );
+
+    const achievedEl = document.getElementById('goal-solver-achieved')!;
+    expect(achievedEl.textContent).toBe(
+      "Objectif déjà atteint ! Votre stratégie actuelle permet d'atteindre zéro dette en 8 ans, dépassant votre cible de 12 ans."
+    );
   });
 });
