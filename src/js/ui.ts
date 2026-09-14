@@ -667,13 +667,13 @@ export const updateLabelCurrencySymbols = () => {
     let labelText: string;
     if (isFr) {
       let freqFr = 'mensuel';
-      if (freq === 'weekly') freqFr = 'hebdomadaire';
+      if (freq === 'weekly' || freq === 'accelerated-weekly') freqFr = 'hebdomadaire';
       else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqFr = 'bihebdomadaire';
       else if (freq === 'semi-monthly') freqFr = 'bimensuel';
       labelText = `Versement excédentaire ${freqFr} supplémentaire (${sym}) `;
     } else {
       let freqWord = 'Monthly';
-      if (freq === 'weekly') freqWord = 'Weekly';
+      if (freq === 'weekly' || freq === 'accelerated-weekly') freqWord = 'Weekly';
       else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqWord = 'Bi-Weekly';
       else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
       labelText = `Extra ${freqWord} Surplus Payment (${sym}) `;
@@ -692,7 +692,7 @@ export const updateLabelCurrencySymbols = () => {
     let freqWord = 'Monthly';
     if (!isCC && freqEl) {
       const freq = freqEl.value || 'monthly';
-      if (freq === 'weekly') freqWord = 'Weekly';
+      if (freq === 'weekly' || freq === 'accelerated-weekly') freqWord = 'Weekly';
       else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqWord = 'Bi-Weekly';
       else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
     }

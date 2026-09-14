@@ -25,22 +25,46 @@ export interface HeatmapMatrixResult {
 }
 
 /**
- * Determines row (monthly extra) and column (lump sum) values dynamically.
+ * Determines row (extra payment) and column (lump sum) values dynamically,
+ * adapting periodic extra payment step intervals to match the active payment frequency.
  */
-export const getHeatmapAxes = (mode: 'mortgage' | 'cc' | 'loan', balance: number) => {
+export const getHeatmapAxes = (
+  mode: 'mortgage' | 'cc' | 'loan',
+  balance: number,
+  frequency?: Inputs['frequency']
+) => {
+  const isMortgageOrLoan = mode === 'mortgage' || mode === 'loan';
+  const freq = isMortgageOrLoan ? (frequency ?? 'monthly') : 'monthly';
+
   if (mode === 'cc') {
     return {
       monthly: [0, 50, 100, 200, 300, 500],
       lumpSum: [0, 500, 1000, 2000, 5000, 10000].filter((v) => v <= balance + 1000)
     };
   } else if (mode === 'loan') {
+    let loanSteps = [0, 50, 100, 250, 500, 1000];
+    if (freq === 'weekly' || freq === 'accelerated-weekly') {
+      loanSteps = [0, 10, 25, 60, 125, 250];
+    } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
+      loanSteps = [0, 25, 50, 125, 250, 500];
+    } else if (freq === 'semi-monthly') {
+      loanSteps = [0, 25, 50, 125, 250, 500];
+    }
     return {
-      monthly: [0, 50, 100, 250, 500, 1000],
+      monthly: loanSteps,
       lumpSum: [0, 1000, 2500, 5000, 10000, 25000].filter((v) => v <= balance + 2000)
     };
   } else {
+    let mortgageSteps = [0, 250, 500, 1000, 1500, 2500];
+    if (freq === 'weekly' || freq === 'accelerated-weekly') {
+      mortgageSteps = [0, 50, 100, 250, 375, 625];
+    } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
+      mortgageSteps = [0, 100, 250, 500, 750, 1250];
+    } else if (freq === 'semi-monthly') {
+      mortgageSteps = [0, 125, 250, 500, 750, 1250];
+    }
     return {
-      monthly: [0, 250, 500, 1000, 1500, 2500],
+      monthly: mortgageSteps,
       lumpSum: [0, 5000, 10000, 25000, 50000, 100000].filter((v) => v <= balance + 5000)
     };
   }
@@ -55,7 +79,7 @@ export const computeHeatmapGridSync = (
   balance: number,
   baseData: ScheduleResult
 ): HeatmapMatrixResult => {
-  const axes = getHeatmapAxes(mode, balance);
+  const axes = getHeatmapAxes(mode, balance, inputs.frequency);
   const baselinePayoff = baseData.summary.periodsToPayoff;
   const periodsPerYear = baseData.summary.periodsPerYear || 12;
   const isBaselineFinite = Number.isFinite(baselinePayoff);

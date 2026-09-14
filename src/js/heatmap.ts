@@ -39,9 +39,54 @@ export const renderHeatmapDOM = (
   inputs: Inputs,
   container: HTMLElement,
   detailsPanel: HTMLElement,
-  onCellClick: (_monthly: number, _lumpSum: number) => void
+  onCellClick: (_monthly: number, _lumpSum: number) => void,
+  mode: 'mortgage' | 'cc' | 'loan' = 'mortgage'
 ) => {
   container.innerHTML = '';
+
+  const isCC = mode === 'cc' || (!mode && document.body?.classList.contains('mode-cc'));
+  const freq = isCC ? 'monthly' : inputs.frequency || 'monthly';
+  const isFr = currentLanguage() === 'fr';
+
+  let freqUnit = isFr ? '/mois' : '/mo';
+  let freqLabel = t('Monthly Extra');
+  let freqCornerLabel = t('Monthly');
+  let ariaFreqPrefix = isFr ? 'Extra mensuel' : 'Monthly extra';
+
+  if (freq === 'weekly' || freq === 'accelerated-weekly') {
+    freqUnit = isFr ? '/sem' : '/wk';
+    freqLabel = t('Weekly Extra');
+    freqCornerLabel = t('Weekly');
+    ariaFreqPrefix = isFr ? 'Extra hebdomadaire' : 'Weekly extra';
+  } else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') {
+    freqUnit = isFr ? '/bi-sem' : '/bi-wk';
+    freqLabel = t('Bi-Weekly Extra');
+    freqCornerLabel = t('Bi-Weekly');
+    ariaFreqPrefix = isFr ? 'Extra bihebdomadaire' : 'Bi-weekly extra';
+  } else if (freq === 'semi-monthly') {
+    freqUnit = isFr ? '/bimens' : '/semi-mo';
+    freqLabel = t('Semi-Monthly Extra');
+    freqCornerLabel = t('Semi-Monthly');
+    ariaFreqPrefix = isFr ? 'Extra bimensuel' : 'Semi-monthly extra';
+  }
+
+  // Dynamically update card subtitle if present in DOM
+  const subtitle = container.parentElement?.querySelector('.heatmap-subtitle');
+  if (subtitle) {
+    if (isFr) {
+      let freqFr = 'mensuel';
+      if (freq === 'weekly' || freq === 'accelerated-weekly') freqFr = 'hebdomadaire';
+      else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqFr = 'bihebdomadaire';
+      else if (freq === 'semi-monthly') freqFr = 'bimensuel';
+      subtitle.textContent = `Représente l'excédent ${freqFr} (lignes) vs le versement forfaitaire unique (colonnes). Indique la réduction du remboursement en années. Cliquez sur une case pour l'appliquer.`;
+    } else {
+      let freqWord = 'Monthly';
+      if (freq === 'weekly' || freq === 'accelerated-weekly') freqWord = 'Weekly';
+      else if (freq === 'bi-weekly' || freq === 'accelerated-bi-weekly') freqWord = 'Bi-Weekly';
+      else if (freq === 'semi-monthly') freqWord = 'Semi-Monthly';
+      subtitle.textContent = `Plots ${freqWord} Extra Surplus (Rows) vs. One-Time Lump Sum (Columns). Shows payoff reduction in years. Click a cell to apply.`;
+    }
+  }
 
   // Find if current inputs match any cell in the grid
   const currentMonthly = inputs.extraPayment || 0;
@@ -59,8 +104,6 @@ export const renderHeatmapDOM = (
     if (selectedCell) break;
   }
 
-  const isFr = currentLanguage() === 'fr';
-
   // Render details panel contents
   const showDetails = (cell: GridCell | null, isLocked: boolean) => {
     if (!cell) {
@@ -73,7 +116,7 @@ export const renderHeatmapDOM = (
 
     detailsPanel.className = 'heatmap-details-panel';
     const headerText = isLocked ? t('Selected Plan Details') : t('Plan Details Preview');
-    const monthlyLabel = t('Monthly Extra');
+    const monthlyLabel = freqLabel;
     const lumpSumLabel = t('One-Time Lump Sum');
     const timelineLabel = t('Timeline Saved');
     const interestLabel = t('Interest Saved');
@@ -134,7 +177,7 @@ export const renderHeatmapDOM = (
 
   // Empty corner cell
   const cornerTh = document.createElement('th');
-  cornerTh.innerHTML = `<div class="corner-axis-labels"><span class="y-label">${t('Monthly')}</span><span class="x-label">${t('Lump Sum')}</span></div>`;
+  cornerTh.innerHTML = `<div class="corner-axis-labels"><span class="y-label">${freqCornerLabel}</span><span class="x-label">${t('Lump Sum')}</span></div>`;
   cornerTh.className = 'heatmap-corner-cell';
   headerRow.appendChild(cornerTh);
 
@@ -152,14 +195,12 @@ export const renderHeatmapDOM = (
   grid.forEach((row, r) => {
     const tr = document.createElement('tr');
 
-    // Row Header (Monthly Extra)
+    // Row Header (Extra Payment)
     const rowHeaderTd = document.createElement('td');
     rowHeaderTd.className = 'heatmap-row-header';
     const firstCell = row[0]!;
     rowHeaderTd.textContent =
-      firstCell.monthly === 0
-        ? t('No Extra')
-        : `+${formatCurrency(firstCell.monthly)}${isFr ? '/mois' : '/mo'}`;
+      firstCell.monthly === 0 ? t('No Extra') : `+${formatCurrency(firstCell.monthly)}${freqUnit}`;
     tr.appendChild(rowHeaderTd);
 
     row.forEach((cell, c) => {
@@ -170,8 +211,8 @@ export const renderHeatmapDOM = (
       td.dataset.r = String(r);
       td.dataset.c = String(c);
       const ariaLabelText = isFr
-        ? `Extra mensuel ${cell.monthly} $, Lump sum ${cell.lumpSum} $, Économie ${cell.yearsSaved.toFixed(1)} ans`
-        : `Monthly extra $${cell.monthly}, Lump sum $${cell.lumpSum}, Saves ${cell.yearsSaved.toFixed(1)} years`;
+        ? `${ariaFreqPrefix} ${cell.monthly} $, Lump sum ${cell.lumpSum} $, Économie ${cell.yearsSaved.toFixed(1)} ans`
+        : `${ariaFreqPrefix} $${cell.monthly}, Lump sum $${cell.lumpSum}, Saves ${cell.yearsSaved.toFixed(1)} years`;
       td.setAttribute('aria-label', ariaLabelText);
 
       const ratio = maxSaved > 0 ? cell.yearsSaved / maxSaved : 0;
@@ -337,12 +378,13 @@ export const renderHeatmap = (
         inputs,
         container,
         detailsPanel,
-        onCellClick
+        onCellClick,
+        mode
       );
     };
     worker.postMessage({ mode, inputs, balance, baseData, requestId });
   } else {
     const { grid, maxSaved, axes } = computeHeatmapGridSync(mode, inputs, balance, baseData);
-    renderHeatmapDOM(grid, maxSaved, axes, inputs, container, detailsPanel, onCellClick);
+    renderHeatmapDOM(grid, maxSaved, axes, inputs, container, detailsPanel, onCellClick, mode);
   }
 };

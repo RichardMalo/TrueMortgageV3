@@ -57,7 +57,7 @@ export const solveRequiredMonthly = (
   const activePeriodsPerYear =
     mode === 'cc'
       ? 12
-      : inputs.frequency === 'weekly'
+      : inputs.frequency === 'weekly' || inputs.frequency === 'accelerated-weekly'
         ? 52
         : inputs.frequency === 'bi-weekly' || inputs.frequency === 'accelerated-bi-weekly'
           ? 26
@@ -118,7 +118,7 @@ export const solveRequiredLumpSum = (
   const activePeriodsPerYear =
     mode === 'cc'
       ? 12
-      : inputs.frequency === 'weekly'
+      : inputs.frequency === 'weekly' || inputs.frequency === 'accelerated-weekly'
         ? 52
         : inputs.frequency === 'bi-weekly' || inputs.frequency === 'accelerated-bi-weekly'
           ? 26
@@ -233,7 +233,7 @@ export const renderGoalSolver = (
   let freqUnit = isFr ? '/mois' : '/mo';
   let btnText = t('Apply to Monthly');
 
-  if (freq === 'weekly') {
+  if (freq === 'weekly' || freq === 'accelerated-weekly') {
     freqLabel = t('Required Weekly Extra');
     freqUnit = isFr ? '/sem' : '/wk';
     btnText = t('Apply to Weekly');
