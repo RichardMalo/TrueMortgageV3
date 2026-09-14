@@ -130,13 +130,14 @@ export const setupShareFunctionality = (
 
   const getReportSummaryText = (formatMarkdown: boolean): string => {
     const isMortgage = state.currentMode === 'mortgage';
+    const isLoan = state.currentMode === 'loan';
     const isFr = currentLanguage() === 'fr';
 
     let modeText: string;
     if (isFr) {
-      modeText = isMortgage ? 'Hypothèque' : 'Carte de crédit';
+      modeText = isMortgage ? 'Hypothèque' : isLoan ? 'Prêt personnel' : 'Carte de crédit';
     } else {
-      modeText = isMortgage ? 'Mortgage' : 'Credit Card';
+      modeText = isMortgage ? 'Mortgage' : isLoan ? 'Loan' : 'Credit Card';
     }
 
     const sym = getCurrencySymbol();

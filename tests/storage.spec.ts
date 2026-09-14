@@ -494,6 +494,11 @@ describe('Storage & Cryptography (storage.ts)', () => {
       };
 
       testTz('America/Toronto', 'semi', 'semi');
+      testTz('America/Regina', 'semi', 'semi');
+      testTz('America/St_Johns', 'semi', 'semi');
+      testTz('America/Moncton', 'semi', 'semi');
+      testTz('America/Yellowknife', 'semi', 'semi');
+      testTz('America/Whitehorse', 'semi', 'semi');
       testTz('Europe/London', 'monthly-uk', 'monthly');
       testTz('Australia/Sydney', 'monthly-au', 'monthly');
       testTz('Pacific/Auckland', 'monthly-nz', 'monthly');

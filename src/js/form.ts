@@ -255,8 +255,15 @@ export const getCalculationsInputs = (
   termRates: Record<number, number>
 ): Inputs => {
   const isMortgage = currentMode === 'mortgage';
+  const country =
+    inputs.countrySelect?.value ||
+    (inputs.country as HTMLInputElement | HTMLSelectElement | null)?.value ||
+    'semi';
+  const isCanadian = country === 'semi' || country === 'CA';
+  const isClosingTaxCountry = !['monthly', 'monthly-nz', 'US', 'NZ'].includes(country);
   const pitiOn = isMortgage && !!(inputs.pitiToggle as HTMLInputElement | null)?.checked;
-  const cmhcOn = isMortgage && !!(inputs.includeCmhc as HTMLInputElement | null)?.checked;
+  const cmhcOn =
+    isMortgage && isCanadian && !!(inputs.includeCmhc as HTMLInputElement | null)?.checked;
 
   const lumpSums: LumpSumItem[] = [];
   const dynamicRowEls = document.querySelectorAll('.lump-sum-row');
@@ -311,7 +318,10 @@ export const getCalculationsInputs = (
     lumpSums,
     includeCmhc: cmhcOn,
     cmhcProvince: inputs.cmhcProvince?.value || inputs.province?.value || 'ON',
-    includeLtt: isMortgage && !!(inputs.includeLtt as HTMLInputElement | null)?.checked,
+    includeLtt:
+      isMortgage &&
+      isClosingTaxCountry &&
+      !!(inputs.includeLtt as HTMLInputElement | null)?.checked,
     lttProvince: inputs.lttProvince?.value || 'ON',
     lttFirstTimeBuyer: !!(inputs.lttFirstTimeBuyer as HTMLInputElement | null)?.checked,
     country:
@@ -348,8 +358,11 @@ export const profileToInputs = (
   const isMortgage = currentMode === 'mortgage';
   const pitiOn = isMortgage && profileInputs.pitiToggle === true;
   const oppCostOn = profileInputs.oppCostToggle === true;
-  const cmhcOn = isMortgage && profileInputs.includeCmhc === true;
-  const lttOn = isMortgage && profileInputs.includeLtt === true;
+  const country = String(profileInputs.countrySelect || profileInputs.country || 'semi');
+  const isCanadian = country === 'semi' || country === 'CA';
+  const isClosingTaxCountry = !['monthly', 'monthly-nz', 'US', 'NZ'].includes(country);
+  const cmhcOn = isMortgage && isCanadian && profileInputs.includeCmhc === true;
+  const lttOn = isMortgage && isClosingTaxCountry && profileInputs.includeLtt === true;
 
   return {
     homePrice: parseNum(profileInputs.homePrice),

@@ -16,7 +16,10 @@ import {
   getBaselineCacheKey,
   getCachedBaselineSchedule,
   getCachedComparisonSchedule,
-  invalidateBaselineCache
+  invalidateBaselineCache,
+  calculateCanadianMinDownPayment,
+  calculateOsfiStressTestRate,
+  getMonthlyPayment
 } from './math.js';
 import {
   renderCharts,
@@ -63,6 +66,7 @@ import { renderHeatmap } from './heatmap.js';
 import { renderGoalSolver } from './goal-solver.js';
 import { setupBlueprintSync } from './blueprint.js';
 import { setupSettingsMenu } from './settings.js';
+import { initMultiDebtUI, updateMultiDebtTheme } from './multi-debt-ui.js';
 
 // App Global State store
 const state: AppState = {
@@ -129,6 +133,9 @@ const els = {
     includeLtt: document.getElementById('includeLtt') as HTMLInputElement | null,
     lttProvince: document.getElementById('lttProvince') as HTMLSelectElement | null,
     lttFirstTimeBuyer: document.getElementById('lttFirstTimeBuyer') as HTMLInputElement | null,
+    isAdditionalProperty: document.getElementById(
+      'isAdditionalProperty'
+    ) as HTMLInputElement | null,
     termMilestoneToggle: document.getElementById('termMilestoneToggle') as HTMLInputElement | null
   },
   results: {
@@ -146,10 +153,13 @@ const els = {
     actualLifetimePaidValue: document.getElementById('actualLifetimePaidValue'),
     concentricStack: document.querySelector('.concentric-visualization-card'),
     lumpSumSavings: document.getElementById('lumpSumSavingsBox'),
-    extraPaymentSavings: document.getElementById('extraPaymentSavingsBox')
+    extraPaymentSavings: document.getElementById('extraPaymentSavingsBox'),
+    effectiveAprDisplay: document.getElementById('effectiveAprDisplay'),
+    osfiStressTestDisplay: document.getElementById('osfiStressTestDisplay')
   },
   containers: {
     pitiSection: document.getElementById('pitiSection'),
+    pmiRateWrapper: document.getElementById('pmiRateWrapper'),
     oppCostSection: document.getElementById('oppCostSection'),
     comparison: document.getElementById('comparison-container'),
     error: document.getElementById('error-message'),
@@ -164,7 +174,14 @@ const els = {
     lumpSumsContainer: document.getElementById('scheduledLumpSumsContainer'),
     lttSection: document.getElementById('lttSection'),
     lttConfigWrapper: document.getElementById('lttConfigWrapper'),
-    lttEstimateBadge: document.getElementById('lttEstimateBadge')
+    lttEstimateBadge: document.getElementById('lttEstimateBadge'),
+    cmhcSection: document.getElementById('cmhcSection'),
+    ukAdditionalPropertyWrapper: document.getElementById('ukAdditionalPropertyWrapper'),
+    minDownPaymentWarning: document.getElementById('minDownPaymentWarning'),
+    osfiStressTestStatBox: document.getElementById('osfiStressTestStatBox'),
+    effectiveAprStatBox: document.getElementById('effectiveAprStatBox'),
+    loanEffectiveAprNote: document.getElementById('loanEffectiveAprNote'),
+    loanEffectiveAprVal: document.getElementById('loanEffectiveAprVal')
   },
   modeSwitch: document.getElementById('mode-switch') as HTMLInputElement | null,
   masterBtns: document.querySelectorAll('.mode-btn')
@@ -272,11 +289,15 @@ const calculate = (e?: Event) => {
         ? inputs.loanAmount || inputs.homePrice - inputs.downPayment
         : inputs.ccBalance;
 
+  const isCanadian = !inputs.country || inputs.country === 'semi' || inputs.country === 'CA';
+  const isLoan = state.currentMode === 'loan';
+
   // CMHC summary stat card update
   const cmhcStatBox = document.getElementById('cmhcStatBox');
   const cmhcProvinceWrapper = document.getElementById('cmhcProvinceWrapper');
   const cmhcAmount = actData.summary.cmhcInsuranceAmount || 0;
-  const isCmhcActive = isMortgage && inputs.includeCmhc && state.complexity === 'advanced';
+  const isCmhcActive =
+    isMortgage && isCanadian && inputs.includeCmhc && state.complexity === 'advanced';
   if (cmhcStatBox) {
     if (isCmhcActive && cmhcAmount > 0) {
       cmhcStatBox.classList.remove('hidden');
@@ -287,6 +308,72 @@ const calculate = (e?: Event) => {
   }
   if (cmhcProvinceWrapper) {
     cmhcProvinceWrapper.classList.toggle('hidden', !isCmhcActive);
+  }
+
+  // Issue 4: Statutory Canadian Minimum Down Payment and OSFI B-20 Stress Test
+  const minDownWarningEl =
+    els.containers.minDownPaymentWarning || document.getElementById('minDownPaymentWarning');
+  const osfiStressBoxEl =
+    els.containers.osfiStressTestStatBox || document.getElementById('osfiStressTestStatBox');
+  const osfiStressValEl =
+    els.results.osfiStressTestDisplay || document.getElementById('osfiStressTestDisplay');
+
+  if (isMortgage && isCanadian) {
+    const minDownResult = calculateCanadianMinDownPayment(inputs.homePrice || 0);
+    if ((inputs.downPayment || 0) < minDownResult.minDownPayment) {
+      if (minDownWarningEl) {
+        let warnText = `⚠️ ${t('Statutory Canadian minimum down payment is')} ${formatCurrency(minDownResult.minDownPayment)} (${(minDownResult.minDownPaymentPct * 100).toFixed(1)}%).`;
+        if ((inputs.homePrice || 0) >= 1500000) {
+          warnText = `⚠️ ${t('Statutory Canadian minimum down payment is')} ${formatCurrency(minDownResult.minDownPayment)} (20.0%). ${t('CMHC insurance is legally prohibited for homes $1.5M+.')}`;
+        }
+        minDownWarningEl.textContent = warnText;
+        minDownWarningEl.classList.remove('hidden');
+      }
+    } else {
+      minDownWarningEl?.classList.add('hidden');
+    }
+
+    // OSFI B-20 Stress Test
+    const qualifyingRate = calculateOsfiStressTestRate(inputs.annualRate || 0);
+    const monthlyRate = Math.pow(1 + qualifyingRate / 100 / 2, 2 / 12) - 1;
+    const safeAmort = Math.min(50, Math.max(0.1, inputs.amortizationYears || 25));
+    const totalMonths = Math.round(safeAmort * 12);
+    const qualifyingPayment = getMonthlyPayment(principalBorrowAmount, monthlyRate, totalMonths);
+
+    if (osfiStressBoxEl && osfiStressValEl) {
+      osfiStressBoxEl.classList.remove('hidden');
+      osfiStressValEl.textContent = `${qualifyingRate.toFixed(2)}% (${formatCurrency(qualifyingPayment)}/mo)`;
+    }
+  } else {
+    minDownWarningEl?.classList.add('hidden');
+    osfiStressBoxEl?.classList.add('hidden');
+  }
+
+  // Issue 5: Consumer Loan Effective APR (TILA)
+  const effectiveAprDisplay =
+    els.results.effectiveAprDisplay || document.getElementById('effectiveAprDisplay');
+  const loanEffectiveAprNote =
+    els.containers.loanEffectiveAprNote || document.getElementById('loanEffectiveAprNote');
+  const loanEffectiveAprVal =
+    els.containers.loanEffectiveAprVal || document.getElementById('loanEffectiveAprVal');
+  if (isLoan && actData.summary.effectiveApr !== undefined) {
+    const effAprVal = actData.summary.effectiveApr;
+    const effAprStr = `${effAprVal.toFixed(2)}%`;
+    if (effectiveAprDisplay) {
+      effectiveAprDisplay.textContent = effAprStr;
+      effectiveAprDisplay.setAttribute('data-val', String(effAprVal));
+    }
+    if (loanEffectiveAprNote && loanEffectiveAprVal) {
+      const origFee = inputs.loanOriginationFeeEnabled
+        ? Math.max(0, inputs.loanOriginationFee || 0)
+        : 0;
+      if (origFee > 0) {
+        loanEffectiveAprVal.textContent = effAprStr;
+        loanEffectiveAprNote.classList.remove('hidden');
+      } else {
+        loanEffectiveAprNote.classList.add('hidden');
+      }
+    }
   }
 
   // Land Transfer Tax (LTT) / Stamp Duty update (Advanced Mode Only)
@@ -849,6 +936,7 @@ const handleProfileSwitch = (profileId: string) => {
 
   document.body.className = buildBodyClass(state);
   if (els.modeSwitch) els.modeSwitch.checked = state.isDark;
+  updateMultiDebtTheme(state.isDark);
   const langSwitch = document.getElementById('language-switch') as HTMLInputElement | null;
   if (langSwitch) langSwitch.checked = state.language === 'fr';
 
@@ -1275,6 +1363,7 @@ const bootApp = () => {
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
     calculate();
+    updateMultiDebtTheme(state.isDark);
   });
 
   // Language switch checkbox
@@ -1352,6 +1441,10 @@ const bootApp = () => {
     calculate();
   });
 
+  els.inputs.isAdditionalProperty?.addEventListener('change', () => {
+    calculate();
+  });
+
   els.inputs.termMilestoneToggle?.addEventListener('change', () => {
     state.showTermMilestone = !!els.inputs.termMilestoneToggle?.checked;
     syncCheckboxARIALabels();
@@ -1360,21 +1453,79 @@ const bootApp = () => {
 
   const updateRegionalTaxOptions = (country: string) => {
     const lttProvEl = els.inputs.lttProvince;
+    const lttSectionEl = els.containers.lttSection || document.getElementById('lttSection');
+    const cmhcSectionEl = els.containers.cmhcSection || document.getElementById('cmhcSection');
+    const pmiWrapperEl = els.containers.pmiRateWrapper || document.getElementById('pmiRateWrapper');
+    const ukAddPropEl =
+      els.containers.ukAdditionalPropertyWrapper ||
+      document.getElementById('ukAdditionalPropertyWrapper');
+
+    const countryNormalized = (country || 'semi').toLowerCase();
+    const isCanada = countryNormalized === 'semi' || countryNormalized === 'ca';
+    const isUK = countryNormalized === 'monthly-uk' || countryNormalized === 'uk';
+    const isAU = countryNormalized === 'monthly-au' || countryNormalized === 'au';
+    const isUSorNZ =
+      countryNormalized === 'monthly' ||
+      countryNormalized === 'us' ||
+      countryNormalized === 'monthly-nz' ||
+      countryNormalized === 'nz';
+
+    // Regional toggle isolation: CMHC (Canada only)
+    if (cmhcSectionEl) {
+      cmhcSectionEl.style.display = isCanada ? '' : 'none';
+      if (!isCanada && els.inputs.includeCmhc) {
+        els.inputs.includeCmhc.checked = false;
+      }
+    }
+
+    // Regional toggle isolation: PMI (non-Canada only; Canada uses statutory CMHC)
+    if (pmiWrapperEl) {
+      pmiWrapperEl.style.display = isCanada ? 'none' : '';
+    }
+
+    // Regional toggle isolation: UK SDLT Additional Property
+    if (ukAddPropEl) {
+      ukAddPropEl.style.display = isUK ? 'flex' : 'none';
+      ukAddPropEl.classList.toggle('hidden', !isUK);
+    }
+
+    // Closing Tax Section (LTT / SDLT / Duty)
+    if (isUSorNZ) {
+      if (lttSectionEl) {
+        lttSectionEl.style.display = 'none';
+      }
+      if (els.inputs.includeLtt) {
+        els.inputs.includeLtt.checked = false;
+      }
+      return;
+    }
+
+    if (lttSectionEl) {
+      lttSectionEl.style.display = '';
+    }
+
     if (!lttProvEl) return;
 
     const currentVal = lttProvEl.value;
-    if (country === 'monthly-au' || country === 'AU') {
+    if (isAU) {
       lttProvEl.innerHTML = `
       <option value="NSW">${t('New South Wales (NSW)')}</option>
       <option value="VIC">${t('Victoria (VIC)')}</option>
+      <option value="QLD">${t('Queensland (QLD)')}</option>
+      <option value="WA">${t('Western Australia (WA)')}</option>
+      <option value="SA">${t('South Australia (SA)')}</option>
+      <option value="TAS">${t('Tasmania (TAS)')}</option>
+      <option value="ACT">${t('Australian Capital Territory (ACT)')}</option>
+      <option value="NT">${t('Northern Territory (NT)')}</option>
     `;
-      lttProvEl.value = ['NSW', 'VIC'].includes(currentVal) ? currentVal : 'NSW';
-    } else if (country === 'monthly-uk' || country === 'UK') {
+      const auStates = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+      lttProvEl.value = auStates.includes(currentVal) ? currentVal : 'NSW';
+    } else if (isUK) {
       lttProvEl.innerHTML = `
       <option value="ENG">${t('England & Northern Ireland (SDLT)')}</option>
     `;
       lttProvEl.value = 'ENG';
-    } else {
+    } else if (isCanada) {
       lttProvEl.innerHTML = `
       <option value="ON">${t('Ontario (General PLTT)')}</option>
       <option value="ON-TORONTO">${t('Ontario - City of Toronto (PLTT + MLTT)')}</option>
@@ -1412,6 +1563,9 @@ const bootApp = () => {
     }
     calculate();
   });
+
+  // Initial regional options initialization
+  updateRegionalTaxOptions(els.inputs.countrySelect?.value || 'semi');
 
   // Reset Form btn handler
   document.getElementById('clearBtn')?.addEventListener('click', async () => {
@@ -1545,6 +1699,7 @@ const bootApp = () => {
   });
   setupScheduledLumpSums();
   setupScenarioSandbox(state, DEFAULT_INPUTS, els.inputs, handleProfileSwitch, calculate);
+  initMultiDebtUI(state.isDark);
 
   // GSAP Entrance Animations (run immediately on boot)
   if (!isPrefersReducedMotion()) {

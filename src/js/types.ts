@@ -159,6 +159,8 @@ export interface ScheduleSummary {
   paidOff?: boolean;
   /** Whether the schedule reached the max period limit without full payoff */
   isTruncated?: boolean;
+  /** Effective Annual Percentage Rate (APR / TILA) accounting for origination fees */
+  effectiveApr?: number;
 }
 
 export interface ScheduleResult {
@@ -296,6 +298,7 @@ export interface AppElements {
     includeLtt?: HTMLInputElement | null;
     lttProvince?: HTMLSelectElement | null;
     lttFirstTimeBuyer?: HTMLInputElement | null;
+    isAdditionalProperty?: HTMLInputElement | null;
     termMilestoneToggle?: HTMLInputElement | null;
   };
   results: {

@@ -177,4 +177,24 @@ describe('Share Functionality (share.ts)', () => {
     URL.createObjectURL = originalCreateObjectURL;
     URL.revokeObjectURL = originalRevokeObjectURL;
   });
+
+  it('should label mode as Type: Loan when currentMode is loan', () => {
+    mockState.currentMode = 'loan';
+    let copiedText = '';
+    Object.assign(navigator, {
+      clipboard: {
+        writeText: vi.fn().mockImplementation((txt: string) => {
+          copiedText = txt;
+          return Promise.resolve();
+        })
+      }
+    });
+
+    setupShareFunctionality(mockState, mockEls, vi.fn(), vi.fn());
+
+    const copyBtn = document.getElementById('copyTextOption');
+    copyBtn?.click();
+
+    expect(copiedText).toContain('Type: Loan');
+  });
 });

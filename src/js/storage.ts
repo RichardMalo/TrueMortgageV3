@@ -35,6 +35,7 @@ export const getCountryCompoundingFromTimezone = (): {
 
     // Canada check
     if (
+      tzLower.startsWith('canada/') ||
       tzLower.includes('toronto') ||
       tzLower.includes('vancouver') ||
       tzLower.includes('winnipeg') ||
@@ -43,7 +44,29 @@ export const getCountryCompoundingFromTimezone = (): {
       tzLower.includes('quebec') ||
       tzLower.includes('montreal') ||
       tzLower.includes('ottawa') ||
-      tzLower.includes('calgary')
+      tzLower.includes('calgary') ||
+      tzLower.includes('regina') ||
+      tzLower.includes('st_johns') ||
+      tzLower.includes('moncton') ||
+      tzLower.includes('yellowknife') ||
+      tzLower.includes('whitehorse') ||
+      tzLower.includes('glace_bay') ||
+      tzLower.includes('goose_bay') ||
+      tzLower.includes('inuvik') ||
+      tzLower.includes('iqaluit') ||
+      tzLower.includes('pangnirtung') ||
+      tzLower.includes('resolute') ||
+      tzLower.includes('rankin_inlet') ||
+      tzLower.includes('swift_current') ||
+      tzLower.includes('cambridge_bay') ||
+      tzLower.includes('dawson') ||
+      tzLower.includes('creston') ||
+      tzLower.includes('fort_nelson') ||
+      tzLower.includes('blanc-sablon') ||
+      tzLower.includes('atikokan') ||
+      tzLower.includes('nipigon') ||
+      tzLower.includes('rainy_river') ||
+      tzLower.includes('thunder_bay')
     ) {
       return { country: 'semi', compounding: 'semi' };
     }

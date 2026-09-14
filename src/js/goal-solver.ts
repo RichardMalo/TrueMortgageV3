@@ -24,12 +24,13 @@ const getStartingBalanceForMode = (inputs: Inputs, mode: 'mortgage' | 'cc' | 'lo
     const safeHomePrice = Math.max(0, inputs.homePrice || 0);
     const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
     const safeAmort = Math.min(100, Math.max(0.1, inputs.amortizationYears || 0));
+    const isCanadian = !inputs.country || inputs.country === 'semi' || inputs.country === 'CA';
     const cmhcResult = calculateCmhcInsurance(
       safeHomePrice,
       safeDownPayment,
       safeAmort,
       inputs.cmhcProvince || inputs.province || 'ON',
-      !!inputs.includeCmhc
+      isCanadian && !!inputs.includeCmhc
     );
     return cmhcResult.totalPrincipal;
   }

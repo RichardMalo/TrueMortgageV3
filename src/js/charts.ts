@@ -11,7 +11,7 @@ import { t, currentLanguage } from './i18n.js';
 
 let plotlyInstance: typeof import('plotly.js-basic-dist') | null = null;
 
-const loadPlotly = async () => {
+export const loadPlotly = async () => {
   if (!plotlyInstance) {
     const module = await import('plotly.js-basic-dist');
     plotlyInstance = module.default || module;

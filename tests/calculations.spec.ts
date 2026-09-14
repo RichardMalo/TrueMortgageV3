@@ -12,7 +12,8 @@ import {
   calculateUkSdlt,
   calculateAustralianTransferDuty,
   calculateClosingTax,
-  calculateMultiDebtCascade
+  calculateMultiDebtCascade,
+  calculateEffectiveApr
 } from '../src/js/math.js';
 import { Inputs, Milestone, MultiDebtAccount } from '../src/js/types.js';
 import { calculateOpportunityCostData } from '../src/js/charts.js';
@@ -1774,6 +1775,101 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(auSchedule.summary.australianDutyResult?.transferDuty).toBe(21730);
         expect(auSchedule.summary.closingTaxResult?.regionType).toBe('AU_DUTY');
         expect(auSchedule.summary.closingTaxResult?.taxAmount).toBe(21730);
+      });
+
+      it('should calculate Australian duty for Queensland (QLD), WA, SA, and TAS', () => {
+        // QLD on $600k: $17325 + 4.5% of ($600k - $540k) = $17325 + $2700 = $20025
+        const qld = calculateAustralianTransferDuty(600000, 'QLD', false);
+        expect(qld.transferDuty).toBe(20025);
+
+        // WA on $500k: $11115 + 4.75% of ($500k - $360k) = $11115 + $6650 = $17765
+        const wa = calculateAustralianTransferDuty(500000, 'WA', false);
+        expect(wa.transferDuty).toBe(17765);
+
+        // SA on $600k: $21330 + 5.5% of ($600k - $500k) = $21330 + $5500 = $26830
+        const sa = calculateAustralianTransferDuty(600000, 'SA', false);
+        expect(sa.transferDuty).toBe(26830);
+
+        // TAS on $500k: $14310 + 4.5% of ($500k - $375k) = $14310 + $5625 = $19935
+        const tas = calculateAustralianTransferDuty(500000, 'TAS', false);
+        expect(tas.transferDuty).toBe(19935);
+      });
+
+      it('should apply UK SDLT +5% surcharge when isAdditionalProperty is true', () => {
+        const standard = calculateUkSdlt(500000, false, false);
+        const additional = calculateUkSdlt(500000, false, true);
+        // £500k * 5% = £25,000 surcharge
+        expect(additional.sdltAmount).toBe(standard.sdltAmount + 25000);
+      });
+
+      it('should not add Canadian CMHC insurance to an American mortgage even if includeCmhc is true', () => {
+        const usMortgage = generateMortgageSchedule({
+          homePrice: 500000,
+          downPayment: 25000, // 5% down (would trigger CMHC in Canada)
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 6.0,
+          amortizationYears: 25,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 7,
+          extraPayment: 0,
+          startDate: '2026-01-01',
+          rateShockEnabled: false,
+          termRates: {},
+          country: 'monthly',
+          includeCmhc: true
+        });
+
+        expect(usMortgage.summary.cmhcInsuranceAmount).toBe(0);
+      });
+
+      it('should correctly calculate Effective APR (TILA / IRR) on consumer loans with origination fees', () => {
+        // Zero fee -> effective APR equals nominal rate
+        const noFeeApr = calculateEffectiveApr(10000, 0, 879.16, 12, 12, 10.0);
+        expect(noFeeApr).toBe(10.0);
+
+        // $500 fee on $10,000 1-year loan at 10%
+        const withFeeApr = calculateEffectiveApr(10000, 500, 879.16, 12, 12, 10.0);
+        expect(withFeeApr).toBeGreaterThan(10.0);
+        expect(withFeeApr).toBeCloseTo(19.9, 0);
+
+        // generateLoanSchedule attaches effectiveApr to summary
+        const loanSchedule = generateLoanSchedule({
+          homePrice: 20000,
+          downPayment: 0,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 8.0,
+          amortizationYears: 5,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 0,
+          insRate: 0,
+          hoaRate: 0,
+          pmiRate: 0,
+          useOppCost: false,
+          investRate: 7,
+          extraPayment: 0,
+          startDate: '2026-01-01',
+          rateShockEnabled: false,
+          termRates: {},
+          loanAmount: 20000,
+          loanOriginationFee: 800,
+          loanOriginationFeeEnabled: true
+        });
+
+        expect(loanSchedule.summary.effectiveApr).toBeDefined();
+        expect(loanSchedule.summary.effectiveApr!).toBeGreaterThan(8.0);
       });
     });
 

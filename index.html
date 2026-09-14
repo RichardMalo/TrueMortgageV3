@@ -453,6 +453,18 @@
                     step="100"
                     min="0"
                   />
+                  <div
+                    id="minDownPaymentWarning"
+                    class="field-warning hidden"
+                    style="
+                      color: var(--danger-color, #ef4444);
+                      font-size: 0.75rem;
+                      margin-top: 4px;
+                      font-weight: 500;
+                    "
+                    role="alert"
+                    aria-live="polite"
+                  ></div>
                 </div>
                 <div class="input-group cc-only">
                   <label for="ccBalance"
@@ -526,6 +538,16 @@
                     disabled
                     style="opacity: 0.5"
                   />
+                  <div
+                    id="loanEffectiveAprNote"
+                    class="text-xs text-secondary mt-1 hidden"
+                    style="font-size: 0.75rem; margin-top: 4px; color: var(--text-secondary)"
+                  >
+                    Effective APR:
+                    <strong id="loanEffectiveAprVal" style="color: var(--accent-color)"
+                      >0.00%</strong
+                    >
+                  </div>
                 </div>
               </div>
 
@@ -815,6 +837,22 @@
                           >First-Time Buyer Rebate</label
                         >
                       </div>
+                      <div
+                        id="ukAdditionalPropertyWrapper"
+                        class="hidden"
+                        style="display: none; align-items: center; gap: 8px; margin-bottom: 8px"
+                      >
+                        <input
+                          type="checkbox"
+                          id="isAdditionalProperty"
+                          style="cursor: pointer; width: 16px; height: 16px"
+                        />
+                        <label
+                          for="isAdditionalProperty"
+                          style="font-size: 0.825rem; margin-bottom: 0; cursor: pointer"
+                          >Additional Property (+5% SDLT)</label
+                        >
+                      </div>
                     </div>
                     <div
                       id="lttEstimateBadge"
@@ -836,7 +874,7 @@
 
             <div class="bento-card form-card mt-24">
               <h2 class="section-title">Aggressive Strategy</h2>
-              <div class="input-group-row mortgage-only">
+              <div class="input-group-row mortgage-or-loan">
                 <div class="input-group">
                   <label for="paymentFrequency"
                     >Payment Frequency
@@ -844,7 +882,7 @@
                       >?<span class="tooltip-text"
                         >Paying accelerated bi-weekly or weekly splits your monthly payment into
                         smaller pieces, effectively making one extra monthly payment per year to pay
-                        off your mortgage years earlier.</span
+                        off your loan or mortgage years earlier.</span
                       ></span
                     ></label
                   >
@@ -854,6 +892,7 @@
                     <option value="bi-weekly">Bi-Weekly (26/Year)</option>
                     <option value="weekly">Weekly (52/Year)</option>
                     <option value="accelerated-bi-weekly">Accelerated Bi-Weekly</option>
+                    <option value="accelerated-weekly">Accelerated Weekly</option>
                   </select>
                 </div>
               </div>
@@ -1120,7 +1159,7 @@
                       min="0"
                     />
                   </div>
-                  <div class="input-group">
+                  <div class="input-group" id="pmiRateWrapper">
                     <label for="pmiRate"
                       >PMI (%/Year)
                       <span class="inline-tooltip-text">(Drops at 80% LTV)</span></label
@@ -1399,6 +1438,38 @@
                 >
                 <div class="kinetic-text" id="balanceAtTerm" data-val="0">$0.00</div>
               </div>
+              <div class="stat-box squishy-interactive loan-only" id="effectiveAprStatBox">
+                <label id="effectiveAprLabel"
+                  >Effective APR (TILA)
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >The true annual cost of borrowing under the Truth in Lending Act,
+                      incorporating upfront origination fees alongside the nominal interest
+                      rate.</span
+                    ></span
+                  ></label
+                >
+                <div class="kinetic-text text-primary" id="effectiveAprDisplay" data-val="0">
+                  0.00%
+                </div>
+              </div>
+              <div
+                class="stat-box squishy-interactive mortgage-only hidden"
+                id="osfiStressTestStatBox"
+              >
+                <label id="osfiStressTestLabel"
+                  >OSFI B-20 Stress Test
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >In Canada, federally regulated lenders must qualify borrowers at the higher
+                      of contract rate + 2.0% or the 5.25% floor.</span
+                    ></span
+                  ></label
+                >
+                <div class="kinetic-text text-primary" id="osfiStressTestDisplay" data-val="0">
+                  5.25% ($0.00/mo)
+                </div>
+              </div>
               <div class="stat-box squishy-interactive">
                 <label>Actual Payoff Time</label>
                 <div class="kinetic-text" id="paidOffIn">0 Years</div>
@@ -1552,6 +1623,213 @@
             </div>
             <div class="chart-wrapper chart-box squishy-interactive" draggable="true">
               <div id="chartOppCost" class="plotly-container"></div>
+            </div>
+          </div>
+
+          <!-- Multi-Debt Cascade Card (Avalanche vs. Snowball) -->
+          <div class="bento-card mb-24" id="multiDebtCard">
+            <div class="section-header-with-toggle mb-16">
+              <div>
+                <h2 class="section-title m-0 flex items-center gap-8">
+                  <span>⚡ Multi-Debt Payoff Engine</span>
+                  <span class="help-tip"
+                    >?<span class="tooltip-text"
+                      >Compare debt payoff strategies across multiple liabilities. The Debt
+                      Avalanche method prioritizes the highest interest rate to minimize total
+                      interest, while the Debt Snowball method prioritizes the smallest balance for
+                      psychological quick wins.</span
+                    ></span
+                  >
+                </h2>
+                <div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px">
+                  Avalanche vs. Snowball Acceleration Optimizer
+                </div>
+              </div>
+              <div class="wage-toggle-selector" role="group" aria-label="Strategy Selector">
+                <button
+                  type="button"
+                  class="wage-toggle-btn multi-debt-strat-btn active"
+                  data-strategy="avalanche"
+                  aria-pressed="true"
+                >
+                  🏔️ Avalanche (Lowest Interest)
+                </button>
+                <button
+                  type="button"
+                  class="wage-toggle-btn multi-debt-strat-btn"
+                  data-strategy="snowball"
+                  aria-pressed="false"
+                >
+                  ⛄ Snowball (Quick Wins)
+                </button>
+              </div>
+            </div>
+
+            <!-- Total Budget Input & Quick Actions -->
+            <div
+              style="
+                display: flex;
+                gap: 16px;
+                align-items: flex-end;
+                margin-bottom: 20px;
+                flex-wrap: wrap;
+              "
+            >
+              <div style="flex: 1; min-width: 200px">
+                <label
+                  for="multiDebtTotalBudget"
+                  style="
+                    display: block;
+                    font-size: 0.85rem;
+                    font-weight: 700;
+                    margin-bottom: 6px;
+                    color: var(--text-color);
+                  "
+                >
+                  Total Monthly Debt Payoff Budget ($)
+                </label>
+                <input
+                  type="number"
+                  id="multiDebtTotalBudget"
+                  min="1"
+                  step="25"
+                  value="600"
+                  class="multi-debt-input"
+                  style="width: 100%"
+                  placeholder="e.g. 600"
+                />
+              </div>
+              <div style="display: flex; gap: 10px; align-items: center">
+                <button
+                  type="button"
+                  id="addDebtBtn"
+                  class="btn-dashed-outline compact-btn"
+                  style="padding: 10px 16px"
+                >
+                  + Add Debt
+                </button>
+                <button
+                  type="button"
+                  id="resetSampleDebtsBtn"
+                  class="secondary-btn compact-btn"
+                  style="
+                    padding: 10px 16px;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    border: 1px solid var(--border-color);
+                  "
+                >
+                  Reset Defaults
+                </button>
+              </div>
+            </div>
+
+            <!-- Debts List Table/Container -->
+            <div class="mb-20">
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  font-size: 0.75rem;
+                  font-weight: 700;
+                  text-transform: uppercase;
+                  letter-spacing: 0.05em;
+                  color: var(--text-secondary);
+                  padding: 0 4px 6px 4px;
+                "
+              >
+                <div style="flex: 2; min-width: 140px">Debt / Creditor</div>
+                <div style="flex: 1.5; min-width: 110px">Balance ($)</div>
+                <div style="flex: 1.2; min-width: 90px">APR (%)</div>
+                <div style="flex: 1.2; min-width: 90px">Min Payment ($)</div>
+                <div style="width: 32px"></div>
+              </div>
+              <div id="multiDebtRowsContainer"></div>
+            </div>
+
+            <!-- Recommendation Banner -->
+            <div
+              id="multiDebtRecBadge"
+              class="mb-20 p-12"
+              style="
+                background: rgba(var(--primary-rgb), 0.1);
+                border: 1px solid rgba(var(--primary-rgb), 0.25);
+                border-radius: 12px;
+                font-size: 0.9rem;
+              "
+            ></div>
+
+            <!-- Strategy Comparison Metrics Grid -->
+            <div
+              class="stats-grid mb-24"
+              style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))"
+            >
+              <div class="stat-box">
+                <label>Minimums Only (Baseline)</label>
+                <div class="kinetic-text" id="multiDebtBaseInterest" style="color: #ef4444">
+                  $0.00
+                </div>
+                <div
+                  style="font-size: 0.8rem; margin-top: 4px; opacity: 0.8"
+                  id="multiDebtBaseMonths"
+                >
+                  0 mo
+                </div>
+              </div>
+              <div class="stat-box">
+                <label>🏔️ Avalanche Strategy</label>
+                <div class="kinetic-text" id="multiDebtAvaInterest" style="color: #10b981">
+                  $0.00
+                </div>
+                <div
+                  style="font-size: 0.8rem; margin-top: 4px; opacity: 0.8"
+                  id="multiDebtAvaMonths"
+                >
+                  0 mo
+                </div>
+                <div
+                  style="font-size: 0.75rem; font-weight: 700; color: #10b981; margin-top: 2px"
+                  id="multiDebtAvaSaved"
+                >
+                  $0 saved
+                </div>
+              </div>
+              <div class="stat-box">
+                <label>⛄ Snowball Strategy</label>
+                <div class="kinetic-text" id="multiDebtSnowInterest" style="color: #f59e0b">
+                  $0.00
+                </div>
+                <div
+                  style="font-size: 0.8rem; margin-top: 4px; opacity: 0.8"
+                  id="multiDebtSnowMonths"
+                >
+                  0 mo
+                </div>
+                <div
+                  style="font-size: 0.75rem; font-weight: 700; color: #f59e0b; margin-top: 2px"
+                  id="multiDebtSnowSaved"
+                >
+                  $0 saved
+                </div>
+              </div>
+            </div>
+
+            <!-- Active Strategy Payoff Priority Table -->
+            <div class="mb-24">
+              <h3 class="sub-section-title mb-12 text-primary font-bold" style="font-size: 0.95rem">
+                🎯 Payoff Elimination Order
+              </h3>
+              <div id="multiDebtPayoffOrderContainer" style="overflow-x: auto"></div>
+            </div>
+
+            <!-- Comparison Chart Container -->
+            <div>
+              <h3 class="sub-section-title mb-12 text-primary font-bold" style="font-size: 0.95rem">
+                📊 Payoff Speed & Interest Comparison
+              </h3>
+              <div class="chart-wrapper chart-box squishy-interactive" draggable="true">
+                <div id="multiDebtComparisonChart" class="plotly-container"></div>
+              </div>
             </div>
           </div>
 

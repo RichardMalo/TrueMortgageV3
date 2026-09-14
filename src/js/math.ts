@@ -290,13 +290,15 @@ export const generateMortgageSchedule = (
   const safeDownPayment = Math.min(safeHomePrice, Math.max(0, inputs.downPayment || 0));
   const basePrincipal = safeHomePrice - safeDownPayment;
 
-  // Calculate CMHC default insurance if enabled
+  // Calculate CMHC default insurance if enabled and applicable (Canada only)
+  const isCanadian = !inputs.country || inputs.country === 'semi' || inputs.country === 'CA';
+  const shouldIncludeCmhc = isCanadian && !!inputs.includeCmhc;
   const cmhcRes = calculateCmhcInsurance(
     safeHomePrice,
     safeDownPayment,
     safeAmort,
     inputs.cmhcProvince || inputs.province || 'ON',
-    !!inputs.includeCmhc
+    shouldIncludeCmhc
   );
   const principal = cmhcRes.totalPrincipal;
 
@@ -526,7 +528,6 @@ export const generateMortgageSchedule = (
   const paidOff = balance <= 0.009;
   const isToronto = inputs.lttProvince === 'ON-TORONTO';
   const lttProv = isToronto ? 'ON' : inputs.lttProvince || 'ON';
-  const isCanadian = !inputs.country || inputs.country === 'semi' || inputs.country === 'CA';
   const lttResult =
     inputs.includeLtt && isCanadian
       ? calculateCanadianLandTransferTax(
@@ -1042,6 +1043,75 @@ export const calculateMilestones = (
 };
 
 /**
+ * Calculates the Effective Annual Percentage Rate (APR) under Truth in Lending Act (TILA)
+ * / Internal Rate of Return (IRR) principles for consumer loans with upfront origination fees.
+ *
+ * Equates the net amount financed (principal disbursed minus fees) to the discounted present
+ * value of the scheduled stream of loan installment payments.
+ *
+ * @param loanAmount - Total borrowed amount including capitalized fee, or principal.
+ * @param originationFee - Upfront loan origination or processing fee.
+ * @param periodicPayment - Regular installment payment per period.
+ * @param totalPeriods - Total number of scheduled payment cycles.
+ * @param periodsPerYear - Payment frequency periods per year (12, 24, 26, 52).
+ * @param nominalRate - Nominal annual interest rate in percent.
+ * @returns Effective APR percentage rounded to 2 decimal places.
+ */
+export const calculateEffectiveApr = (
+  loanAmount: number,
+  originationFee: number,
+  periodicPayment: number,
+  totalPeriods: number,
+  periodsPerYear: number,
+  nominalRate: number
+): number => {
+  const safeLoan = Math.max(0, loanAmount || 0);
+  const safeFee = Math.max(0, originationFee || 0);
+  const safePeriods = Math.max(1, totalPeriods || 1);
+  const safePeriodsPerYear = Math.max(1, periodsPerYear || 12);
+  const safeNominal = Math.max(0, nominalRate || 0);
+
+  if (safeLoan <= 0 || periodicPayment <= 0 || safeFee <= 0) {
+    return Math.round(safeNominal * 100) / 100;
+  }
+
+  // Net amount financed received by borrower
+  const netProceeds = Math.max(1, safeLoan - safeFee);
+  if (netProceeds >= safeLoan) {
+    return Math.round(safeNominal * 100) / 100;
+  }
+
+  const totalCashOut = periodicPayment * safePeriods;
+  if (totalCashOut <= netProceeds) {
+    return Math.round(safeNominal * 100) / 100;
+  }
+
+  // Root-finding for periodic rate `i` such that PV(i) = sum(periodicPayment / (1 + i)^t) = netProceeds
+  let low = 0.000001;
+  let high = Math.max(1.0, (safeNominal / 100 / safePeriodsPerYear) * 10);
+
+  let pvHigh = (periodicPayment * (1 - Math.pow(1 + high, -safePeriods))) / high;
+  while (pvHigh > netProceeds && high < 50) {
+    high *= 2;
+    pvHigh = (periodicPayment * (1 - Math.pow(1 + high, -safePeriods))) / high;
+  }
+
+  for (let iter = 0; iter < 40; iter++) {
+    const mid = (low + high) / 2;
+    const pv = (periodicPayment * (1 - Math.pow(1 + mid, -safePeriods))) / mid;
+    if (pv > netProceeds) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  const effectivePeriodicRate = (low + high) / 2;
+  const effectiveAnnualRate = effectivePeriodicRate * safePeriodsPerYear * 100;
+  return Math.round(effectiveAnnualRate * 100) / 100;
+};
+
+/**
  * Generates an amortization schedule for a generic personal / auto loan.
  * Supports customizable loan amounts, terms, annual rates, payment frequencies,
  * extra principal payments, and scheduled lump sums.
@@ -1085,7 +1155,8 @@ export const generateLoanSchedule = (
         totalInterest: 0,
         totalPrincipal: 0,
         totalEscrow: 0,
-        paidOff: true
+        paidOff: true,
+        effectiveApr: safeRate
       }
     };
   }
@@ -1204,6 +1275,15 @@ export const generateLoanSchedule = (
   const paidOff = balance <= 0.001;
   const periodsToPayoff = paidOff ? period - 1 : Infinity;
 
+  const effectiveApr = calculateEffectiveApr(
+    loanAmount,
+    originationFee,
+    periodicPayment,
+    totalPeriods,
+    periodsPerYear,
+    safeRate
+  );
+
   return {
     schedule,
     summary: {
@@ -1212,7 +1292,8 @@ export const generateLoanSchedule = (
       totalInterest,
       totalPrincipal,
       totalEscrow: 0,
-      paidOff
+      paidOff,
+      effectiveApr
     }
   };
 };
@@ -1598,10 +1679,134 @@ export const calculateAustralianTransferDuty = (
       if (price <= 600000) {
         concession = baseDuty;
       } else if (price <= 750000) {
-        // Pro-rated concession between $600k and $750k
         const factor = (750000 - price) / 150000;
         concession = baseDuty * Math.max(0, factor);
       }
+    }
+  } else if (stateUpper === 'QLD') {
+    // Queensland (QLD)
+    if (price <= 5000) {
+      baseDuty = 0;
+    } else if (price <= 75000) {
+      baseDuty = (price - 5000) * 0.015;
+    } else if (price <= 540000) {
+      baseDuty = 1050 + (price - 75000) * 0.035;
+    } else if (price <= 1000000) {
+      baseDuty = 17325 + (price - 540000) * 0.045;
+    } else {
+      baseDuty = 38025 + (price - 1000000) * 0.0575;
+    }
+
+    // QLD First Home Concession
+    if (isFirstTimeBuyer) {
+      if (price <= 700000) {
+        concession = baseDuty;
+      } else if (price <= 800000) {
+        const factor = (800000 - price) / 100000;
+        concession = baseDuty * Math.max(0, factor);
+      }
+    }
+  } else if (stateUpper === 'WA') {
+    // Western Australia (WA)
+    if (price <= 120000) {
+      baseDuty = price * 0.019;
+    } else if (price <= 150000) {
+      baseDuty = 2280 + (price - 120000) * 0.0285;
+    } else if (price <= 360000) {
+      baseDuty = 3135 + (price - 150000) * 0.038;
+    } else if (price <= 725000) {
+      baseDuty = 11115 + (price - 360000) * 0.0475;
+    } else {
+      baseDuty = 28453 + (price - 725000) * 0.0515;
+    }
+
+    // WA First Home Owner Rate of Duty
+    if (isFirstTimeBuyer) {
+      if (price <= 450000) {
+        concession = baseDuty;
+      } else if (price <= 600000) {
+        const factor = (600000 - price) / 150000;
+        concession = baseDuty * Math.max(0, factor);
+      }
+    }
+  } else if (stateUpper === 'SA') {
+    // South Australia (SA)
+    if (price <= 12000) {
+      baseDuty = price * 0.01;
+    } else if (price <= 30000) {
+      baseDuty = 120 + (price - 12000) * 0.02;
+    } else if (price <= 50000) {
+      baseDuty = 480 + (price - 30000) * 0.03;
+    } else if (price <= 100000) {
+      baseDuty = 1080 + (price - 50000) * 0.035;
+    } else if (price <= 200000) {
+      baseDuty = 2830 + (price - 100000) * 0.04;
+    } else if (price <= 250000) {
+      baseDuty = 6830 + (price - 200000) * 0.0425;
+    } else if (price <= 300000) {
+      baseDuty = 8955 + (price - 250000) * 0.0475;
+    } else if (price <= 500000) {
+      baseDuty = 11330 + (price - 300000) * 0.05;
+    } else {
+      baseDuty = 21330 + (price - 500000) * 0.055;
+    }
+
+    if (isFirstTimeBuyer && price <= 650000) {
+      concession = baseDuty;
+    }
+  } else if (stateUpper === 'TAS') {
+    // Tasmania (TAS)
+    if (price <= 3000) {
+      baseDuty = 50;
+    } else if (price <= 25000) {
+      baseDuty = 50 + (price - 3000) * 0.0175;
+    } else if (price <= 40000) {
+      baseDuty = 435 + (price - 25000) * 0.0225;
+    } else if (price <= 100000) {
+      baseDuty = 772.5 + (price - 40000) * 0.035;
+    } else if (price <= 200000) {
+      baseDuty = 2872.5 + (price - 100000) * 0.04;
+    } else if (price <= 375000) {
+      baseDuty = 6872.5 + (price - 200000) * 0.0425;
+    } else if (price <= 725000) {
+      baseDuty = 14310 + (price - 375000) * 0.045;
+    } else {
+      baseDuty = 30060 + (price - 725000) * 0.045;
+    }
+
+    if (isFirstTimeBuyer && price <= 750000) {
+      concession = baseDuty * 0.5;
+    }
+  } else if (stateUpper === 'ACT') {
+    // Australian Capital Territory (ACT)
+    if (price <= 260000) {
+      baseDuty = price * 0.012;
+    } else if (price <= 300000) {
+      baseDuty = 3120 + (price - 260000) * 0.022;
+    } else if (price <= 500000) {
+      baseDuty = 4000 + (price - 300000) * 0.034;
+    } else if (price <= 750000) {
+      baseDuty = 10800 + (price - 500000) * 0.0432;
+    } else if (price <= 1000000) {
+      baseDuty = 21600 + (price - 750000) * 0.059;
+    } else {
+      baseDuty = price * 0.0454;
+    }
+
+    if (isFirstTimeBuyer && price <= 1000000) {
+      concession = baseDuty;
+    }
+  } else if (stateUpper === 'NT') {
+    // Northern Territory (NT)
+    if (price <= 525000) {
+      const v = price / 1000;
+      baseDuty = 0.06571441 * v * v + 15 * v;
+    } else {
+      baseDuty = price * 0.0495;
+    }
+
+    if (isFirstTimeBuyer) {
+      concession = Math.min(baseDuty, 10000);
     }
   } else {
     // Default / New South Wales (NSW) standard rates
@@ -1624,7 +1829,6 @@ export const calculateAustralianTransferDuty = (
       if (price <= 800000) {
         concession = baseDuty;
       } else if (price <= 1000000) {
-        // Pro-rated concession between $800k and $1,000,000
         const factor = (1000000 - price) / 200000;
         concession = baseDuty * Math.max(0, factor);
       }
