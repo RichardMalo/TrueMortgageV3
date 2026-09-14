@@ -174,6 +174,14 @@ export const dictionary: Record<string, string> = {
   'Bank Interest': 'Intérêts bancaires',
   'All Years': 'Toutes les années',
   'Paid Off': 'Remboursé',
+  'Close details': 'Fermer les détails',
+  'Total Paid': 'Total payé',
+  'Ending Balance': 'Solde restant',
+  'Extra Payment': 'Versement supplémentaire',
+  'No payment scheduled': 'Aucun paiement prévu',
+  'Loan Paid Off!': 'Prêt remboursé !',
+  'Month Details': 'Détails du mois',
+  Payments: 'Paiements',
 
   // Milestones
   'Chronological Milestone Roadmap': 'Feuille de route chronologique des étapes clés',

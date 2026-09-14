@@ -14,7 +14,8 @@ import {
   renderDebtCalendar,
   renderDaysOwnedCalendar,
   getMonthIndexFromRow,
-  setupBankWagesToggle
+  setupBankWagesToggle,
+  dismissCalendarMonthPopup
 } from '../src/js/wages-viz.js';
 import { setLanguageState } from '../src/js/i18n.js';
 import type { AppState, AppElements, ScheduleResult, ScheduleRow } from '../src/js/types.js';
@@ -42,6 +43,8 @@ const setupDOM = () => {
 };
 
 const teardownDOM = () => {
+  dismissCalendarMonthPopup();
+  document.querySelectorAll('.calendar-cell-popup').forEach((el) => el.remove());
   container?.remove();
   titleEl?.remove();
   tooltipEl?.remove();
@@ -834,6 +837,209 @@ describe('renderBankWages (wages-viz.ts)', () => {
       const result = makeScheduleResult([]);
       renderDaysOwnedCalendar(container, makeState('days-owned'), makeEls(), result);
       expect(container.innerHTML).toBe('');
+    });
+  });
+
+  // ── Calendar Mobile & Interactive Cell Popup ──────────────────────────────
+
+  describe('Calendar Mobile & Interactive Cell Popup', () => {
+    it('opens the mobile popup card when an active days-owned month cell is clicked', () => {
+      const result = makeScheduleResult([
+        {
+          calendarYear: 2025,
+          interest: 1200,
+          principal: 800,
+          extra: 200,
+          dateLabel: 'Apr 15, 2025'
+        }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const aprBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[3]!;
+      expect(aprBox.classList.contains('is-selected')).toBe(false);
+
+      aprBox.click();
+
+      expect(aprBox.classList.contains('is-selected')).toBe(true);
+
+      const popup = document.querySelector<HTMLElement>('.calendar-cell-popup');
+      expect(popup).not.toBeNull();
+      expect(popup?.getAttribute('role')).toBe('dialog');
+
+      // Verify title and badges
+      const title = popup?.querySelector('.calendar-popup-title');
+      expect(title?.textContent).toContain('April 2025');
+
+      const freedomBanner = popup?.querySelector('.calendar-popup-freedom-banner');
+      expect(freedomBanner?.textContent).toContain('Freedom Day');
+
+      // Verify stats grid
+      expect(popup?.textContent).toContain('Bank Days');
+      expect(popup?.textContent).toContain('Days Owned');
+      expect(popup?.textContent).toContain('Total Paid');
+      expect(popup?.textContent).toContain('Ending Balance');
+      expect(popup?.textContent).toContain('Extra Payment');
+    });
+
+    it('toggles the popup closed when clicking the same month cell again', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1200, principal: 800, dateLabel: 'Apr 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const aprBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[3]!;
+      aprBox.click();
+      expect(document.querySelector('.calendar-cell-popup')).not.toBeNull();
+      expect(aprBox.classList.contains('is-selected')).toBe(true);
+
+      aprBox.click();
+      expect(aprBox.classList.contains('is-selected')).toBe(false);
+      const popup = document.querySelector('.calendar-cell-popup');
+      expect(popup === null || popup.classList.contains('popup-closing')).toBe(true);
+    });
+
+    it('updates popup and selection when clicking a different month cell', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1200, principal: 800, dateLabel: 'Jan 15, 2025' },
+        { calendarYear: 2025, interest: 1100, principal: 900, dateLabel: 'Feb 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const monthBoxes = container.querySelectorAll<HTMLElement>('.days-owned-month-box');
+      const janBox = monthBoxes[0]!;
+      const febBox = monthBoxes[1]!;
+
+      janBox.click();
+      expect(janBox.classList.contains('is-selected')).toBe(true);
+      expect(febBox.classList.contains('is-selected')).toBe(false);
+      let popup = document.querySelector<HTMLElement>('.calendar-cell-popup');
+      expect(popup?.querySelector('.calendar-popup-title')?.textContent).toContain('January 2025');
+
+      febBox.click();
+      expect(janBox.classList.contains('is-selected')).toBe(false);
+      expect(febBox.classList.contains('is-selected')).toBe(true);
+      popup = document.querySelector<HTMLElement>('.calendar-cell-popup');
+      expect(popup?.querySelector('.calendar-popup-title')?.textContent).toContain('February 2025');
+    });
+
+    it('closes the popup when the close button is clicked', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1200, principal: 800, dateLabel: 'Jan 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
+      janBox.click();
+
+      const closeBtn = document.querySelector<HTMLButtonElement>('.calendar-popup-close');
+      expect(closeBtn).not.toBeNull();
+      closeBtn?.click();
+
+      expect(janBox.classList.contains('is-selected')).toBe(false);
+      const popup = document.querySelector('.calendar-cell-popup');
+      expect(popup === null || popup.classList.contains('popup-closing')).toBe(true);
+    });
+
+    it('closes the popup when Escape key is pressed', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1200, principal: 800, dateLabel: 'Jan 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
+      janBox.click();
+
+      expect(document.querySelector('.calendar-cell-popup')).not.toBeNull();
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+      expect(janBox.classList.contains('is-selected')).toBe(false);
+      const popup = document.querySelector('.calendar-cell-popup');
+      expect(popup === null || popup.classList.contains('popup-closing')).toBe(true);
+    });
+
+    it('opens the popup via keyboard Enter on a focused cell', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1200, principal: 800, dateLabel: 'Jan 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
+      janBox.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+      expect(janBox.classList.contains('is-selected')).toBe(true);
+      expect(document.querySelector('.calendar-cell-popup')).not.toBeNull();
+    });
+
+    it('shows inactive notice when an inactive month is clicked', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1200, principal: 800, dateLabel: 'Jan 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const febBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[1]!;
+      febBox.click();
+
+      const popup = document.querySelector<HTMLElement>('.calendar-cell-popup');
+      expect(popup).not.toBeNull();
+      expect(popup?.querySelector('.calendar-popup-inactive-msg')?.textContent).toContain(
+        'No payment scheduled'
+      );
+    });
+
+    it('displays loan paid off celebration banner in popup when month is paid off', () => {
+      const result = makeScheduleResult([
+        {
+          calendarYear: 2025,
+          interest: 0,
+          principal: 1000,
+          balance: 0,
+          dateLabel: 'Jan 15, 2025'
+        }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
+      janBox.click();
+
+      const popup = document.querySelector<HTMLElement>('.calendar-cell-popup');
+      expect(popup?.querySelector('.calendar-popup-paidoff-banner')?.textContent).toContain(
+        'Loan Paid Off!'
+      );
+    });
+
+    it('works for debt calendar (calendar mode) month cells too', () => {
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 800, principal: 1200, dateLabel: 'Jan 15, 2025' }
+      ]);
+      renderBankWages(makeState('calendar'), makeEls(), result);
+
+      const janBox = container.querySelectorAll<HTMLElement>('.debt-calendar-month-box')[0]!;
+      janBox.click();
+
+      const popup = document.querySelector<HTMLElement>('.calendar-cell-popup');
+      expect(popup).not.toBeNull();
+      expect(janBox.classList.contains('is-selected')).toBe(true);
+      expect(popup?.textContent).toContain('Owned by You');
+      expect(popup?.textContent).toContain('Bank Interest');
+    });
+
+    it('renders localized French popup content when language is French', () => {
+      setLanguageState('fr');
+      const result = makeScheduleResult([
+        { calendarYear: 2025, interest: 1200, principal: 800, dateLabel: 'Jan 15, 2025' }
+      ]);
+      renderBankWages(makeState('days-owned'), makeEls(), result);
+
+      const janBox = container.querySelectorAll<HTMLElement>('.days-owned-month-box')[0]!;
+      janBox.click();
+
+      const popup = document.querySelector<HTMLElement>('.calendar-cell-popup');
+      expect(popup).not.toBeNull();
+      expect(popup?.querySelector('.calendar-popup-freedom-banner')?.textContent).toContain(
+        'Jour de liberté'
+      );
+      expect(popup?.textContent).toContain('Jours pour la banque');
+      expect(popup?.textContent).toContain('Jours acquis');
     });
   });
 

@@ -140,6 +140,7 @@ export const getMonthIndexFromRow = (
  * @param actData - The active ScheduleResult containing computed schedule.
  */
 export const renderBankWages = (state: AppState, els: AppElements, actData: ScheduleResult) => {
+  dismissCalendarMonthPopup();
   const container = document.getElementById('bankWagesCirclesContainer');
   if (!container) return;
   container.innerHTML = '';
@@ -349,6 +350,414 @@ export const renderBankWages = (state: AppState, els: AppElements, actData: Sche
 };
 
 /**
+ * Data payload for interactive calendar month cell details popup.
+ */
+export interface CalendarPopupData {
+  title: string;
+  yearLabel: string;
+  hasPayment: boolean;
+  paymentCount?: number;
+  isDaysOwned?: boolean;
+  freedomDay?: number;
+  freedomDayNarrative?: string;
+  daysInMonth?: number;
+  bankDays?: number;
+  ownedDays?: number;
+  principal?: number;
+  interest?: number;
+  extra?: number;
+  totalPaid?: number;
+  lastBalance?: number;
+  isPaidOff?: boolean;
+  equityPct?: number;
+  interestPct?: number;
+}
+
+let activeCalendarPopup: HTMLElement | null = null;
+let activePopupTriggerEl: HTMLElement | null = null;
+let activeDocumentTouchListener: ((e: Event) => void) | null = null;
+let activeDocumentKeyDownListener: ((e: KeyboardEvent) => void) | null = null;
+
+/**
+ * Dismisses any currently visible calendar month details popup with exit animation.
+ */
+export const dismissCalendarMonthPopup = () => {
+  if (activePopupTriggerEl) {
+    activePopupTriggerEl.classList.remove('is-selected');
+    activePopupTriggerEl = null;
+  }
+  if (activeCalendarPopup) {
+    const popup = activeCalendarPopup;
+    activeCalendarPopup = null;
+    popup.classList.add('popup-closing');
+    setTimeout(() => {
+      popup.remove();
+    }, 180);
+  }
+  if (activeDocumentTouchListener) {
+    document.removeEventListener('click', activeDocumentTouchListener);
+    document.removeEventListener('touchstart', activeDocumentTouchListener);
+    activeDocumentTouchListener = null;
+  }
+  if (activeDocumentKeyDownListener) {
+    document.removeEventListener('keydown', activeDocumentKeyDownListener);
+    activeDocumentKeyDownListener = null;
+  }
+};
+
+/**
+ * Displays an elegant mobile & interactive details popup for a selected calendar month.
+ *
+ * @param data - The month details and financial metrics.
+ * @param triggerEl - The month cell element that triggered the popup.
+ */
+export const showCalendarMonthPopup = (data: CalendarPopupData, triggerEl: HTMLElement) => {
+  // Synchronously clean up any existing popup element
+  const existing = document.querySelectorAll('.calendar-cell-popup');
+  existing.forEach((el) => el.remove());
+  activeCalendarPopup = null;
+
+  const isFr = currentLanguage() === 'fr';
+
+  const popup = document.createElement('div');
+  popup.className = 'calendar-cell-popup';
+  popup.setAttribute('role', 'dialog');
+  popup.setAttribute('aria-modal', 'false');
+  popup.setAttribute('aria-label', `${data.title} ${t('Month Details')}`);
+
+  // Header
+  const header = document.createElement('div');
+  header.className = 'calendar-popup-header';
+
+  const titleGroup = document.createElement('div');
+  titleGroup.className = 'calendar-popup-title-group';
+
+  const titleEl = document.createElement('h4');
+  titleEl.className = 'calendar-popup-title';
+  titleEl.textContent = data.title;
+  titleGroup.appendChild(titleEl);
+
+  if (data.yearLabel) {
+    const yearBadge = document.createElement('span');
+    yearBadge.className = 'calendar-popup-badge';
+    yearBadge.textContent = data.yearLabel;
+    titleGroup.appendChild(yearBadge);
+  }
+
+  if (data.hasPayment && data.paymentCount !== undefined) {
+    const pmtBadge = document.createElement('span');
+    pmtBadge.className = 'calendar-popup-badge';
+    const pmtWord = data.paymentCount > 1 ? t('Payments') : t('Payment');
+    pmtBadge.textContent = `${data.paymentCount} ${pmtWord}`;
+    titleGroup.appendChild(pmtBadge);
+  }
+
+  header.appendChild(titleGroup);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'calendar-popup-close';
+  closeBtn.setAttribute('aria-label', t('Close details'));
+  closeBtn.innerHTML = '&times;';
+  closeBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dismissCalendarMonthPopup();
+  });
+  header.appendChild(closeBtn);
+  popup.appendChild(header);
+
+  if (!data.hasPayment) {
+    const inactiveDiv = document.createElement('div');
+    inactiveDiv.className = 'calendar-popup-inactive-msg';
+    inactiveDiv.textContent = t('No payment scheduled');
+    popup.appendChild(inactiveDiv);
+  } else {
+    // Freedom Day highlight (for Days Owned)
+    if (data.isDaysOwned) {
+      const banner = document.createElement('div');
+      banner.className = 'calendar-popup-freedom-banner';
+
+      const bannerLabel = document.createElement('span');
+      bannerLabel.textContent = `🗓️ ${t('Freedom Day')}:`;
+
+      const bannerVal = document.createElement('span');
+      bannerVal.className = 'calendar-popup-freedom-day-val';
+      bannerVal.textContent =
+        data.freedomDayNarrative ||
+        (data.freedomDay ? `${isFr ? 'Jour' : 'Day'} ${data.freedomDay}` : '—');
+
+      banner.appendChild(bannerLabel);
+      banner.appendChild(bannerVal);
+      popup.appendChild(banner);
+
+      // Horizontal Timeline Progress Bar
+      if (data.daysInMonth && data.bankDays !== undefined && data.ownedDays !== undefined) {
+        const bar = document.createElement('div');
+        bar.className = 'calendar-popup-bar';
+        const dCount = data.daysInMonth;
+        const bankPct = (data.bankDays / dCount) * 100;
+        const ownedPct = (data.ownedDays / dCount) * 100;
+
+        const segBank = document.createElement('div');
+        segBank.className = 'calendar-popup-bar-bank';
+        segBank.style.width = `${bankPct}%`;
+
+        const segOwned = document.createElement('div');
+        segOwned.className = 'calendar-popup-bar-owned';
+        segOwned.style.width = `${ownedPct}%`;
+
+        bar.appendChild(segBank);
+        bar.appendChild(segOwned);
+
+        if (data.bankDays > 0 && data.bankDays < dCount) {
+          const divider = document.createElement('div');
+          divider.className = 'calendar-popup-bar-divider';
+          divider.style.left = `${bankPct}%`;
+          bar.appendChild(divider);
+        }
+        popup.appendChild(bar);
+      }
+    } else if (data.equityPct !== undefined && data.interestPct !== undefined) {
+      // Dual-color bar for Debt Calendar
+      const bar = document.createElement('div');
+      bar.className = 'calendar-popup-bar';
+
+      const segBank = document.createElement('div');
+      segBank.className = 'calendar-popup-bar-bank';
+      segBank.style.width = `${data.interestPct}%`;
+
+      const segOwned = document.createElement('div');
+      segOwned.className = 'calendar-popup-bar-owned';
+      segOwned.style.width = `${data.equityPct}%`;
+
+      bar.appendChild(segBank);
+      bar.appendChild(segOwned);
+      popup.appendChild(bar);
+    }
+
+    // Metrics grid
+    const grid = document.createElement('div');
+    grid.className = 'calendar-popup-grid';
+
+    if (data.isDaysOwned) {
+      // Bank Days item
+      const bankItem = document.createElement('div');
+      bankItem.className = 'calendar-popup-item';
+      const bankLabel = document.createElement('span');
+      bankLabel.className = 'calendar-popup-item-label';
+      bankLabel.textContent = `🏦 ${t('Bank Days')}`;
+      const bankVal = document.createElement('span');
+      bankVal.className = 'calendar-popup-item-value text-danger';
+      const bankAmt = formatCurrency(data.interest || 0);
+      bankVal.textContent = `${data.bankDays ?? 0}d (${bankAmt})`;
+      bankItem.appendChild(bankLabel);
+      bankItem.appendChild(bankVal);
+      grid.appendChild(bankItem);
+
+      // Owned Days item
+      const ownedItem = document.createElement('div');
+      ownedItem.className = 'calendar-popup-item';
+      const ownedLabel = document.createElement('span');
+      ownedLabel.className = 'calendar-popup-item-label';
+      ownedLabel.textContent = `🏡 ${t('Days Owned')}`;
+      const ownedVal = document.createElement('span');
+      ownedVal.className = 'calendar-popup-item-value text-accent';
+      const equityAmt = formatCurrency((data.principal || 0) + (data.extra || 0));
+      ownedVal.textContent = `${data.ownedDays ?? 0}d (${equityAmt})`;
+      ownedItem.appendChild(ownedLabel);
+      ownedItem.appendChild(ownedVal);
+      grid.appendChild(ownedItem);
+    } else {
+      // Principal / Equity item
+      const eqItem = document.createElement('div');
+      eqItem.className = 'calendar-popup-item';
+      const eqLabel = document.createElement('span');
+      eqLabel.className = 'calendar-popup-item-label';
+      eqLabel.textContent = `🏡 ${t('Owned by You')}`;
+      const eqVal = document.createElement('span');
+      eqVal.className = 'calendar-popup-item-value text-accent';
+      eqVal.textContent = `${formatCurrency(data.principal || 0)} (${data.equityPct ?? 0}%)`;
+      eqItem.appendChild(eqLabel);
+      eqItem.appendChild(eqVal);
+      grid.appendChild(eqItem);
+
+      // Interest item
+      const intItem = document.createElement('div');
+      intItem.className = 'calendar-popup-item';
+      const intLabel = document.createElement('span');
+      intLabel.className = 'calendar-popup-item-label';
+      intLabel.textContent = `🏦 ${t('Bank Interest')}`;
+      const intVal = document.createElement('span');
+      intVal.className = 'calendar-popup-item-value text-danger';
+      intVal.textContent = `${formatCurrency(data.interest || 0)} (${data.interestPct ?? 0}%)`;
+      intItem.appendChild(intLabel);
+      intItem.appendChild(intVal);
+      grid.appendChild(intItem);
+    }
+
+    // Extra payment if any
+    if ((data.extra || 0) > 0) {
+      const extraItem = document.createElement('div');
+      extraItem.className = 'calendar-popup-item col-span-2';
+      const extraLabel = document.createElement('span');
+      extraLabel.className = 'calendar-popup-item-label';
+      extraLabel.textContent = `⚡ ${t('Extra Payment')}`;
+      const extraVal = document.createElement('span');
+      extraVal.className = 'calendar-popup-item-value text-accent';
+      extraVal.textContent = `+${formatCurrency(data.extra!)}`;
+      extraItem.appendChild(extraLabel);
+      extraItem.appendChild(extraVal);
+      grid.appendChild(extraItem);
+    }
+
+    // Total Paid
+    const totalItem = document.createElement('div');
+    totalItem.className = 'calendar-popup-item';
+    const totalLabel = document.createElement('span');
+    totalLabel.className = 'calendar-popup-item-label';
+    totalLabel.textContent = t('Total Paid');
+    const totalVal = document.createElement('span');
+    totalVal.className = 'calendar-popup-item-value';
+    totalVal.textContent = formatCurrency(data.totalPaid || 0);
+    totalItem.appendChild(totalLabel);
+    totalItem.appendChild(totalVal);
+    grid.appendChild(totalItem);
+
+    // Ending Balance
+    const balItem = document.createElement('div');
+    balItem.className = 'calendar-popup-item';
+    const balLabel = document.createElement('span');
+    balLabel.className = 'calendar-popup-item-label';
+    balLabel.textContent = t('Ending Balance');
+    const balVal = document.createElement('span');
+    balVal.className = 'calendar-popup-item-value text-highlight';
+    balVal.textContent = formatCurrency(data.lastBalance || 0);
+    balItem.appendChild(balLabel);
+    balItem.appendChild(balVal);
+    grid.appendChild(balItem);
+
+    popup.appendChild(grid);
+
+    // Paid-off celebration banner
+    if (data.isPaidOff) {
+      const celebration = document.createElement('div');
+      celebration.className = 'calendar-popup-paidoff-banner';
+      celebration.textContent = `🎉 ${t('Loan Paid Off!')}`;
+      popup.appendChild(celebration);
+    }
+  }
+
+  document.body.appendChild(popup);
+  activeCalendarPopup = popup;
+  activePopupTriggerEl = triggerEl;
+
+  // Dismiss on outside tap/click
+  if (activeDocumentTouchListener) {
+    document.removeEventListener('click', activeDocumentTouchListener);
+    document.removeEventListener('touchstart', activeDocumentTouchListener);
+  }
+  activeDocumentTouchListener = (e: Event) => {
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+    if (activeCalendarPopup && activeCalendarPopup.contains(target)) return;
+    if (target.closest('.days-owned-month-box, .debt-calendar-month-box')) return;
+    dismissCalendarMonthPopup();
+  };
+  setTimeout(() => {
+    if (activeDocumentTouchListener) {
+      document.addEventListener('click', activeDocumentTouchListener);
+      document.addEventListener('touchstart', activeDocumentTouchListener, { passive: true });
+    }
+  }, 10);
+
+  // Dismiss on Escape key
+  if (activeDocumentKeyDownListener) {
+    document.removeEventListener('keydown', activeDocumentKeyDownListener);
+  }
+  activeDocumentKeyDownListener = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      dismissCalendarMonthPopup();
+    }
+  };
+  document.addEventListener('keydown', activeDocumentKeyDownListener);
+};
+
+/**
+ * Attaches interactive click, touch, and keyboard listeners to a calendar month cell.
+ *
+ * @param monthBox - The month cell element.
+ * @param getData - Getter returning the latest data payload for the cell.
+ */
+const bindCalendarCellPopup = (monthBox: HTMLElement, getData: () => CalendarPopupData) => {
+  const activate = () => {
+    if (activePopupTriggerEl === monthBox) {
+      dismissCalendarMonthPopup();
+      return;
+    }
+    if (activePopupTriggerEl) {
+      activePopupTriggerEl.classList.remove('is-selected');
+    }
+    monthBox.classList.add('is-selected');
+    showCalendarMonthPopup(getData(), monthBox);
+  };
+
+  // Immediate touch tap handling for mobile devices (zero click delay, robust tap detection)
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchMoved = false;
+
+  monthBox.addEventListener(
+    'touchstart',
+    (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (touch) {
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchMoved = false;
+      }
+    },
+    { passive: true }
+  );
+
+  monthBox.addEventListener(
+    'touchmove',
+    (e: TouchEvent) => {
+      const touch = e.touches[0];
+      if (touch) {
+        if (
+          Math.abs(touch.clientX - touchStartX) > 12 ||
+          Math.abs(touch.clientY - touchStartY) > 12
+        ) {
+          touchMoved = true;
+        }
+      }
+    },
+    { passive: true }
+  );
+
+  monthBox.addEventListener('touchend', (e: TouchEvent) => {
+    if (!touchMoved) {
+      e.preventDefault();
+      e.stopPropagation();
+      activate();
+    }
+  });
+
+  monthBox.addEventListener('click', (e) => {
+    e.stopPropagation();
+    activate();
+  });
+
+  monthBox.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      e.stopPropagation();
+      activate();
+    }
+  });
+};
+
+/**
  * Renders the classy multi-year debt calendar visualization.
  * Shows each year broken down into 12 month boxes graphically displaying
  * the balance between borrower ownership (equity) and bank interest obligations.
@@ -364,6 +773,7 @@ export const renderDebtCalendar = (
   els: AppElements,
   actData: ScheduleResult
 ) => {
+  dismissCalendarMonthPopup();
   container.innerHTML = '';
   const schedule = actData.schedule;
   if (!schedule || schedule.length === 0) return;
@@ -568,6 +978,7 @@ export const renderDebtCalendar = (
       btn.textContent = opt.label;
       btn.setAttribute('data-filter', opt.value);
       btn.addEventListener('click', () => {
+        dismissCalendarMonthPopup();
         activeFilter = opt.value;
         filterContainer.querySelectorAll('.debt-calendar-filter-btn').forEach((b) => {
           b.classList.toggle('active', b.getAttribute('data-filter') === activeFilter);
@@ -733,6 +1144,13 @@ export const renderDebtCalendar = (
           : `${mFullName} ${yData.calendarYear}\nNo payment scheduled`;
         monthBox.title = inactiveTitle;
         monthBox.setAttribute('aria-label', inactiveTitle);
+
+        bindCalendarCellPopup(monthBox, () => ({
+          title: `${mFullName} ${yData.calendarYear}`,
+          yearLabel: yData.displayYearLabel || '',
+          hasPayment: false,
+          isDaysOwned: false
+        }));
       } else {
         monthBox.classList.add('month-active');
         if (mItem.isPaidOff) {
@@ -789,6 +1207,21 @@ export const renderDebtCalendar = (
           'aria-label',
           `${mFullName} ${yData.calendarYear}: ${equityPct}% owned by you, ${interestPct}% bank interest`
         );
+
+        bindCalendarCellPopup(monthBox, () => ({
+          title: `${mFullName} ${yData.calendarYear}`,
+          yearLabel: yData.displayYearLabel || '',
+          hasPayment: true,
+          paymentCount: mItem.paymentCount,
+          isDaysOwned: false,
+          principal: mItem.principal,
+          interest: mItem.interest,
+          totalPaid: mItem.totalPaid,
+          lastBalance: mItem.lastBalance,
+          isPaidOff: mItem.isPaidOff,
+          equityPct,
+          interestPct
+        }));
       }
 
       monthsGrid.appendChild(monthBox);
@@ -818,6 +1251,7 @@ export const renderDaysOwnedCalendar = (
   els: AppElements,
   actData: ScheduleResult
 ) => {
+  dismissCalendarMonthPopup();
   container.innerHTML = '';
   const schedule = actData.schedule;
   if (!schedule || schedule.length === 0) return;
@@ -1107,6 +1541,7 @@ export const renderDaysOwnedCalendar = (
       btn.textContent = opt.label;
       btn.setAttribute('data-filter', opt.value);
       btn.addEventListener('click', () => {
+        dismissCalendarMonthPopup();
         activeFilter = opt.value;
         filterContainer.querySelectorAll('.debt-calendar-filter-btn').forEach((b) => {
           b.classList.toggle('active', b.getAttribute('data-filter') === activeFilter);
@@ -1273,6 +1708,13 @@ export const renderDaysOwnedCalendar = (
           : `${mFullName} ${yData.calendarYear}\nNo payment scheduled`;
         monthBox.title = inactiveTitle;
         monthBox.setAttribute('aria-label', inactiveTitle);
+
+        bindCalendarCellPopup(monthBox, () => ({
+          title: `${mFullName} ${yData.calendarYear}`,
+          yearLabel: yData.displayYearLabel || '',
+          hasPayment: false,
+          isDaysOwned: true
+        }));
       } else {
         monthBox.classList.add('month-active');
         if (mItem.isPaidOff) {
@@ -1409,6 +1851,25 @@ export const renderDaysOwnedCalendar = (
           'aria-label',
           `${mFullName} ${yData.calendarYear}: Freedom Day ${freedomDayNarrative}, ${mItem.bankDays} bank days, ${mItem.ownedDays} days owned of ${dCount} days`
         );
+
+        bindCalendarCellPopup(monthBox, () => ({
+          title: `${mFullName} ${yData.calendarYear}`,
+          yearLabel: yData.displayYearLabel || '',
+          hasPayment: true,
+          paymentCount: mItem.paymentCount,
+          isDaysOwned: true,
+          freedomDay: mItem.freedomDay,
+          freedomDayNarrative,
+          daysInMonth: dCount,
+          bankDays: mItem.bankDays,
+          ownedDays: mItem.ownedDays,
+          principal: mItem.principal,
+          interest: mItem.interest,
+          extra: mItem.extra,
+          totalPaid: mItem.totalPaid,
+          lastBalance: mItem.lastBalance,
+          isPaidOff: mItem.isPaidOff
+        }));
       }
 
       monthsGrid.appendChild(monthBox);
@@ -1442,6 +1903,7 @@ export const setupBankWagesToggle = (
   const buttons = container.querySelectorAll('.wage-toggle-btn');
   buttons.forEach((btn) => {
     btn.addEventListener('click', (e) => {
+      dismissCalendarMonthPopup();
       const view = (e.currentTarget as HTMLElement).getAttribute(
         'data-view'
       ) as AppState['bankWagesView'];
