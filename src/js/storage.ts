@@ -402,6 +402,7 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
     startDate: 'date',
     rateShockEnabled: 'rateShockToggle',
     goalSolverEnabled: 'goalSolverToggle',
+    multiDebtEnabled: 'multiDebtToggle',
     termRates: 'termRates',
     ccMinPercent: 'ccMinPercent',
     ccMinPrincipalPct: 'ccMinPrincipalPct',

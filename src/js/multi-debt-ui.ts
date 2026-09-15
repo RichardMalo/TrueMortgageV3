@@ -162,21 +162,21 @@ const renderDebtRows = () => {
   let html = '';
   currentDebts.forEach((debt) => {
     html += `
-      <div class="multi-debt-row" data-id="${escapeHtml(debt.id)}" style="display: flex; gap: 10px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
-        <div style="flex: 2; min-width: 140px;">
+      <div class="multi-debt-row" data-id="${escapeHtml(debt.id)}" style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap;">
+        <div style="flex: 2; min-width: 110px;">
           <input type="text" class="multi-debt-input debt-name-input" value="${escapeHtml(debt.name)}" placeholder="Debt Name" aria-label="Debt Name" style="width: 100%;" />
         </div>
-        <div style="flex: 1.5; min-width: 110px;">
+        <div style="flex: 1.5; min-width: 80px;">
           <div style="position: relative;">
             <input type="number" class="multi-debt-input debt-balance-input" value="${debt.balance}" min="0" step="50" placeholder="Balance" aria-label="Current Balance" style="width: 100%;" />
           </div>
         </div>
-        <div style="flex: 1.2; min-width: 90px;">
+        <div style="flex: 1.2; min-width: 65px;">
           <div style="position: relative;">
             <input type="number" class="multi-debt-input debt-rate-input" value="${debt.rate}" min="0" max="100" step="0.1" placeholder="APR %" aria-label="Interest Rate" style="width: 100%;" />
           </div>
         </div>
-        <div style="flex: 1.2; min-width: 90px;">
+        <div style="flex: 1.2; min-width: 65px;">
           <div style="position: relative;">
             <input type="number" class="multi-debt-input debt-min-input" value="${debt.minPayment}" min="0" step="5" placeholder="Min Pmt" aria-label="Minimum Monthly Payment" style="width: 100%;" />
           </div>

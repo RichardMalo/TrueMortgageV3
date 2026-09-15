@@ -21,24 +21,29 @@ describe('Multi-Debt UI Module', () => {
   beforeEach(() => {
     localStorage.clear();
     document.body.innerHTML = `
-      <div id="multiDebtCard">
-        <input type="number" id="multiDebtTotalBudget" value="600" />
-        <button type="button" id="addDebtBtn">+ Add Debt</button>
-        <button type="button" id="resetSampleDebtsBtn">Reset Defaults</button>
-        <button type="button" class="multi-debt-strat-btn active" data-strategy="avalanche">Avalanche</button>
-        <button type="button" class="multi-debt-strat-btn" data-strategy="snowball">Snowball</button>
-        <div id="multiDebtRowsContainer"></div>
-        <div id="multiDebtRecBadge"></div>
-        <div id="multiDebtBaseInterest"></div>
-        <div id="multiDebtBaseMonths"></div>
-        <div id="multiDebtAvaInterest"></div>
-        <div id="multiDebtAvaMonths"></div>
-        <div id="multiDebtAvaSaved"></div>
-        <div id="multiDebtSnowInterest"></div>
-        <div id="multiDebtSnowMonths"></div>
-        <div id="multiDebtSnowSaved"></div>
-        <div id="multiDebtPayoffOrderContainer"></div>
-        <div id="multiDebtComparisonChart"></div>
+      <div class="bento-card form-card advanced-only mt-24" id="multi-debt-card">
+        <div class="section-header-with-toggle">
+          <input type="checkbox" id="multiDebtToggle" role="switch" aria-checked="false" />
+        </div>
+        <div class="hidden mt-15" id="multiDebtSection">
+          <input type="number" id="multiDebtTotalBudget" value="600" />
+          <button type="button" id="addDebtBtn">+ Add Debt</button>
+          <button type="button" id="resetSampleDebtsBtn">Reset Defaults</button>
+          <button type="button" class="multi-debt-strat-btn active" data-strategy="avalanche">Avalanche</button>
+          <button type="button" class="multi-debt-strat-btn" data-strategy="snowball">Snowball</button>
+          <div id="multiDebtRowsContainer"></div>
+          <div id="multiDebtRecBadge"></div>
+          <div id="multiDebtBaseInterest"></div>
+          <div id="multiDebtBaseMonths"></div>
+          <div id="multiDebtAvaInterest"></div>
+          <div id="multiDebtAvaMonths"></div>
+          <div id="multiDebtAvaSaved"></div>
+          <div id="multiDebtSnowInterest"></div>
+          <div id="multiDebtSnowMonths"></div>
+          <div id="multiDebtSnowSaved"></div>
+          <div id="multiDebtPayoffOrderContainer"></div>
+          <div id="multiDebtComparisonChart"></div>
+        </div>
       </div>
     `;
   });
@@ -176,5 +181,18 @@ describe('Multi-Debt UI Module', () => {
     initMultiDebtUI(false);
     expect(() => saveDebtsToStorage()).not.toThrow();
     expect(() => updateMultiDebtCalculation()).not.toThrow();
+  });
+
+  it('multi-debt-card is marked advanced-only and starts in the OFF position and hidden', () => {
+    const card = document.getElementById('multi-debt-card');
+    expect(card?.classList.contains('advanced-only')).toBe(true);
+
+    const toggle = document.getElementById('multiDebtToggle') as HTMLInputElement | null;
+    expect(toggle).not.toBeNull();
+    expect(toggle?.checked).toBe(false);
+    expect(toggle?.getAttribute('aria-checked')).toBe('false');
+
+    const section = document.getElementById('multiDebtSection');
+    expect(section?.classList.contains('hidden')).toBe(true);
   });
 });

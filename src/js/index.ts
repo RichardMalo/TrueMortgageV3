@@ -66,7 +66,11 @@ import { renderHeatmap } from './heatmap.js';
 import { renderGoalSolver } from './goal-solver.js';
 import { setupBlueprintSync } from './blueprint.js';
 import { setupSettingsMenu } from './settings.js';
-import { initMultiDebtUI, updateMultiDebtTheme } from './multi-debt-ui.js';
+import {
+  initMultiDebtUI,
+  updateMultiDebtTheme,
+  updateMultiDebtCalculation
+} from './multi-debt-ui.js';
 
 // App Global State store
 const state: AppState = {
@@ -127,6 +131,7 @@ const els = {
     date: document.getElementById('firstPaymentDate') as HTMLInputElement | null,
     rateShockToggle: document.getElementById('rateShockToggle') as HTMLInputElement | null,
     goalSolverToggle: document.getElementById('goalSolverToggle') as HTMLInputElement | null,
+    multiDebtToggle: document.getElementById('multiDebtToggle') as HTMLInputElement | null,
     lumpSum: document.getElementById('lumpSumPayment') as HTMLInputElement | null,
     includeCmhc: document.getElementById('includeCmhc') as HTMLInputElement | null,
     cmhcProvince: document.getElementById('cmhcProvince') as HTMLSelectElement | null,
@@ -181,7 +186,9 @@ const els = {
     osfiStressTestStatBox: document.getElementById('osfiStressTestStatBox'),
     effectiveAprStatBox: document.getElementById('effectiveAprStatBox'),
     loanEffectiveAprNote: document.getElementById('loanEffectiveAprNote'),
-    loanEffectiveAprVal: document.getElementById('loanEffectiveAprVal')
+    loanEffectiveAprVal: document.getElementById('loanEffectiveAprVal'),
+    multiDebtSection: document.getElementById('multiDebtSection'),
+    multiDebtCard: document.getElementById('multi-debt-card')
   },
   modeSwitch: document.getElementById('mode-switch') as HTMLInputElement | null,
   masterBtns: document.querySelectorAll('.mode-btn')
@@ -244,6 +251,10 @@ const calculate = (e?: Event) => {
 
   if (els.containers.goalSolverSection) {
     els.containers.goalSolverSection.classList.toggle('hidden', !inputs.goalSolverEnabled);
+  }
+
+  if (els.containers.multiDebtSection) {
+    els.containers.multiDebtSection.classList.toggle('hidden', !inputs.multiDebtEnabled);
   }
 
   if (state.currentMode === 'cc') {
@@ -984,6 +995,12 @@ const handleProfileSwitch = (profileId: string) => {
       !(els.inputs.goalSolverToggle && els.inputs.goalSolverToggle.checked)
     );
   }
+  if (els.containers.multiDebtSection) {
+    els.containers.multiDebtSection.classList.toggle(
+      'hidden',
+      !(els.inputs.multiDebtToggle && els.inputs.multiDebtToggle.checked)
+    );
+  }
   if (els.inputs.termMilestoneToggle) {
     els.inputs.termMilestoneToggle.checked = state.showTermMilestone !== false;
   }
@@ -1414,6 +1431,19 @@ const bootApp = () => {
     saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
   });
 
+  els.inputs.multiDebtToggle?.addEventListener('change', (e) => {
+    const isChecked = (e.target as HTMLInputElement).checked;
+    if (els.containers.multiDebtSection) {
+      els.containers.multiDebtSection.classList.toggle('hidden', !isChecked);
+    }
+    syncCheckboxARIALabels();
+    if (isChecked) {
+      updateMultiDebtCalculation();
+    }
+    calculate();
+    saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
+  });
+
   els.inputs.loanOriginationFeeEnabled?.addEventListener('change', () => {
     syncCheckboxARIALabels();
     calculate();
@@ -1605,6 +1635,7 @@ const bootApp = () => {
         'includePitiToggle',
         'rateShockToggle',
         'goalSolverToggle',
+        'multiDebtToggle',
         'termMilestoneToggle'
       ].includes(inp.id)
     ) {

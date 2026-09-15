@@ -40,6 +40,7 @@ export interface Inputs {
   startDate: string;
   rateShockEnabled: boolean;
   goalSolverEnabled?: boolean;
+  multiDebtEnabled?: boolean;
   termRates: Record<number, number>;
   ccCompounding?: 'simple' | 'daily';
   lumpSum?: number;
@@ -195,6 +196,7 @@ export interface ProfileInputs {
   date: string;
   rateShockToggle: boolean;
   goalSolverToggle?: boolean;
+  multiDebtToggle?: boolean;
   mortgageRate: string;
   mortgageExtra: string;
   mortgageAmortization?: string;
@@ -292,6 +294,7 @@ export interface AppElements {
     date: HTMLInputElement | null;
     rateShockToggle: HTMLInputElement | null;
     goalSolverToggle: HTMLInputElement | null;
+    multiDebtToggle?: HTMLInputElement | null;
     lumpSum: HTMLInputElement | null;
     includeCmhc?: HTMLInputElement | null;
     cmhcProvince?: HTMLSelectElement | null;
@@ -333,6 +336,8 @@ export interface AppElements {
     lttSection?: HTMLElement | null;
     lttConfigWrapper?: HTMLElement | null;
     lttEstimateBadge?: HTMLElement | null;
+    multiDebtSection?: HTMLElement | null;
+    multiDebtCard?: HTMLElement | null;
   };
   modeSwitch: HTMLInputElement | null;
   masterBtns: NodeListOf<Element>;
