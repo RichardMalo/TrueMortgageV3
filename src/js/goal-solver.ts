@@ -318,7 +318,9 @@ export const renderGoalSolver = (
     const actualPayoff = actData.summary.periodsToPayoff;
     const isAlreadyAchieved =
       actData.summary.paidOff !== false && isFinite(actualPayoff) && actualPayoff <= targetPeriods;
-    const isInfeasible = !isFinite(solvedMonthly) || !isFinite(solvedLumpSum);
+    const isMonthlyInfeasible = !isFinite(solvedMonthly);
+    const isLumpSumInfeasible = !isFinite(solvedLumpSum);
+    const isInfeasible = isMonthlyInfeasible && isLumpSumInfeasible;
 
     if (achievedEl) {
       if (isAlreadyAchieved) {
@@ -344,12 +346,11 @@ export const renderGoalSolver = (
       errorEl.classList.add('hidden');
     }
 
-    const disableApply = isAlreadyAchieved || isInfeasible;
     if (applyMonthlyBtn) {
-      applyMonthlyBtn.disabled = disableApply;
+      applyMonthlyBtn.disabled = isAlreadyAchieved || isMonthlyInfeasible;
     }
     if (applyLumpSumBtn) {
-      applyLumpSumBtn.disabled = disableApply;
+      applyLumpSumBtn.disabled = isAlreadyAchieved || isLumpSumInfeasible;
     }
   };
 

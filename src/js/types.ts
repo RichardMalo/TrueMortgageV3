@@ -103,6 +103,7 @@ export interface MultiDebtStrategySummary {
   interestSavedVsMinimums: number;
   monthsSavedVsMinimums: number;
   payoffOrder: string[];
+  paidOff?: boolean;
 }
 
 export interface MultiDebtCascadeResult {

@@ -293,11 +293,15 @@ const calculate = (e?: Event) => {
         : generateCCSchedule(inputs, false)
     : baseData;
 
+  const origFee =
+    state.currentMode === 'loan' && inputs.loanOriginationFeeEnabled
+      ? Math.max(0, inputs.loanOriginationFee || 0)
+      : 0;
   const principalBorrowAmount =
     state.currentMode === 'mortgage'
       ? inputs.homePrice - inputs.downPayment + (actData.summary.cmhcInsuranceAmount || 0)
       : state.currentMode === 'loan'
-        ? inputs.loanAmount || inputs.homePrice - inputs.downPayment
+        ? (inputs.loanAmount ?? inputs.homePrice - inputs.downPayment) + origFee
         : inputs.ccBalance;
 
   const isCanadian = !inputs.country || inputs.country === 'semi' || inputs.country === 'CA';

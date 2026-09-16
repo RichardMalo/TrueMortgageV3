@@ -5,6 +5,7 @@ import {
   renderGoalSolver
 } from '../src/js/goal-solver.js';
 import { generateMortgageSchedule, generateLoanSchedule } from '../src/js/math.js';
+import * as math from '../src/js/math.js';
 import { Inputs, ScheduleResult, AppState, AppElements } from '../src/js/types.js';
 import { setLanguageState } from '../src/js/i18n.js';
 
@@ -521,5 +522,135 @@ describe('renderGoalSolver UI & Feedback State', () => {
     expect(achievedEl.textContent).toBe(
       "Objectif déjà atteint ! Votre stratégie actuelle permet d'atteindre zéro dette en 8 ans, dépassant votre cible de 12 ans."
     );
+  });
+
+  it('should return Infinity when target periods cannot be achieved even with maximum payment', () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    expect(solveRequiredMonthly(0, mortgageInputs, 'mortgage', baseData)).toBe(Infinity);
+    expect(solveRequiredLumpSum(0, mortgageInputs, 'mortgage', baseData)).toBe(Infinity);
+  });
+
+  it('should handle infeasible target periods by showing error and disabling apply buttons when both solvers fail', () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    const actData = generateMortgageSchedule(mortgageInputs, false);
+
+    const state: AppState = {
+      isDark: false,
+      currentMode: 'mortgage',
+      complexity: 'advanced',
+      termRates: {},
+      customizedYears: {},
+      labelFormat: 'date',
+      activeProfileId: null,
+      comparisonProfileId: null,
+      compareModeActive: false,
+      profiles: {},
+      bankWagesView: 'wages',
+      showTermMilestone: true,
+      currentTargetYears: 15
+    };
+
+    const origMethod = math.generateMortgageSchedule;
+    const spy = vi
+      .spyOn(math, 'generateMortgageSchedule')
+      .mockImplementation((inputs, isBase, summaryOnly) => {
+        if (summaryOnly && ((inputs.extraPayment ?? 0) > 0 || (inputs.lumpSum ?? 0) > 0)) {
+          return {
+            schedule: [],
+            summary: {
+              periodsToPayoff: 999,
+              periodsPerYear: 12,
+              totalInterest: 100000,
+              totalPrincipal: 640000,
+              totalEscrow: 0,
+              paidOff: false
+            }
+          };
+        }
+        return origMethod(inputs, isBase, summaryOnly);
+      });
+
+    renderGoalSolver(
+      state,
+      {} as unknown as AppElements,
+      actData,
+      baseData,
+      () => mortgageInputs,
+      vi.fn()
+    );
+
+    const errorEl = document.getElementById('goal-solver-error')!;
+    const monthlyBtn = document.getElementById('goalApplyMonthlyBtn') as HTMLButtonElement;
+    const lumpSumBtn = document.getElementById('goalApplyLumpSumBtn') as HTMLButtonElement;
+
+    expect(errorEl.classList.contains('hidden')).toBe(false);
+    expect(monthlyBtn.disabled).toBe(true);
+    expect(lumpSumBtn.disabled).toBe(true);
+
+    spy.mockRestore();
+  });
+
+  it('should decouple monthly and lump-sum button states when only one solver is infeasible', () => {
+    const baseData = generateMortgageSchedule(mortgageInputs, true);
+    const actData = generateMortgageSchedule(mortgageInputs, false);
+
+    const state: AppState = {
+      isDark: false,
+      currentMode: 'mortgage',
+      complexity: 'advanced',
+      termRates: {},
+      customizedYears: {},
+      labelFormat: 'date',
+      activeProfileId: null,
+      comparisonProfileId: null,
+      compareModeActive: false,
+      profiles: {},
+      bankWagesView: 'wages',
+      showTermMilestone: true,
+      currentTargetYears: 15
+    };
+
+    const origMethod = math.generateMortgageSchedule;
+    const spy = vi
+      .spyOn(math, 'generateMortgageSchedule')
+      .mockImplementation((inputs, isBase, summaryOnly) => {
+        if (summaryOnly && (inputs.lumpSum ?? 0) > 0) {
+          return {
+            schedule: [],
+            summary: {
+              periodsToPayoff: 999,
+              periodsPerYear: 12,
+              totalInterest: 100000,
+              totalPrincipal: 640000,
+              totalEscrow: 0,
+              paidOff: false
+            }
+          };
+        }
+        return origMethod(inputs, isBase, summaryOnly);
+      });
+
+    const onApply = vi.fn();
+    renderGoalSolver(
+      state,
+      {} as unknown as AppElements,
+      actData,
+      baseData,
+      () => mortgageInputs,
+      onApply
+    );
+
+    const errorEl = document.getElementById('goal-solver-error')!;
+    const monthlyBtn = document.getElementById('goalApplyMonthlyBtn') as HTMLButtonElement;
+    const lumpSumBtn = document.getElementById('goalApplyLumpSumBtn') as HTMLButtonElement;
+
+    expect(errorEl.classList.contains('hidden')).toBe(true);
+    expect(monthlyBtn.disabled).toBe(false);
+    expect(lumpSumBtn.disabled).toBe(true);
+
+    monthlyBtn.click();
+    expect(onApply).toHaveBeenCalledWith('monthly', expect.any(Number));
+
+    spy.mockRestore();
   });
 });

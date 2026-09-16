@@ -264,6 +264,44 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
     expect(payoffMilestone?.period).toBe('Month 360');
   });
 
+  it('should omit financial-freedom milestone when schedule is not paid off', () => {
+    const inputs: Inputs = {
+      homePrice: 800000,
+      downPayment: 160000,
+      ccBalance: 0,
+      province: 'ON',
+      annualRate: 4.39,
+      amortizationYears: 30,
+      termYears: 5,
+      compounding: 'monthly',
+      frequency: 'monthly',
+      usePiti: false,
+      taxRate: 0,
+      insRate: 0,
+      hoaRate: 0,
+      pmiRate: 0,
+      useOppCost: false,
+      investRate: 0,
+      extraPayment: 0,
+      startDate: '2026-07-01',
+      rateShockEnabled: false,
+      termRates: {}
+    };
+
+    const baseData = generateMortgageSchedule(inputs, true);
+    const actData = generateMortgageSchedule(inputs, false);
+    const unpaidActData = {
+      ...actData,
+      summary: {
+        ...actData.summary,
+        paidOff: false
+      }
+    };
+    const milestones = calculateMilestones(baseData, unpaidActData, inputs, 'mortgage');
+    const payoffMilestone = milestones.find((m: Milestone) => m.id === 'financial-freedom');
+    expect(payoffMilestone).toBeUndefined();
+  });
+
   it('should handle extreme/boundary inputs robustly', () => {
     const zeroRateInputs: Inputs = {
       homePrice: 800000,
@@ -1645,31 +1683,33 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
     describe('International Closing Taxes (UK SDLT & Australian Duty)', () => {
       it('should calculate UK Stamp Duty Land Tax (SDLT) correctly for standard residential purchase', () => {
-        // £500,000 home:
-        // 0% on first £250,000 = £0
+        // £500,000 home (post-April 1, 2025):
+        // 0% on first £125,000 = £0
+        // 2% on next £125,000 (£125k - £250k) = £2,500
         // 5% on next £250,000 (£250k - £500k) = £12,500
+        // Total = £15,000
         const res = calculateUkSdlt(500000, false, false);
-        expect(res.sdltAmount).toBe(12500);
-        expect(res.effectiveRatePct).toBe(2.5);
+        expect(res.sdltAmount).toBe(15000);
+        expect(res.effectiveRatePct).toBe(3.0);
         expect(res.firstTimeBuyerRelief).toBe(0);
       });
 
-      it('should apply UK First-Time Buyer relief for properties <= £625,000', () => {
-        // £500,000 home for first-time buyer:
-        // 0% up to £425,000
-        // 5% on remaining £75,000 = £3,750
-        // Standard was £12,500, relief = £8,750
+      it('should apply UK First-Time Buyer relief for properties <= £500,000', () => {
+        // £500,000 home for first-time buyer (post-April 1, 2025):
+        // 0% up to £300,000
+        // 5% on remaining £200,000 (£300k - £500k) = £10,000
+        // Standard was £15,000, relief = £5,000
         const res = calculateUkSdlt(500000, true, false);
-        expect(res.sdltAmount).toBe(3750);
-        expect(res.firstTimeBuyerRelief).toBe(8750);
-        expect(res.effectiveRatePct).toBe(0.75);
+        expect(res.sdltAmount).toBe(10000);
+        expect(res.firstTimeBuyerRelief).toBe(5000);
+        expect(res.effectiveRatePct).toBe(2.0);
       });
 
       it('should apply UK Additional Property Surcharge (+5%)', () => {
-        // £500,000 additional home: £12,500 standard + 5% of £500k (£25,000) = £37,500
+        // £500,000 additional home: £15,000 standard + 5% of £500k (£25,000) = £40,000
         const res = calculateUkSdlt(500000, false, true);
-        expect(res.sdltAmount).toBe(37500);
-        expect(res.effectiveRatePct).toBe(7.5);
+        expect(res.sdltAmount).toBe(40000);
+        expect(res.effectiveRatePct).toBe(8.0);
       });
 
       it('should calculate Australian Transfer Duty (NSW & VIC)', () => {
@@ -1697,7 +1737,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       it('should route calculateClosingTax correctly across countries', () => {
         const ukClosing = calculateClosingTax(500000, 'UK', '', true);
         expect(ukClosing.regionType).toBe('UK_SDLT');
-        expect(ukClosing.taxAmount).toBe(3750);
+        expect(ukClosing.taxAmount).toBe(10000);
 
         const auClosing = calculateClosingTax(600000, 'AU', 'NSW', false);
         expect(auClosing.regionType).toBe('AU_DUTY');
@@ -1740,9 +1780,9 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         });
 
         expect(ukSchedule.summary.ukSdltResult).toBeDefined();
-        expect(ukSchedule.summary.ukSdltResult?.sdltAmount).toBe(3750);
+        expect(ukSchedule.summary.ukSdltResult?.sdltAmount).toBe(10000);
         expect(ukSchedule.summary.closingTaxResult?.regionType).toBe('UK_SDLT');
-        expect(ukSchedule.summary.closingTaxResult?.taxAmount).toBe(3750);
+        expect(ukSchedule.summary.closingTaxResult?.taxAmount).toBe(10000);
 
         const auSchedule = generateMortgageSchedule({
           homePrice: 600000,
@@ -1942,6 +1982,21 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(result.avalanche.totalInterestPaid).toBeLessThanOrEqual(
           result.snowball.totalInterestPaid
         );
+      });
+
+      it('should properly track and pay off debts with identical names', () => {
+        const debts: MultiDebtAccount[] = [
+          { id: 'card-a', name: 'Credit Card', balance: 1000, rate: 20.0, minPayment: 50 },
+          { id: 'card-b', name: 'Credit Card', balance: 2000, rate: 15.0, minPayment: 80 }
+        ];
+
+        const result = calculateMultiDebtCascade(debts, 500, 'avalanche');
+        expect(result.avalanche.paidOff).toBe(true);
+        expect(result.snowball.paidOff).toBe(true);
+        expect(result.avalanche.payoffOrder).toHaveLength(2);
+        expect(result.avalanche.payoffOrder).toEqual(['Credit Card', 'Credit Card']);
+        expect(result.snowball.payoffOrder).toHaveLength(2);
+        expect(result.snowball.payoffOrder).toEqual(['Credit Card', 'Credit Card']);
       });
 
       it('should handle empty or zero debt list in multi-debt cascade gracefully', () => {

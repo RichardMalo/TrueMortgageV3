@@ -812,11 +812,15 @@ export const calculateMilestones = (
     ? Math.max(0, inputs.loanOriginationFee || 0)
     : 0;
   const startingPrincipal =
-    currentMode === 'mortgage'
-      ? safeHomePrice - safeDownPayment
-      : currentMode === 'loan'
-        ? Math.max(0, (inputs.loanAmount ?? safeHomePrice - safeDownPayment) + originationFee)
-        : Math.max(0, inputs.ccBalance || 0);
+    actSched.length > 0
+      ? Math.round(
+          (actSched[0]!.balance + actSched[0]!.principal + (actSched[0]!.extra || 0)) * 100
+        ) / 100
+      : currentMode === 'mortgage'
+        ? safeHomePrice - safeDownPayment + (actData.summary.cmhcInsuranceAmount || 0)
+        : currentMode === 'loan'
+          ? Math.max(0, (inputs.loanAmount ?? safeHomePrice - safeDownPayment) + originationFee)
+          : Math.max(0, inputs.ccBalance || 0);
   const periodsPerYear = actData.summary.periodsPerYear;
   const isFr = lang === 'fr';
   const cycleLabel =
@@ -1007,9 +1011,9 @@ export const calculateMilestones = (
   }
 
   // 5. Financial Freedom (Debt Payoff)
-  {
+  if (actData.summary.paidOff !== false) {
     const actIdx = findIndex(actSched, 'PAYOFF');
-    const baseIdx = findIndex(baseSched, 'PAYOFF');
+    const baseIdx = baseData.summary.paidOff !== false ? findIndex(baseSched, 'PAYOFF') : -1;
 
     if (actIdx !== -1) {
       const row = actSched[actIdx]!;
@@ -1600,8 +1604,11 @@ export const calculateUkSdlt = (
     return { sdltAmount: 0, effectiveRatePct: 0, firstTimeBuyerRelief: 0 };
   }
 
-  // Standard calculation
+  // Standard calculation (Post-April 1, 2025 statutory rates)
   let standardSdlt = 0;
+  if (price > 125000) {
+    standardSdlt += Math.min(price - 125000, 125000) * 0.02; // £125k - £250k @ 2%
+  }
   if (price > 250000) {
     standardSdlt += Math.min(price - 250000, 675000) * 0.05; // £250k - £925k @ 5%
   }
@@ -1615,11 +1622,11 @@ export const calculateUkSdlt = (
   let relief = 0;
   let netTax = standardSdlt;
 
-  // First-Time Buyer Relief (applies if purchase price is £625,000 or less)
-  if (isFirstTimeBuyer && !isAdditionalProperty && price <= 625000) {
+  // First-Time Buyer Relief (applies if purchase price is £500,000 or less)
+  if (isFirstTimeBuyer && !isAdditionalProperty && price <= 500000) {
     let ftbTax = 0;
-    if (price > 425000) {
-      ftbTax = (price - 425000) * 0.05; // £425k - £625k @ 5%
+    if (price > 300000) {
+      ftbTax = (price - 300000) * 0.05; // £300k - £500k @ 5%
     }
     relief = Math.max(0, standardSdlt - ftbTax);
     netTax = ftbTax;
@@ -2021,6 +2028,7 @@ export const calculateMultiDebtCascade = (
     let totalInterestPaid = 0;
     let month = 0;
     const payoffOrder: string[] = [];
+    const paidDebtIds = new Set<string>();
     const schedule: MultiDebtPaymentRow[] = [];
 
     while (activeDebts.some((d) => d.balance > 0.009) && month < MAX_CC_PAYOFF_MONTHS) {
@@ -2049,8 +2057,9 @@ export const calculateMultiDebtCascade = (
         monthlyPayments[debt.id] = regularPayment;
         monthlyAvailableSurplus -= regularPayment;
 
-        if (debt.balance <= 0.009) {
+        if (debt.balance <= 0.009 && !paidDebtIds.has(debt.id)) {
           debt.paidMonth = month;
+          paidDebtIds.add(debt.id);
           payoffOrder.push(debt.name);
         }
       }
@@ -2065,7 +2074,8 @@ export const calculateMultiDebtCascade = (
 
         if (target.balance <= 0.009) {
           target.paidMonth = month;
-          if (!payoffOrder.includes(target.name)) {
+          if (!paidDebtIds.has(target.id)) {
+            paidDebtIds.add(target.id);
             payoffOrder.push(target.name);
           }
           target = getTargetDebt();
@@ -2092,12 +2102,13 @@ export const calculateMultiDebtCascade = (
       });
     }
 
+    const isPaidOff = !activeDebts.some((d) => d.balance > 0.009);
     const roundedInterest = Math.round(totalInterestPaid * 100) / 100;
     const interestSaved = Math.max(
       0,
       Math.round((baselineTotalInterest - roundedInterest) * 100) / 100
     );
-    const monthsSaved = Math.max(0, baselineMaxMonths - month);
+    const monthsSaved = isPaidOff ? Math.max(0, baselineMaxMonths - month) : 0;
 
     return {
       summary: {
@@ -2106,7 +2117,8 @@ export const calculateMultiDebtCascade = (
         totalMonthsToPayoff: month,
         interestSavedVsMinimums: interestSaved,
         monthsSavedVsMinimums: monthsSaved,
-        payoffOrder
+        payoffOrder,
+        paidOff: isPaidOff
       },
       schedule
     };

@@ -19,6 +19,17 @@ let currentDebts: MultiDebtAccount[] = [];
 let currentBudget = 600;
 let currentStrategy: 'avalanche' | 'snowball' = 'avalanche';
 let currentIsDark = false;
+let multiDebtDebounceTimer: ReturnType<typeof setTimeout> | undefined;
+
+export const debouncedUpdateMultiDebtCalculation = (delay = 150) => {
+  if (multiDebtDebounceTimer !== undefined) {
+    clearTimeout(multiDebtDebounceTimer);
+  }
+  multiDebtDebounceTimer = setTimeout(() => {
+    multiDebtDebounceTimer = undefined;
+    updateMultiDebtCalculation();
+  }, delay);
+};
 
 export const loadStoredDebts = (): MultiDebtAccount[] => {
   try {
@@ -75,7 +86,7 @@ export const initMultiDebtUI = (isDark: boolean) => {
       const val = parseFloat(budgetInput.value) || 0;
       currentBudget = Math.max(0, val);
       saveDebtsToStorage();
-      updateMultiDebtCalculation();
+      debouncedUpdateMultiDebtCalculation();
     });
   }
 
@@ -205,25 +216,25 @@ const renderDebtRows = () => {
     nameInp?.addEventListener('input', () => {
       debt.name = nameInp.value || 'Debt';
       saveDebtsToStorage();
-      updateMultiDebtCalculation();
+      debouncedUpdateMultiDebtCalculation();
     });
 
     balInp?.addEventListener('input', () => {
       debt.balance = Math.max(0, parseFloat(balInp.value) || 0);
       saveDebtsToStorage();
-      updateMultiDebtCalculation();
+      debouncedUpdateMultiDebtCalculation();
     });
 
     rateInp?.addEventListener('input', () => {
       debt.rate = Math.max(0, parseFloat(rateInp.value) || 0);
       saveDebtsToStorage();
-      updateMultiDebtCalculation();
+      debouncedUpdateMultiDebtCalculation();
     });
 
     minInp?.addEventListener('input', () => {
       debt.minPayment = Math.max(0, parseFloat(minInp.value) || 0);
       saveDebtsToStorage();
-      updateMultiDebtCalculation();
+      debouncedUpdateMultiDebtCalculation();
     });
 
     delBtn?.addEventListener('click', () => {

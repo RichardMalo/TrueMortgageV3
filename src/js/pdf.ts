@@ -27,12 +27,14 @@ export const generateReportHtml = (
   const isFr = currentLanguage() === 'fr';
   const reportDate = new Date().toLocaleString(isFr ? 'fr-CA' : undefined);
 
+  const loanFee =
+    isLoan && inputs.loanOriginationFeeEnabled ? Math.max(0, inputs.loanOriginationFee || 0) : 0;
   const startingPrincipal = isMortgageMode
-    ? inputs.homePrice - inputs.downPayment
+    ? inputs.homePrice - inputs.downPayment + (actualData.summary.cmhcInsuranceAmount || 0)
     : isLoan
-      ? inputs.loanAmount !== undefined
-        ? inputs.loanAmount
-        : inputs.homePrice - inputs.downPayment
+      ? (inputs.loanAmount !== undefined
+          ? inputs.loanAmount
+          : inputs.homePrice - inputs.downPayment) + loanFee
       : inputs.ccBalance;
   const balanceVal = formatCurrency(startingPrincipal);
 

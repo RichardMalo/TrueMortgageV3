@@ -940,7 +940,16 @@ export const calculateOpportunityCostData = (
 
   const actCursor = new ScheduleCursor(actualData.schedule, initialBalance);
   const baseCursor = new ScheduleCursor(baseData.schedule, initialBalance);
-  const compCursor = compData ? new ScheduleCursor(compData.schedule, initialBalance) : null;
+  const compInitialBalance =
+    compData && compData.schedule.length > 0
+      ? Math.round(
+          (compData.schedule[0]!.balance +
+            compData.schedule[0]!.principal +
+            (compData.schedule[0]!.extra || 0)) *
+            100
+        ) / 100
+      : initialBalance;
+  const compCursor = compData ? new ScheduleCursor(compData.schedule, compInitialBalance) : null;
 
   for (let m = 0; m < maxMonths; m++) {
     const { T_start, T_end } = getMonthInterval(m);
