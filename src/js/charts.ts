@@ -397,10 +397,20 @@ const renderMonthlyPaymentCircle = (
   const pieEl = document.getElementById('monthlyPaymentCircle');
   if (!pieEl) return;
   const lValues = [p1.principal, p1.interest, p1.tax, p1.ins, p1.hoa, p1.pmi, p1.extra];
+  const allColors = [
+    CONFIG.colors.principal,
+    CONFIG.colors.interest,
+    CONFIG.colors.tax,
+    CONFIG.colors.ins,
+    CONFIG.colors.hoa,
+    CONFIG.colors.pmi,
+    CONFIG.colors.extra
+  ];
   const values = lValues.filter((v) => v > 0);
   const labels = ['Principal', 'Interest', 'Taxes', 'Insurance', 'HOA', 'PMI', 'Extra']
     .map((l) => t(l))
     .filter((_, i) => (lValues[i] ?? 0) > 0);
+  const colors = allColors.filter((_, i) => (lValues[i] ?? 0) > 0);
 
   queueChartRender(
     'monthlyPaymentCircle',
@@ -411,15 +421,7 @@ const renderMonthlyPaymentCircle = (
         type: 'pie',
         hole: 0.75,
         marker: {
-          colors: [
-            CONFIG.colors.principal,
-            CONFIG.colors.interest,
-            CONFIG.colors.tax,
-            CONFIG.colors.ins,
-            CONFIG.colors.hoa,
-            CONFIG.colors.pmi,
-            CONFIG.colors.extra
-          ]
+          colors
         },
         textinfo: 'none',
         hovertemplate: `<b>%{label}</b><br>${getCurrencySymbol()}%{value:,.2f}<extra></extra>`
@@ -644,14 +646,15 @@ const renderAnnualCashFlowChart = (
   inputs: Inputs,
   currentMode: 'mortgage' | 'cc' | 'loan',
   isDark: boolean,
-  xKey: 'year'
+  _xKey: 'year' = 'year'
 ) => {
   const chart11El = document.getElementById('chart11');
   if (!chart11El) return;
 
   const aData: Record<number, { p: number; i: number; e: number; esc: number }> = {};
   actualData.schedule.forEach((d) => {
-    const y = Math.floor(d[xKey]);
+    const y =
+      d.calendarYear ?? Math.floor((d.period - 1) / (actualData.summary.periodsPerYear || 12)) + 1;
     if (!aData[y]) aData[y] = { p: 0, i: 0, e: 0, esc: 0 };
     aData[y].p += d.principal;
     aData[y].i += d.interest;
@@ -712,19 +715,19 @@ const renderPaymentCompositionChart = (
     [
       {
         x: actualData.schedule.map((d) => d[xKey]),
-        y: actualData.schedule.map((d) => d.interest),
-        name: t('Interest'),
+        y: actualData.schedule.map((d) => d.principal + (d.extra || 0)),
+        name: t('Principal'),
         type: 'scatter',
-        fill: 'tozeroy',
-        line: { color: CONFIG.colors.interest }
+        stackgroup: 'one',
+        line: { color: CONFIG.colors.principal }
       },
       {
         x: actualData.schedule.map((d) => d[xKey]),
-        y: actualData.schedule.map((d) => d.principal),
-        name: t('Principal'),
+        y: actualData.schedule.map((d) => d.interest),
+        name: t('Interest'),
         type: 'scatter',
-        fill: 'tonexty',
-        line: { color: CONFIG.colors.principal }
+        stackgroup: 'one',
+        line: { color: CONFIG.colors.interest }
       }
     ],
     getBaseLayout('Payment Composition', 'Year', '$', isDark),
@@ -938,17 +941,22 @@ export const calculateOpportunityCostData = (
     }
   }
 
-  const actCursor = new ScheduleCursor(actualData.schedule, initialBalance);
-  const baseCursor = new ScheduleCursor(baseData.schedule, initialBalance);
-  const compInitialBalance =
-    compData && compData.schedule.length > 0
-      ? Math.round(
-          (compData.schedule[0]!.balance +
-            compData.schedule[0]!.principal +
-            (compData.schedule[0]!.extra || 0)) *
-            100
-        ) / 100
-      : initialBalance;
+  const getInitialBal = (sched: ScheduleRow[], fallback: number) =>
+    sched.length > 0
+      ? Math.round((sched[0]!.balance + sched[0]!.principal + (sched[0]!.extra || 0)) * 100) / 100
+      : fallback;
+
+  const actCursor = new ScheduleCursor(
+    actualData.schedule,
+    getInitialBal(actualData.schedule, initialBalance)
+  );
+  const baseCursor = new ScheduleCursor(
+    baseData.schedule,
+    getInitialBal(baseData.schedule, initialBalance)
+  );
+  const compInitialBalance = compData
+    ? getInitialBal(compData.schedule, initialBalance)
+    : initialBalance;
   const compCursor = compData ? new ScheduleCursor(compData.schedule, compInitialBalance) : null;
 
   for (let m = 0; m < maxMonths; m++) {

@@ -465,6 +465,13 @@ export const dictionary: Record<string, string> = {
   'Bi-Weekly': 'Bihebdomadaire',
   'Semi-Monthly': 'Bimensuel',
   'Accelerated Bi-Weekly': 'Bihebdomadaire accéléré',
+  'Accelerated Weekly': 'Hebdomadaire accéléré',
+  monthly: 'Mensuel',
+  weekly: 'Hebdomadaire',
+  'bi-weekly': 'Bihebdomadaire',
+  'semi-monthly': 'Bimensuel',
+  'accelerated-bi-weekly': 'Bihebdomadaire accéléré',
+  'accelerated-weekly': 'Hebdomadaire accéléré',
 
   // Heatmap UI Details
   'Hover over or tap any cell in the heatmap grid to view strategy details':
@@ -524,9 +531,18 @@ export const dictionary: Record<string, string> = {
   Municipal: 'Municipal'
 };
 
+const englishFrequencyMap: Record<string, string> = {
+  monthly: 'Monthly',
+  weekly: 'Weekly',
+  'bi-weekly': 'Bi-Weekly',
+  'semi-monthly': 'Semi-Monthly',
+  'accelerated-bi-weekly': 'Accelerated Bi-Weekly',
+  'accelerated-weekly': 'Accelerated Weekly'
+};
+
 export const t = (key: string): string => {
-  if (activeLanguage === 'en') return key;
-  return dictionary[key] || key;
+  if (activeLanguage === 'en') return englishFrequencyMap[key] || key;
+  return dictionary[key] || englishFrequencyMap[key] || key;
 };
 
 const originalTextMap = new WeakMap<Node, string>();

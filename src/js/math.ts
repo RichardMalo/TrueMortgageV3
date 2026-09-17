@@ -99,8 +99,8 @@ export const calculateCmhcInsurance = (
   }
 
   // Statutory Canadian regulations: Mortgage default insurance is legally prohibited
-  // for properties >= $1,500,000, and requires at least a 5% down payment (maximum 95% LTV).
-  if (homePrice >= 1500000 || ltv > 0.95 + 1e-6) {
+  // for properties > $1,500,000, and requires at least a 5% down payment (maximum 95% LTV).
+  if (homePrice > 1500000 || ltv > 0.95 + 1e-6) {
     return {
       insuranceRate: 0,
       insuranceAmount: 0,
@@ -167,7 +167,7 @@ export const calculateCanadianMinDownPayment = (
     const minDown = Math.round(safePrice * 0.05 * 100) / 100;
     return { minDownPayment: minDown, minDownPaymentPct: 0.05, isCmhcEligible: true };
   }
-  if (safePrice < 1500000) {
+  if (safePrice <= 1500000) {
     const minDown = Math.round((25000 + (safePrice - 500000) * 0.1) * 100) / 100;
     return {
       minDownPayment: minDown,
@@ -1939,7 +1939,8 @@ export const calculateMultiDebtCascade = (
       totalMonthsToPayoff: 0,
       interestSavedVsMinimums: 0,
       monthsSavedVsMinimums: 0,
-      payoffOrder: []
+      payoffOrder: [],
+      payoffOrderIds: []
     };
     return {
       baselineTotalInterest: 0,
@@ -2002,6 +2003,8 @@ export const calculateMultiDebtCascade = (
     // Sort order: Avalanche = rate desc, Snowball = balance asc
     if (strat === 'avalanche') {
       activeDebts.sort((a, b) => b.rate - a.rate);
+    } else if (strat === 'snowball') {
+      activeDebts.sort((a, b) => a.balance - b.balance);
     }
     const getTargetDebt = () => {
       if (strat === 'avalanche') {
@@ -2028,6 +2031,7 @@ export const calculateMultiDebtCascade = (
     let totalInterestPaid = 0;
     let month = 0;
     const payoffOrder: string[] = [];
+    const payoffOrderIds: string[] = [];
     const paidDebtIds = new Set<string>();
     const schedule: MultiDebtPaymentRow[] = [];
 
@@ -2061,6 +2065,7 @@ export const calculateMultiDebtCascade = (
           debt.paidMonth = month;
           paidDebtIds.add(debt.id);
           payoffOrder.push(debt.name);
+          payoffOrderIds.push(debt.id);
         }
       }
 
@@ -2077,6 +2082,7 @@ export const calculateMultiDebtCascade = (
           if (!paidDebtIds.has(target.id)) {
             paidDebtIds.add(target.id);
             payoffOrder.push(target.name);
+            payoffOrderIds.push(target.id);
           }
           target = getTargetDebt();
         } else {
@@ -2118,6 +2124,7 @@ export const calculateMultiDebtCascade = (
         interestSavedVsMinimums: interestSaved,
         monthsSavedVsMinimums: monthsSaved,
         payoffOrder,
+        payoffOrderIds,
         paidOff: isPaidOff
       },
       schedule

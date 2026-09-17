@@ -30,7 +30,7 @@ export const CMHC_30_YEAR_SURCHARGE = 0.002; // +0.20%
 /** Provincial Sales Tax (PST/QST) on CMHC Insurance Premiums */
 export const CMHC_PROVINCE_PST_RATES: Record<string, number> = Object.freeze({
   ON: 0.08, // Ontario 8% PST
-  QC: 0.09, // Quebec 9% QST
+  QC: 0.09975, // Quebec 9.975% QST
   SK: 0.06, // Saskatchewan 6% PST
   OTHER: 0.0
 });

@@ -1461,8 +1461,8 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         const res = calculateCmhcInsurance(600000, 60000, 25, 'QC', true); // 10% down
         expect(res.insuranceRate).toBe(0.031);
         expect(res.insuranceAmount).toBe(16740); // 540,000 * 0.031 = 16,740
-        expect(res.pstRate).toBe(0.09); // Quebec 9% QST
-        expect(res.pstAmount).toBe(1506.6); // 16,740 * 0.09 = 1,506.60
+        expect(res.pstRate).toBe(0.09975); // Quebec 9.975% QST
+        expect(res.pstAmount).toBe(1669.82); // 16,740 * 0.09975 = 1,669.815 -> 1,669.82
         expect(res.totalPrincipal).toBe(556740);
       });
 
@@ -1533,11 +1533,17 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(res.isCmhcEligible).toBe(true);
       });
 
-      it('should require 20% down and mark CMHC ineligible for properties >= $1.5M', () => {
-        const res = calculateCanadianMinDownPayment(1500000);
-        expect(res.minDownPayment).toBe(300000);
-        expect(res.minDownPaymentPct).toBe(0.2);
-        expect(res.isCmhcEligible).toBe(false);
+      it('should allow CMHC tier up to $1.5M and require 20% down for properties > $1.5M', () => {
+        const atCap = calculateCanadianMinDownPayment(1500000);
+        // 5% of 500,000 ($25,000) + 10% of 1,000,000 ($100,000) = $125,000 (8.33%)
+        expect(atCap.minDownPayment).toBe(125000);
+        expect(atCap.minDownPaymentPct).toBeCloseTo(125000 / 1500000, 5);
+        expect(atCap.isCmhcEligible).toBe(true);
+
+        const overCap = calculateCanadianMinDownPayment(1500001);
+        expect(overCap.minDownPayment).toBe(300000.2);
+        expect(overCap.minDownPaymentPct).toBe(0.2);
+        expect(overCap.isCmhcEligible).toBe(false);
 
         const res2 = calculateCanadianMinDownPayment(2000000);
         expect(res2.minDownPayment).toBe(400000);
@@ -1668,11 +1674,17 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
       });
 
       it('should enforce statutory Canadian CMHC $1.5M insurance prohibition and 95% max LTV', () => {
-        // Properties >= $1.5M are legally prohibited from CMHC default insurance
-        const overCap = calculateCmhcInsurance(1500000, 100000, 25, 'ON', true);
+        // Properties up to $1.5M remain eligible for CMHC default insurance
+        const atCap = calculateCmhcInsurance(1500000, 150000, 25, 'ON', true); // 10% down
+        expect(atCap.insuranceRate).toBe(0.031);
+        expect(atCap.insuranceAmount).toBe(41850);
+        expect(atCap.totalPrincipal).toBe(1391850);
+
+        // Properties > $1.5M are legally prohibited from CMHC default insurance
+        const overCap = calculateCmhcInsurance(1500001, 150000, 25, 'ON', true);
         expect(overCap.insuranceRate).toBe(0);
         expect(overCap.insuranceAmount).toBe(0);
-        expect(overCap.totalPrincipal).toBe(1400000);
+        expect(overCap.totalPrincipal).toBe(1350001);
 
         // Down payment < 5% (LTV > 95%) is legally ineligible for CMHC default insurance
         const underDown = calculateCmhcInsurance(500000, 15000, 25, 'ON', true); // 3% down
@@ -1932,7 +1944,7 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         const tier2 = calculateCmhcInsurance(500000, 50000, 25, 'QC', true);
         expect(tier2.insuranceRate).toBe(0.031);
         expect(tier2.insuranceAmount).toBe(13950);
-        expect(tier2.pstAmount).toBe(1255.5); // 9% QC QST
+        expect(tier2.pstAmount).toBe(1391.51); // 9.975% QC QST
 
         // 85% LTV (15% down) -> 2.8%
         const tier3 = calculateCmhcInsurance(500000, 75000, 25, 'SK', true);
@@ -1995,8 +2007,10 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(result.snowball.paidOff).toBe(true);
         expect(result.avalanche.payoffOrder).toHaveLength(2);
         expect(result.avalanche.payoffOrder).toEqual(['Credit Card', 'Credit Card']);
+        expect(result.avalanche.payoffOrderIds).toEqual(['card-a', 'card-b']);
         expect(result.snowball.payoffOrder).toHaveLength(2);
         expect(result.snowball.payoffOrder).toEqual(['Credit Card', 'Credit Card']);
+        expect(result.snowball.payoffOrderIds).toEqual(['card-a', 'card-b']);
       });
 
       it('should handle empty or zero debt list in multi-debt cascade gracefully', () => {

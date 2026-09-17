@@ -338,7 +338,7 @@ const calculate = (e?: Event) => {
     if ((inputs.downPayment || 0) < minDownResult.minDownPayment) {
       if (minDownWarningEl) {
         let warnText = `⚠️ ${t('Statutory Canadian minimum down payment is')} ${formatCurrency(minDownResult.minDownPayment)} (${(minDownResult.minDownPaymentPct * 100).toFixed(1)}%).`;
-        if ((inputs.homePrice || 0) >= 1500000) {
+        if ((inputs.homePrice || 0) > 1500000) {
           warnText = `⚠️ ${t('Statutory Canadian minimum down payment is')} ${formatCurrency(minDownResult.minDownPayment)} (20.0%). ${t('CMHC insurance is legally prohibited for homes $1.5M+.')}`;
         }
         minDownWarningEl.textContent = warnText;
@@ -794,7 +794,8 @@ const updateScheduledLumpSumDatesInPlace = () => {
     'semi-monthly': 24,
     'bi-weekly': 26,
     'accelerated-bi-weekly': 26,
-    weekly: 52
+    weekly: 52,
+    'accelerated-weekly': 52
   };
   const periodsPerYear = freqMap[freq] || 12;
 
@@ -890,8 +891,9 @@ const updateScheduledLumpSumSavingsInPlace = (inputs: Inputs, actData: ScheduleR
     }
 
     const savings = Math.max(0, freeData.summary.totalInterest - actData.summary.totalInterest);
-    if (scheduledLumpSumSavingsCache.size > 100) {
-      scheduledLumpSumSavingsCache.clear();
+    if (scheduledLumpSumSavingsCache.size >= 100) {
+      const firstKey = scheduledLumpSumSavingsCache.keys().next().value;
+      if (firstKey !== undefined) scheduledLumpSumSavingsCache.delete(firstKey);
     }
     scheduledLumpSumSavingsCache.set(cacheKey, savings);
     updateKineticText(savingsBox, savings);
@@ -927,6 +929,7 @@ const setupScheduledLumpSums = () => {
 
 const handleProfileSwitch = (profileId: string) => {
   invalidateBaselineCache();
+  scheduledLumpSumSavingsCache.clear();
   const activeProfile = state.profiles[profileId];
   if (!activeProfile) return;
   state.currentMode = activeProfile.currentMode || 'mortgage';
@@ -1034,6 +1037,7 @@ const handleProfileSwitch = (profileId: string) => {
 
 const resetApplicationData = () => {
   invalidateBaselineCache();
+  scheduledLumpSumSavingsCache.clear();
   try {
     localStorage.removeItem(STORAGE_KEY);
   } catch (err) {
@@ -1595,6 +1599,7 @@ const bootApp = () => {
         }
       }
     }
+    updateRegionalTaxOptions(els.inputs.countrySelect?.value || 'monthly');
     calculate();
   });
 

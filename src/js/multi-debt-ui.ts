@@ -319,6 +319,7 @@ const renderPayoffOrderTable = (result: MultiDebtCascadeResult) => {
   const activeStrategySummary =
     currentStrategy === 'avalanche' ? result.avalanche : result.snowball;
   const payoffOrder = activeStrategySummary.payoffOrder || [];
+  const payoffOrderIds = activeStrategySummary.payoffOrderIds || [];
 
   if (payoffOrder.length === 0) {
     container.innerHTML = `
@@ -344,7 +345,11 @@ const renderPayoffOrderTable = (result: MultiDebtCascadeResult) => {
   `;
 
   payoffOrder.forEach((name, idx) => {
-    const debt = currentDebts.find((d) => d.name === name);
+    const debtId = payoffOrderIds[idx];
+    const debt = debtId
+      ? currentDebts.find((d) => d.id === debtId)
+      : currentDebts.find((d) => d.name === name);
+    const displayName = debt ? debt.name : name;
     const rateStr = debt ? `${debt.rate.toFixed(2)}%` : '—';
     const balStr = debt ? formatCurrency(debt.balance) : '—';
     const priorityDesc =
@@ -359,7 +364,7 @@ const renderPayoffOrderTable = (result: MultiDebtCascadeResult) => {
     html += `
       <tr style="border-bottom: 1px solid var(--border-color);">
         <td style="padding: 8px 10px; font-weight: 700; color: var(--accent-color);">#${idx + 1}</td>
-        <td style="padding: 8px 10px; font-weight: 600;">${escapeHtml(name)}</td>
+        <td style="padding: 8px 10px; font-weight: 600;">${escapeHtml(displayName)}</td>
         <td style="padding: 8px 10px;">${rateStr}</td>
         <td style="padding: 8px 10px;">${balStr}</td>
         <td style="padding: 8px 10px; opacity: 0.85;">${priorityDesc}</td>

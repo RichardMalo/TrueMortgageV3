@@ -225,6 +225,21 @@ describe('UI Helper Functions (ui.ts)', () => {
       const rows = container.querySelectorAll('.lump-sum-row');
       expect(rows.length).toBe(2);
 
+      // Verify accelerated-weekly maps to 52 periods per year
+      const accContainer = document.createElement('div');
+      document.body.appendChild(accContainer);
+      renderScheduledLumpSumRows(
+        accContainer,
+        [{ id: 'ls-acc', amount: 5000, paymentNumber: 52 }],
+        '2026-01-01',
+        'accelerated-weekly',
+        () => {},
+        () => {}
+      );
+      const accBadge = accContainer.querySelector('.lump-sum-date-badge');
+      expect(accBadge?.textContent).toContain('2026');
+      document.body.removeChild(accContainer);
+
       // Test applyCardCustomizationsToDOM
       const mockState = {
         hiddenCards: ['chart3'],

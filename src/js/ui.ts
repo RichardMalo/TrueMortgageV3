@@ -794,7 +794,8 @@ export const renderScheduledLumpSumRows = (
     'semi-monthly': 24,
     'bi-weekly': 26,
     'accelerated-bi-weekly': 26,
-    weekly: 52
+    weekly: 52,
+    'accelerated-weekly': 52
   };
   const periodsPerYear = freqMap[frequency] || 12;
 

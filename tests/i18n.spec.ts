@@ -179,4 +179,26 @@ describe('i18n Translation Engine', () => {
     // Clean up
     applyTranslations('en');
   });
+
+  it('should accurately translate kebab-case and title-case payment frequencies in English and French', () => {
+    applyTranslations('en');
+    expect(t('monthly')).toBe('Monthly');
+    expect(t('weekly')).toBe('Weekly');
+    expect(t('bi-weekly')).toBe('Bi-Weekly');
+    expect(t('semi-monthly')).toBe('Semi-Monthly');
+    expect(t('accelerated-bi-weekly')).toBe('Accelerated Bi-Weekly');
+    expect(t('accelerated-weekly')).toBe('Accelerated Weekly');
+    expect(t('Accelerated Weekly')).toBe('Accelerated Weekly');
+
+    applyTranslations('fr');
+    expect(t('monthly')).toBe('Mensuel');
+    expect(t('weekly')).toBe('Hebdomadaire');
+    expect(t('bi-weekly')).toBe('Bihebdomadaire');
+    expect(t('semi-monthly')).toBe('Bimensuel');
+    expect(t('accelerated-bi-weekly')).toBe('Bihebdomadaire accéléré');
+    expect(t('accelerated-weekly')).toBe('Hebdomadaire accéléré');
+    expect(t('Accelerated Weekly')).toBe('Hebdomadaire accéléré');
+
+    applyTranslations('en');
+  });
 });
