@@ -1652,12 +1652,12 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
 
       it('should calculate Alberta statutory nominal Land Titles registration fee without falling through to Ontario', () => {
         // Price: $800,000
-        // $50 base fee + $2 per $5,000 (160 units of $5,000) = $50 + $320 = $370
+        // Statutory Bill 20 (effective Oct 20, 2024): $50 base fee + $5 per $5,000 (160 units of $5,000) = $50 + $800 = $850
         const resAb = calculateCanadianLandTransferTax(800000, 'AB', false, false);
-        expect(resAb.provincialLtt).toBe(370);
+        expect(resAb.provincialLtt).toBe(850);
         expect(resAb.municipalLtt).toBe(0);
         expect(resAb.firstTimeRebate).toBe(0);
-        expect(resAb.totalLtt).toBe(370);
+        expect(resAb.totalLtt).toBe(850);
       });
 
       it('should calculate Quebec municipal Taxe de bienvenue without falling through to Ontario', () => {
@@ -2018,6 +2018,59 @@ describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
         expect(emptyResult.baselineTotalInterest).toBe(0);
         expect(emptyResult.avalanche.totalInterestPaid).toBe(0);
         expect(emptyResult.schedule.length).toBe(0);
+      });
+
+      it('should allow sub-$10 minimum payments in multi-debt cascade without clamping to $10', () => {
+        const debts: MultiDebtAccount[] = [
+          { id: 'micro-debt', name: 'Micro Loan', balance: 50, rate: 12.0, minPayment: 5 }
+        ];
+        const res = calculateMultiDebtCascade(debts, 5);
+        expect(res.schedule[0]!.payments['micro-debt']).toBe(5);
+        expect(res.schedule[0]!.totalPayment).toBe(5);
+      });
+    });
+
+    describe('Audit Logic & Law Defect Verification Tests', () => {
+      it('should evaluate conventional 20% down payment as 0% CMHC insurance despite floating-point drift', () => {
+        // $800,000 home with $160,000 down
+        const res800k = calculateCmhcInsurance(800000, 160000, 25, 'ON', true);
+        expect(res800k.insuranceRate).toBe(0);
+        expect(res800k.insuranceAmount).toBe(0);
+        expect(res800k.pstAmount).toBe(0);
+
+        // $777,777 home with 20% down ($155,555.40) causing float representation 0.80000000000000004
+        const resOdd = calculateCmhcInsurance(777777, 155555.4, 25, 'ON', true);
+        expect(resOdd.insuranceRate).toBe(0);
+        expect(resOdd.insuranceAmount).toBe(0);
+        expect(resOdd.pstAmount).toBe(0);
+      });
+
+      it('should decouple periodic escrow from mortgage schedule when usePiti is false even if taxRate is non-zero', () => {
+        const inputsWithoutPiti: Inputs = {
+          homePrice: 500000,
+          downPayment: 100000,
+          ccBalance: 0,
+          province: 'ON',
+          annualRate: 4.5,
+          amortizationYears: 25,
+          termYears: 5,
+          compounding: 'monthly',
+          frequency: 'monthly',
+          usePiti: false,
+          taxRate: 4000, // non-zero taxRate preserved in inputs
+          insRate: 1200, // non-zero insRate preserved
+          hoaRate: 200, // non-zero hoaRate preserved
+          pmiRate: 0.5,
+          useOppCost: false,
+          investRate: 7,
+          extraPayment: 0,
+          startDate: '2026-01-01',
+          rateShockEnabled: false,
+          termRates: {}
+        };
+        const sched = generateMortgageSchedule(inputsWithoutPiti);
+        expect(sched.summary.totalEscrow).toBe(0);
+        expect(sched.schedule[0]!.escrow).toBe(0);
       });
     });
   });

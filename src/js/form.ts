@@ -429,13 +429,10 @@ export const profileToInputs = (
     auFirstTimeBuyer:
       profileInputs.auFirstTimeBuyer === true || profileInputs.lttFirstTimeBuyer === true,
     isAdditionalProperty: profileInputs.isAdditionalProperty === true,
-    auState: String(
-      profileInputs.auState ||
-        (['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'].includes(
-          String(profileInputs.lttProvince || '')
-        )
-          ? profileInputs.lttProvince
-          : 'NSW')
-    )
+    auState: (() => {
+      const validAuStates = ['NSW', 'VIC', 'QLD', 'WA', 'SA', 'TAS', 'ACT', 'NT'];
+      const rawState = String(profileInputs.auState || profileInputs.lttProvince || 'NSW');
+      return validAuStates.includes(rawState) ? rawState : 'NSW';
+    })()
   };
 };

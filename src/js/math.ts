@@ -88,7 +88,7 @@ export const calculateCmhcInsurance = (
   const ltv = 1 - downPaymentRatio;
 
   // Conventional mortgage (LTV <= 80%, down payment >= 20%) requires no CMHC default insurance
-  if (ltv <= 0.8) {
+  if (ltv <= 0.8 + 1e-6) {
     return {
       insuranceRate: 0,
       insuranceAmount: 0,
@@ -117,8 +117,8 @@ export const calculateCmhcInsurance = (
       break;
     }
   }
-  if (rate === 0 && ltv > 0.8) {
-    rate = 0.04;
+  if (rate === 0 && ltv > 0.8 + 1e-6) {
+    rate = 0.028;
   }
 
   // 30-year amortization surcharge on insured mortgages (+0.20%)
@@ -361,9 +361,10 @@ export const generateMortgageSchedule = (
     );
   }
 
-  const periodicTax = Math.max(0, inputs.taxRate || 0) / periodsPerYear;
-  const periodicInsurance = Math.max(0, inputs.insRate || 0) / periodsPerYear;
-  const periodicHOA = (Math.max(0, inputs.hoaRate || 0) * 12) / periodsPerYear;
+  const hasPiti = Boolean(inputs.usePiti);
+  const periodicTax = hasPiti ? Math.max(0, inputs.taxRate || 0) / periodsPerYear : 0;
+  const periodicInsurance = hasPiti ? Math.max(0, inputs.insRate || 0) / periodsPerYear : 0;
+  const periodicHOA = hasPiti ? (Math.max(0, inputs.hoaRate || 0) * 12) / periodsPerYear : 0;
   const pmiDropThreshold = safeHomePrice * PMI_LTV_THRESHOLD;
 
   const basePeriodicRate =
@@ -374,7 +375,7 @@ export const generateMortgageSchedule = (
 
   const annualPmiRate = inputs.pmiRate || 0;
   const basePeriodicPMI =
-    inputs.compounding !== 'semi' && safeHomePrice > 0 && annualPmiRate > 0
+    hasPiti && inputs.compounding !== 'semi' && safeHomePrice > 0 && annualPmiRate > 0
       ? (principal * (Math.min(100, Math.max(0, annualPmiRate)) / 100)) / periodsPerYear
       : 0;
 
@@ -1447,8 +1448,9 @@ export const calculateCanadianLandTransferTax = (
 
   if (provUpper === 'AB') {
     // Alberta: No progressive land transfer tax.
-    // Statutory Land Titles registration fee: $50 base fee + $2 per $5,000 of property value (or part thereof)
-    const propertyTransferFee = 50 + Math.ceil(price / 5000) * 2;
+    // Statutory Land Titles registration levy (Updated per statutory Bill 20, effective Oct 20, 2024):
+    // $50 base fee + $5 per $5,000 of property value (or part thereof)
+    const propertyTransferFee = 50 + Math.ceil(price / 5000) * 5;
     return {
       provincialLtt: propertyTransferFee,
       municipalLtt: 0,
@@ -1590,7 +1592,7 @@ export const calculateCanadianLandTransferTax = (
  * Calculates United Kingdom Stamp Duty Land Tax (SDLT) for residential property in England & Northern Ireland.
  *
  * @param homePrice - Property purchase price in GBP (£).
- * @param isFirstTimeBuyer - Whether the buyer qualifies for First-Time Buyer relief (up to £625k).
+ * @param isFirstTimeBuyer - Whether the buyer qualifies for First-Time Buyer relief (up to £500k statutory cap).
  * @param isAdditionalProperty - Whether the property is an additional residential property (subject to +5% surcharge).
  * @returns SDLT amount, effective rate percentage, and first-time buyer relief savings.
  */
@@ -1961,7 +1963,7 @@ export const calculateMultiDebtCascade = (
   for (const debt of validDebts) {
     let bal = debt.balance;
     const monthlyRate = debt.rate / 100 / 12;
-    const minPmt = Math.max(10, debt.minPayment);
+    const minPmt = Math.max(0, debt.minPayment);
     let debtInterest = 0;
     let months = 0;
 
@@ -2052,7 +2054,7 @@ export const calculateMultiDebtCascade = (
 
         const monthlyRate = debt.rate / 100 / 12;
         const interest = Math.round(debt.balance * monthlyRate * 100) / 100;
-        const regularPayment = Math.min(debt.balance + interest, Math.max(10, debt.minPayment));
+        const regularPayment = Math.min(debt.balance + interest, Math.max(0, debt.minPayment));
         const regularPrincipal = regularPayment - interest;
 
         debt.balance = Math.max(0, debt.balance - regularPrincipal);

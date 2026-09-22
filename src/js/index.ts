@@ -52,7 +52,8 @@ import {
   updateLabelCurrencySymbols,
   applyCardCustomizationsToDOM,
   renderScheduledLumpSumRows,
-  isPrefersReducedMotion
+  isPrefersReducedMotion,
+  escapeHtml
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
@@ -71,6 +72,18 @@ import {
   updateMultiDebtTheme,
   updateMultiDebtCalculation
 } from './multi-debt-ui.js';
+
+// Clickjacking defense: prevent unauthorized iframe embedding where meta CSP cannot enforce frame-ancestors
+if (typeof window !== 'undefined' && window.top && window.top !== window.self) {
+  try {
+    window.top.location.href = window.self.location.href;
+  } catch {
+    // If top window blocked access across origins, blank the document
+    if (document.body) {
+      document.body.innerHTML = '';
+    }
+  }
+}
 
 // App Global State store
 const state: AppState = {
@@ -442,7 +455,7 @@ const calculate = (e?: Event) => {
           : null);
       if (duty) {
         const netDutyStr = formatCurrency(duty.transferDuty);
-        const stateCode = inputs.auState || 'NSW';
+        const stateCode = escapeHtml(inputs.auState || 'NSW');
         let details = `${t('State')}: ${stateCode} | ${t('Effective Rate')}: ${duty.effectiveRatePct.toFixed(2)}%`;
         if (duty.concessionAmount > 0) {
           details += ` | ${t('Concession')}: -${formatCurrency(duty.concessionAmount)}`;

@@ -11,8 +11,14 @@ export const getLocaleAndCurrency = (): { locale: string; currency: string } => 
   const el = document.getElementById('country-select') as HTMLSelectElement | null;
   const val = el ? el.value : 'semi';
   switch (val) {
-    case 'semi': // Canada
-      return { locale: 'en-CA', currency: 'CAD' };
+    case 'semi': {
+      // Canada
+      const isFr =
+        document.documentElement.lang === 'fr' ||
+        document.body?.classList.contains('lang-fr') ||
+        (document.getElementById('language-switch') as HTMLInputElement | null)?.checked;
+      return { locale: isFr ? 'fr-CA' : 'en-CA', currency: 'CAD' };
+    }
     case 'monthly-uk': // UK
       return { locale: 'en-GB', currency: 'GBP' };
     case 'monthly-au': // AU

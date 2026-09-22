@@ -37,7 +37,13 @@ export const loadStoredDebts = (): MultiDebtAccount[] => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed) && parsed.length > 0) {
-        return parsed;
+        return parsed.map((d: Partial<MultiDebtAccount>, i: number) => ({
+          id: String(d.id || `debt-${i}`).replace(/[^a-zA-Z0-9_-]/g, ''),
+          name: String(d.name || `Debt ${i + 1}`).slice(0, 100),
+          balance: Math.max(0, parseFloat(String(d.balance)) || 0),
+          rate: Math.min(100, Math.max(0, parseFloat(String(d.rate)) || 0)),
+          minPayment: Math.max(0, parseFloat(String(d.minPayment)) || 0)
+        }));
       }
     }
   } catch {
@@ -179,17 +185,17 @@ const renderDebtRows = () => {
         </div>
         <div style="flex: 1.5; min-width: 80px;">
           <div style="position: relative;">
-            <input type="number" class="multi-debt-input debt-balance-input" value="${debt.balance}" min="0" step="50" placeholder="Balance" aria-label="Current Balance" style="width: 100%;" />
+            <input type="number" class="multi-debt-input debt-balance-input" value="${Number.isFinite(debt.balance) ? debt.balance : 0}" min="0" step="50" placeholder="Balance" aria-label="Current Balance" style="width: 100%;" />
           </div>
         </div>
         <div style="flex: 1.2; min-width: 65px;">
           <div style="position: relative;">
-            <input type="number" class="multi-debt-input debt-rate-input" value="${debt.rate}" min="0" max="100" step="0.1" placeholder="APR %" aria-label="Interest Rate" style="width: 100%;" />
+            <input type="number" class="multi-debt-input debt-rate-input" value="${Number.isFinite(debt.rate) ? debt.rate : 0}" min="0" max="100" step="0.1" placeholder="APR %" aria-label="Interest Rate" style="width: 100%;" />
           </div>
         </div>
         <div style="flex: 1.2; min-width: 65px;">
           <div style="position: relative;">
-            <input type="number" class="multi-debt-input debt-min-input" value="${debt.minPayment}" min="0" step="5" placeholder="Min Pmt" aria-label="Minimum Monthly Payment" style="width: 100%;" />
+            <input type="number" class="multi-debt-input debt-min-input" value="${Number.isFinite(debt.minPayment) ? debt.minPayment : 0}" min="0" step="5" placeholder="Min Pmt" aria-label="Minimum Monthly Payment" style="width: 100%;" />
           </div>
         </div>
         <div>

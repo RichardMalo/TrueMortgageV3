@@ -21,7 +21,7 @@ export const STORAGE_KEY = 'mtg_calculator_settings';
 export const CMHC_TIERS = Object.freeze([
   { minLtv: 0.90001, maxLtv: 0.95, rate: 0.04 }, // 5% to 9.99% down payment
   { minLtv: 0.85001, maxLtv: 0.9, rate: 0.031 }, // 10% to 14.99% down payment
-  { minLtv: 0.80001, maxLtv: 0.85, rate: 0.028 } // 15% to 19.99% down payment
+  { minLtv: 0.8, maxLtv: 0.85, rate: 0.028 } // 15% to 19.99% down payment
 ]);
 
 /** CMHC Surcharge for 30-year Amortization on Insured Mortgages */
