@@ -53,7 +53,8 @@ import {
   applyCardCustomizationsToDOM,
   renderScheduledLumpSumRows,
   isPrefersReducedMotion,
-  escapeHtml
+  escapeHtml,
+  updateCalculatorSectionTitle
 } from './ui.js';
 import { renderSandboxList, setupScenarioSandbox } from './sandbox.js';
 import { updateTable } from './table.js';
@@ -70,7 +71,10 @@ import { setupSettingsMenu } from './settings.js';
 import {
   initMultiDebtUI,
   updateMultiDebtTheme,
-  updateMultiDebtCalculation
+  updateMultiDebtCalculation,
+  setMultiDebtState,
+  resetMultiDebtToDefaults,
+  loadStoredDebts
 } from './multi-debt-ui.js';
 
 // Clickjacking defense: prevent unauthorized iframe embedding where meta CSP cannot enforce frame-ancestors
@@ -173,7 +177,9 @@ const els = {
     lumpSumSavings: document.getElementById('lumpSumSavingsBox'),
     extraPaymentSavings: document.getElementById('extraPaymentSavingsBox'),
     effectiveAprDisplay: document.getElementById('effectiveAprDisplay'),
-    osfiStressTestDisplay: document.getElementById('osfiStressTestDisplay')
+    osfiStressTestDisplay: document.getElementById('osfiStressTestDisplay'),
+    cmhcStatAmount: document.getElementById('cmhcStatAmount'),
+    concentricRatioNote: document.getElementById('concentricRatioNote')
   },
   containers: {
     pitiSection: document.getElementById('pitiSection'),
@@ -194,6 +200,8 @@ const els = {
     lttConfigWrapper: document.getElementById('lttConfigWrapper'),
     lttEstimateBadge: document.getElementById('lttEstimateBadge'),
     cmhcSection: document.getElementById('cmhcSection'),
+    cmhcStatBox: document.getElementById('cmhcStatBox'),
+    cmhcProvinceWrapper: document.getElementById('cmhcProvinceWrapper'),
     ukAdditionalPropertyWrapper: document.getElementById('ukAdditionalPropertyWrapper'),
     minDownPaymentWarning: document.getElementById('minDownPaymentWarning'),
     osfiStressTestStatBox: document.getElementById('osfiStressTestStatBox'),
@@ -201,7 +209,9 @@ const els = {
     loanEffectiveAprNote: document.getElementById('loanEffectiveAprNote'),
     loanEffectiveAprVal: document.getElementById('loanEffectiveAprVal'),
     multiDebtSection: document.getElementById('multiDebtSection'),
-    multiDebtCard: document.getElementById('multi-debt-card')
+    multiDebtCard: document.getElementById('multi-debt-card'),
+    ccCustomMinSection: document.getElementById('ccCustomMinPaymentSection'),
+    bankWagesToggle: document.getElementById('bankWagesToggle')
   },
   modeSwitch: document.getElementById('mode-switch') as HTMLInputElement | null,
   masterBtns: document.querySelectorAll('.mode-btn')
@@ -224,7 +234,7 @@ const calculate = (e?: Event) => {
     els.containers.pitiSection.classList.toggle('hidden', !inputs.usePiti);
   }
 
-  const ccCustomMinEl = document.getElementById('ccCustomMinPaymentSection');
+  const ccCustomMinEl = els.containers.ccCustomMinSection;
   if (ccCustomMinEl) {
     const showCustom =
       !isMortgage && state.complexity === 'advanced' && inputs.province === 'CUSTOM';
@@ -241,7 +251,7 @@ const calculate = (e?: Event) => {
       rentTaxInsBtn.classList.add('hidden');
       if (state.bankWagesView === 'rent-tax-ins') {
         state.bankWagesView = 'rent';
-        const container = document.getElementById('bankWagesToggle');
+        const container = els.containers.bankWagesToggle;
         if (container) {
           const buttons = container.querySelectorAll('.wage-toggle-btn');
           buttons.forEach((b) =>
@@ -321,15 +331,15 @@ const calculate = (e?: Event) => {
   const isLoan = state.currentMode === 'loan';
 
   // CMHC summary stat card update
-  const cmhcStatBox = document.getElementById('cmhcStatBox');
-  const cmhcProvinceWrapper = document.getElementById('cmhcProvinceWrapper');
+  const cmhcStatBox = els.containers.cmhcStatBox;
+  const cmhcProvinceWrapper = els.containers.cmhcProvinceWrapper;
   const cmhcAmount = actData.summary.cmhcInsuranceAmount || 0;
   const isCmhcActive =
     isMortgage && isCanadian && inputs.includeCmhc && state.complexity === 'advanced';
   if (cmhcStatBox) {
     if (isCmhcActive && cmhcAmount > 0) {
       cmhcStatBox.classList.remove('hidden');
-      updateKineticText(document.getElementById('cmhcStatAmount'), cmhcAmount);
+      updateKineticText(els.results.cmhcStatAmount || null, cmhcAmount);
     } else {
       cmhcStatBox.classList.add('hidden');
     }
@@ -339,12 +349,9 @@ const calculate = (e?: Event) => {
   }
 
   // Issue 4: Statutory Canadian Minimum Down Payment and OSFI B-20 Stress Test
-  const minDownWarningEl =
-    els.containers.minDownPaymentWarning || document.getElementById('minDownPaymentWarning');
-  const osfiStressBoxEl =
-    els.containers.osfiStressTestStatBox || document.getElementById('osfiStressTestStatBox');
-  const osfiStressValEl =
-    els.results.osfiStressTestDisplay || document.getElementById('osfiStressTestDisplay');
+  const minDownWarningEl = els.containers.minDownPaymentWarning;
+  const osfiStressBoxEl = els.containers.osfiStressTestStatBox;
+  const osfiStressValEl = els.results.osfiStressTestDisplay;
 
   if (isMortgage && isCanadian) {
     const minDownResult = calculateCanadianMinDownPayment(inputs.homePrice || 0);
@@ -378,12 +385,9 @@ const calculate = (e?: Event) => {
   }
 
   // Issue 5: Consumer Loan Effective APR (TILA)
-  const effectiveAprDisplay =
-    els.results.effectiveAprDisplay || document.getElementById('effectiveAprDisplay');
-  const loanEffectiveAprNote =
-    els.containers.loanEffectiveAprNote || document.getElementById('loanEffectiveAprNote');
-  const loanEffectiveAprVal =
-    els.containers.loanEffectiveAprVal || document.getElementById('loanEffectiveAprVal');
+  const effectiveAprDisplay = els.results.effectiveAprDisplay;
+  const loanEffectiveAprNote = els.containers.loanEffectiveAprNote;
+  const loanEffectiveAprVal = els.containers.loanEffectiveAprVal;
   if (isLoan && actData.summary.effectiveApr !== undefined) {
     const effAprVal = actData.summary.effectiveApr;
     const effAprStr = `${effAprVal.toFixed(2)}%`;
@@ -405,8 +409,8 @@ const calculate = (e?: Event) => {
   }
 
   // Land Transfer Tax (LTT) / Stamp Duty update (Advanced Mode Only)
-  const lttConfigWrapper = document.getElementById('lttConfigWrapper');
-  const lttEstimateBadge = document.getElementById('lttEstimateBadge');
+  const lttConfigWrapper = els.containers.lttConfigWrapper;
+  const lttEstimateBadge = els.containers.lttEstimateBadge;
   const isLttActive = isMortgage && !!inputs.includeLtt && state.complexity === 'advanced';
   if (lttConfigWrapper) {
     lttConfigWrapper.classList.toggle('hidden', !isLttActive);
@@ -596,7 +600,7 @@ const calculate = (e?: Event) => {
 
   const ratio =
     principalBorrowAmount > 0 ? actData.summary.totalInterest / principalBorrowAmount : 0;
-  const concentricRatioNote = document.getElementById('concentricRatioNote');
+  const concentricRatioNote = els.results.concentricRatioNote;
   if (concentricRatioNote) {
     const isFr = state.language === 'fr';
     const baseDollar = formatDecimal(1);
@@ -968,6 +972,16 @@ const handleProfileSwitch = (profileId: string) => {
   document.body.className = buildBodyClass(state);
   if (els.modeSwitch) els.modeSwitch.checked = state.isDark;
   updateMultiDebtTheme(state.isDark);
+  if (activeProfile.inputs.multiDebtAccounts) {
+    setMultiDebtState(
+      activeProfile.inputs.multiDebtAccounts,
+      activeProfile.inputs.multiDebtBudget,
+      activeProfile.inputs.multiDebtStrategy,
+      true
+    );
+  } else {
+    setMultiDebtState(loadStoredDebts(), 600, 'avalanche', true);
+  }
   const langSwitch = document.getElementById('language-switch') as HTMLInputElement | null;
   if (langSwitch) langSwitch.checked = state.language === 'fr';
 
@@ -976,6 +990,8 @@ const handleProfileSwitch = (profileId: string) => {
     btn.classList.toggle('active', isActive);
     btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
   });
+
+  updateCalculatorSectionTitle(state.currentMode);
 
   const complexityBtns = document.querySelectorAll('.complexity-btn');
   complexityBtns.forEach((btn) => {
@@ -1053,9 +1069,13 @@ const resetApplicationData = () => {
   scheduledLumpSumSavingsCache.clear();
   try {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem('truemortgage_multi_debts');
+    localStorage.removeItem('truemortgage_multi_debt_budget');
+    localStorage.removeItem('truemortgage_multi_debt_strategy');
   } catch (err) {
     console.error('Error clearing settings from localStorage:', err);
   }
+  resetMultiDebtToDefaults();
   els.form?.reset();
   const detected = getCountryCompoundingFromTimezone();
   if (els.inputs.rate) els.inputs.rate.value = '4.39';
@@ -1389,6 +1409,7 @@ const bootApp = () => {
         b.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       });
 
+      updateCalculatorSectionTitle(state.currentMode);
       calculate();
       saveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, false);
     });
@@ -1409,6 +1430,7 @@ const bootApp = () => {
   langSwitchEl?.addEventListener('change', (e) => {
     state.language = (e.target as HTMLInputElement).checked ? 'fr' : 'en';
     applyTranslations(state.language);
+    updateCalculatorSectionTitle(state.currentMode);
     syncCheckboxARIALabels();
     clearVisibleChartsCache();
     invalidateBaselineCache();
@@ -1752,7 +1774,15 @@ const bootApp = () => {
   });
   setupScheduledLumpSums();
   setupScenarioSandbox(state, DEFAULT_INPUTS, els.inputs, handleProfileSwitch, calculate);
-  initMultiDebtUI(state.isDark);
+  initMultiDebtUI(state.isDark, (debts, budget, strategy) => {
+    const activeProfile = state.profiles[state.activeProfileId as string];
+    if (activeProfile) {
+      activeProfile.inputs.multiDebtAccounts = debts;
+      activeProfile.inputs.multiDebtBudget = budget;
+      activeProfile.inputs.multiDebtStrategy = strategy;
+      debouncedSaveSettingsToStorage(state, els.inputs, DEFAULT_INPUTS, true);
+    }
+  });
 
   // GSAP Entrance Animations (run immediately on boot)
   if (!isPrefersReducedMotion()) {

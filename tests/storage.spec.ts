@@ -716,5 +716,52 @@ describe('Storage & Cryptography (storage.ts)', () => {
       vi.advanceTimersByTime(500);
       expect(localStorage.getItem('mtg_calculator_settings')).toBeNull();
     });
+
+    it('should sanitize multiDebtAccounts, multiDebtBudget, and multiDebtStrategy', () => {
+      const profile = {
+        id: 'prof-multi-debt',
+        inputs: {
+          multiDebtAccounts: [
+            { id: 'd-1', name: 'Credit Card', balance: 5000, rate: 19.99, minPayment: 150 },
+            { id: 'd-2', name: 'Auto Loan', balance: '12000', rate: '5.5', minPayment: '300' }
+          ],
+          multiDebtBudget: '750',
+          multiDebtStrategy: 'snowball'
+        }
+      };
+
+      const sanitized = sanitizeProfile(profile, DEFAULT_INPUTS);
+      expect(sanitized).not.toBeNull();
+      expect(sanitized?.inputs.multiDebtAccounts).toEqual([
+        { id: 'd-1', name: 'Credit Card', balance: 5000, rate: 19.99, minPayment: 150 },
+        { id: 'd-2', name: 'Auto Loan', balance: 12000, rate: 5.5, minPayment: 300 }
+      ]);
+      expect(sanitized?.inputs.multiDebtBudget).toBe(750);
+      expect(sanitized?.inputs.multiDebtStrategy).toBe('snowball');
+    });
+
+    it('should migrate legacy multi-debt localStorage keys into profile inputs when absent', () => {
+      localStorage.setItem(
+        'truemortgage_multi_debts',
+        JSON.stringify([
+          { id: 'legacy-1', name: 'Old Debt', balance: 2500, rate: 12, minPayment: 80 }
+        ])
+      );
+      localStorage.setItem('truemortgage_multi_debt_budget', '450');
+      localStorage.setItem('truemortgage_multi_debt_strategy', 'snowball');
+
+      const profile = {
+        id: 'prof-legacy-debt',
+        inputs: {}
+      };
+
+      const sanitized = sanitizeProfile(profile, DEFAULT_INPUTS);
+      expect(sanitized).not.toBeNull();
+      expect(sanitized?.inputs.multiDebtAccounts).toEqual([
+        { id: 'legacy-1', name: 'Old Debt', balance: 2500, rate: 12, minPayment: 80 }
+      ]);
+      expect(sanitized?.inputs.multiDebtBudget).toBe(450);
+      expect(sanitized?.inputs.multiDebtStrategy).toBe('snowball');
+    });
   });
 });

@@ -909,3 +909,18 @@ export const renderScheduledLumpSumRows = (
     container.appendChild(row);
   });
 };
+
+/**
+ * Updates the single primary calculator section title according to active mode and language.
+ */
+export const updateCalculatorSectionTitle = (mode: 'mortgage' | 'cc' | 'loan') => {
+  const el = document.getElementById('calculatorSectionTitle');
+  if (!el) return;
+  if (mode === 'cc') {
+    el.textContent = t('Revolving Debt');
+  } else if (mode === 'loan') {
+    el.textContent = t('Personal Loan');
+  } else {
+    el.textContent = t('Property & Loan');
+  }
+};

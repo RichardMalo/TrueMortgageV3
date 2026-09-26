@@ -16,7 +16,7 @@ import {
   calculateEffectiveApr
 } from '../src/js/math.js';
 import { Inputs, Milestone, MultiDebtAccount } from '../src/js/types.js';
-import { calculateOpportunityCostData } from '../src/js/charts.js';
+import { calculateOpportunityCostData } from '../src/js/opportunity-cost.js';
 
 describe('Debt Elimination Engine Calculations (Pure Logic)', () => {
   it('should calculate standard US mortgage payments correctly', () => {

@@ -141,18 +141,15 @@ export const setupSettingsMenu = (
   optSync.addEventListener('click', () => {
     dropdown.classList.remove('active');
     syncModal.classList.add('active');
-    if (!isPrefersReducedMotion()) {
+    const modalCard = syncModal.querySelector<HTMLElement>('.modal-card');
+    if (!isPrefersReducedMotion() && modalCard) {
       gsap.fromTo(
-        '#syncModal .modal-card',
+        modalCard,
         { scale: 0.9, y: 20 },
         { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
       );
     }
-    cleanupSyncTrap = trapFocus(
-      (syncModal.querySelector('.modal-card') as HTMLElement) ?? syncModal,
-      trigger as HTMLElement,
-      closeSyncModal
-    );
+    cleanupSyncTrap = trapFocus(modalCard ?? syncModal, trigger as HTMLElement, closeSyncModal);
   });
 
   closeSyncBtn.addEventListener('click', closeSyncModal);
@@ -186,15 +183,16 @@ export const setupSettingsMenu = (
     });
 
     layoutModal.classList.add('active');
-    if (!isPrefersReducedMotion()) {
+    const modalCard = layoutModal.querySelector<HTMLElement>('.modal-card');
+    if (!isPrefersReducedMotion() && modalCard) {
       gsap.fromTo(
-        '#layoutModal .modal-card',
+        modalCard,
         { scale: 0.9, y: 20 },
         { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
       );
     }
     cleanupLayoutTrap = trapFocus(
-      (layoutModal.querySelector('.modal-card') as HTMLElement) ?? layoutModal,
+      modalCard ?? layoutModal,
       trigger as HTMLElement,
       closeLayoutModal
     );
@@ -237,15 +235,16 @@ export const setupSettingsMenu = (
   optLimits.addEventListener('click', () => {
     dropdown.classList.remove('active');
     limitsModal.classList.add('active');
-    if (!isPrefersReducedMotion()) {
+    const modalCard = limitsModal.querySelector<HTMLElement>('.modal-card');
+    if (!isPrefersReducedMotion() && modalCard) {
       gsap.fromTo(
-        '#limitsModal .modal-card',
+        modalCard,
         { scale: 0.9, y: 20 },
         { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
       );
     }
     cleanupLimitsTrap = trapFocus(
-      (limitsModal.querySelector('.modal-card') as HTMLElement) ?? limitsModal,
+      modalCard ?? limitsModal,
       trigger as HTMLElement,
       closeLimitsModal
     );
@@ -281,15 +280,16 @@ export const setupSettingsMenu = (
   if (shortcutsTrigger && shortcutsModal) {
     shortcutsTrigger.addEventListener('click', () => {
       shortcutsModal.classList.add('active');
-      if (!isPrefersReducedMotion()) {
+      const modalCard = shortcutsModal.querySelector<HTMLElement>('.modal-card');
+      if (!isPrefersReducedMotion() && modalCard) {
         gsap.fromTo(
-          '#shortcutsModal .modal-card',
+          modalCard,
           { scale: 0.9, y: 20 },
           { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
         );
       }
       cleanupShortcutsTrap = trapFocus(
-        (shortcutsModal.querySelector('.modal-card') as HTMLElement) ?? shortcutsModal,
+        modalCard ?? shortcutsModal,
         shortcutsTrigger,
         closeShortcutsModal
       );

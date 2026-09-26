@@ -300,6 +300,38 @@ export const setupBlueprintSync = (
         return;
       }
 
+      // Migrate top-level multiDebt into profiles if present
+      if (isValidV2 && settingsObj.multiDebt && typeof settingsObj.multiDebt === 'object') {
+        const md = settingsObj.multiDebt as Record<string, unknown>;
+        const activeProf = (settingsObj.profiles as Record<string, Record<string, unknown>>)[
+          settingsObj.activeProfileId as string
+        ];
+        if (activeProf && activeProf.inputs && typeof activeProf.inputs === 'object') {
+          const aInputs = activeProf.inputs as Record<string, unknown>;
+          if (Array.isArray(md.accounts) && !aInputs.multiDebtAccounts) {
+            aInputs.multiDebtAccounts = md.accounts;
+          }
+          if (md.budget !== undefined && aInputs.multiDebtBudget === undefined) {
+            aInputs.multiDebtBudget = md.budget;
+          }
+          if (md.strategy !== undefined && aInputs.multiDebtStrategy === undefined) {
+            aInputs.multiDebtStrategy = md.strategy;
+          }
+        }
+      } else if (isValidV1 && settingsObj.multiDebt && typeof settingsObj.multiDebt === 'object') {
+        const md = settingsObj.multiDebt as Record<string, unknown>;
+        const v1Inputs = settingsObj.inputs as Record<string, unknown>;
+        if (Array.isArray(md.accounts) && !v1Inputs.multiDebtAccounts) {
+          v1Inputs.multiDebtAccounts = md.accounts;
+        }
+        if (md.budget !== undefined && v1Inputs.multiDebtBudget === undefined) {
+          v1Inputs.multiDebtBudget = md.budget;
+        }
+        if (md.strategy !== undefined && v1Inputs.multiDebtStrategy === undefined) {
+          v1Inputs.multiDebtStrategy = md.strategy;
+        }
+      }
+
       // Validate imported numeric fields are within reasonable ranges
       const warnings: string[] = [];
       if (isValidV2 && settingsObj.profiles) {

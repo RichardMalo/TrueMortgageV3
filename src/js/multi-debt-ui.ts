@@ -21,6 +21,96 @@ let currentStrategy: 'avalanche' | 'snowball' = 'avalanche';
 let currentIsDark = false;
 let multiDebtDebounceTimer: ReturnType<typeof setTimeout> | undefined;
 
+export type MultiDebtChangeHandler = (
+  debts: MultiDebtAccount[],
+  budget: number,
+  strategy: 'avalanche' | 'snowball'
+) => void;
+
+let onDebtsChangedCallback: MultiDebtChangeHandler | null = null;
+
+export const setOnMultiDebtChanged = (cb: MultiDebtChangeHandler | null) => {
+  onDebtsChangedCallback = cb;
+};
+
+export const getMultiDebtState = (): {
+  debts: MultiDebtAccount[];
+  budget: number;
+  strategy: 'avalanche' | 'snowball';
+} => ({
+  debts: [...currentDebts],
+  budget: currentBudget,
+  strategy: currentStrategy
+});
+
+export const setMultiDebtState = (
+  debts?: MultiDebtAccount[],
+  budget?: number,
+  strategy?: 'avalanche' | 'snowball',
+  skipStorageSave = false
+) => {
+  if (debts && Array.isArray(debts)) {
+    currentDebts = debts.map((d, i) => ({
+      id: String(d.id || `debt-${i}`).replace(/[^a-zA-Z0-9_-]/g, ''),
+      name: String(d.name || `Debt ${i + 1}`).slice(0, 100),
+      balance: Math.max(0, parseFloat(String(d.balance)) || 0),
+      rate: Math.min(100, Math.max(0, parseFloat(String(d.rate)) || 0)),
+      minPayment: Math.max(0, parseFloat(String(d.minPayment)) || 0)
+    }));
+  }
+  if (typeof budget === 'number' && !isNaN(budget) && budget >= 0) {
+    currentBudget = budget;
+  }
+  if (strategy === 'avalanche' || strategy === 'snowball') {
+    currentStrategy = strategy;
+  }
+
+  const budgetInput = document.getElementById('multiDebtTotalBudget') as HTMLInputElement | null;
+  if (budgetInput) {
+    budgetInput.value = String(currentBudget);
+  }
+  const stratBtns = document.querySelectorAll<HTMLButtonElement>('.multi-debt-strat-btn');
+  stratBtns.forEach((btn) => {
+    const isActive = btn.getAttribute('data-strategy') === currentStrategy;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+
+  renderDebtRows();
+  updateMultiDebtCalculation();
+  if (!skipStorageSave) {
+    saveDebtsToStorage();
+  }
+};
+
+export const resetMultiDebtToDefaults = () => {
+  currentDebts = [...DEFAULT_MULTI_DEBTS];
+  currentBudget = 600;
+  currentStrategy = 'avalanche';
+  try {
+    localStorage.removeItem(MULTI_DEBT_STORAGE_KEY);
+    localStorage.removeItem(MULTI_DEBT_BUDGET_KEY);
+    localStorage.removeItem(MULTI_DEBT_STRATEGY_KEY);
+  } catch {
+    // ignore
+  }
+  const budgetInput = document.getElementById('multiDebtTotalBudget') as HTMLInputElement | null;
+  if (budgetInput) {
+    budgetInput.value = '600';
+  }
+  const stratBtns = document.querySelectorAll<HTMLButtonElement>('.multi-debt-strat-btn');
+  stratBtns.forEach((btn) => {
+    const isActive = btn.getAttribute('data-strategy') === 'avalanche';
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+  renderDebtRows();
+  updateMultiDebtCalculation();
+  if (onDebtsChangedCallback) {
+    onDebtsChangedCallback(currentDebts, currentBudget, currentStrategy);
+  }
+};
+
 export const debouncedUpdateMultiDebtCalculation = (delay = 150) => {
   if (multiDebtDebounceTimer !== undefined) {
     clearTimeout(multiDebtDebounceTimer);
@@ -60,13 +150,19 @@ export const saveDebtsToStorage = () => {
   } catch {
     // ignore
   }
+  if (onDebtsChangedCallback) {
+    onDebtsChangedCallback(currentDebts, currentBudget, currentStrategy);
+  }
 };
 
 /**
  * Initializes the Multi-Debt UI, sets up DOM event listeners, and runs initial calculation.
  */
-export const initMultiDebtUI = (isDark: boolean) => {
+export const initMultiDebtUI = (isDark: boolean, onStateChange?: MultiDebtChangeHandler) => {
   currentIsDark = isDark;
+  if (onStateChange) {
+    onDebtsChangedCallback = onStateChange;
+  }
   currentDebts = loadStoredDebts();
 
   try {

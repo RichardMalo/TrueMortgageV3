@@ -1,4 +1,11 @@
-import { AppState, Profile, Inputs, ProfileInputs, LumpSumItem } from './types.js';
+import {
+  AppState,
+  Profile,
+  Inputs,
+  ProfileInputs,
+  LumpSumItem,
+  MultiDebtAccount
+} from './types.js';
 import { PBKDF2_ITERATIONS, STORAGE_KEY, getPrefersDark } from './constants.js';
 
 export interface AppSettings {
@@ -485,6 +492,83 @@ export const sanitizeProfile = (profile: unknown, defaultInputs: Inputs): Profil
       }
     }
   });
+
+  // Sanitize multi-debt accounts, budget, and strategy
+  if (Array.isArray(sourceInputs.multiDebtAccounts)) {
+    sanitized.inputs.multiDebtAccounts = (sourceInputs.multiDebtAccounts as unknown[]).map(
+      (item: unknown, i: number) => {
+        const obj = (item || {}) as Partial<MultiDebtAccount>;
+        return {
+          id: String(obj.id || `debt-${i}`).replace(/[^a-zA-Z0-9_-]/g, ''),
+          name: String(obj.name || `Debt ${i + 1}`).slice(0, 100),
+          balance: Math.max(0, parseFloat(String(obj.balance)) || 0),
+          rate: Math.min(100, Math.max(0, parseFloat(String(obj.rate)) || 0)),
+          minPayment: Math.max(0, parseFloat(String(obj.minPayment)) || 0)
+        };
+      }
+    );
+  } else {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const legacyDebts = localStorage.getItem('truemortgage_multi_debts');
+        if (legacyDebts) {
+          const parsed = JSON.parse(legacyDebts);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            sanitized.inputs.multiDebtAccounts = parsed.map(
+              (d: Partial<MultiDebtAccount>, i: number) => ({
+                id: String(d.id || `debt-${i}`).replace(/[^a-zA-Z0-9_-]/g, ''),
+                name: String(d.name || `Debt ${i + 1}`).slice(0, 100),
+                balance: Math.max(0, parseFloat(String(d.balance)) || 0),
+                rate: Math.min(100, Math.max(0, parseFloat(String(d.rate)) || 0)),
+                minPayment: Math.max(0, parseFloat(String(d.minPayment)) || 0)
+              })
+            );
+          }
+        }
+      }
+    } catch {
+      // ignore legacy storage read errors
+    }
+  }
+
+  if (sourceInputs.multiDebtBudget !== undefined) {
+    const budgetVal = parseFloat(String(sourceInputs.multiDebtBudget));
+    if (!isNaN(budgetVal) && budgetVal >= 0) {
+      sanitized.inputs.multiDebtBudget = budgetVal;
+    }
+  } else {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const legacyBudget = localStorage.getItem('truemortgage_multi_debt_budget');
+        if (legacyBudget) {
+          const b = parseFloat(legacyBudget);
+          if (!isNaN(b) && b >= 0) {
+            sanitized.inputs.multiDebtBudget = b;
+          }
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  if (
+    sourceInputs.multiDebtStrategy === 'avalanche' ||
+    sourceInputs.multiDebtStrategy === 'snowball'
+  ) {
+    sanitized.inputs.multiDebtStrategy = sourceInputs.multiDebtStrategy;
+  } else {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        const legacyStrat = localStorage.getItem('truemortgage_multi_debt_strategy');
+        if (legacyStrat === 'avalanche' || legacyStrat === 'snowball') {
+          sanitized.inputs.multiDebtStrategy = legacyStrat;
+        }
+      }
+    } catch {
+      // ignore
+    }
+  }
 
   return sanitized;
 };

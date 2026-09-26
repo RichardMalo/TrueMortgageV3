@@ -180,4 +180,70 @@ describe('Blueprint Sync Module', () => {
     dropzone.dispatchEvent(new Event('dragleave'));
     expect(dropzone.classList.contains('drag-over')).toBe(false);
   });
+
+  it('should restore blueprint with multiDebt structure and migrate into profile', async () => {
+    const saveSettingsMock = vi.fn();
+    const loadSettingsMock = vi.fn((s: AppState) => {
+      s.activeProfileId = 'imported-profile';
+    });
+    const handleSwitchMock = vi.fn();
+
+    setupBlueprintSync(
+      state,
+      els,
+      defaultInputs,
+      saveSettingsMock,
+      loadSettingsMock,
+      vi.fn(),
+      vi.fn(),
+      handleSwitchMock
+    );
+
+    const fileInput = document.getElementById('blueprintFileInput') as HTMLInputElement;
+
+    const blueprintData = {
+      version: 2,
+      activeProfileId: 'imported-profile',
+      profiles: {
+        'imported-profile': {
+          id: 'imported-profile',
+          name: 'Imported Plan',
+          currentMode: 'mortgage',
+          inputs: {
+            rate: '4.5',
+            amortization: '25'
+          }
+        }
+      },
+      multiDebt: {
+        accounts: [{ id: 'md-1', name: 'Credit Card', balance: 4000, rate: 21, minPayment: 100 }],
+        budget: 500,
+        strategy: 'snowball'
+      }
+    };
+
+    const file = new File([JSON.stringify(blueprintData)], 'blueprint.json', {
+      type: 'application/json'
+    });
+
+    Object.defineProperty(fileInput, 'files', {
+      value: [file],
+      writable: true
+    });
+
+    fileInput.dispatchEvent(new Event('change'));
+
+    // Wait for FileReader
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    expect(loadSettingsMock).toHaveBeenCalled();
+    expect(handleSwitchMock).toHaveBeenCalledWith('imported-profile');
+
+    const storedSettings = JSON.parse(localStorage.getItem('mtg_calculator_settings')!);
+    expect(storedSettings.profiles['imported-profile'].inputs.multiDebtAccounts).toEqual([
+      { id: 'md-1', name: 'Credit Card', balance: 4000, rate: 21, minPayment: 100 }
+    ]);
+    expect(storedSettings.profiles['imported-profile'].inputs.multiDebtBudget).toBe(500);
+    expect(storedSettings.profiles['imported-profile'].inputs.multiDebtStrategy).toBe('snowball');
+  });
 });

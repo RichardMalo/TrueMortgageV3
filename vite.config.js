@@ -1,6 +1,31 @@
 import { defineConfig } from 'vite';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+function swVersionPlugin() {
+  return {
+    name: 'sw-version-stamper',
+    closeBundle() {
+      const swPath = path.resolve(__dirname, 'dist/sw.js');
+      if (fs.existsSync(swPath)) {
+        let content = fs.readFileSync(swPath, 'utf-8');
+        const stamp = `truemortgage-v3-${Date.now()}`;
+        content = content.replace(
+          /const CACHE_NAME = ['"][^'"]+['"];/,
+          `const CACHE_NAME = '${stamp}';`
+        );
+        fs.writeFileSync(swPath, content, 'utf-8');
+      }
+    }
+  };
+}
 
 export default defineConfig({
+  plugins: [swVersionPlugin()],
   base: './', // Relative paths for local filesystem and static hosting (GitHub Pages)
   build: {
     outDir: 'dist',
@@ -40,10 +65,10 @@ export default defineConfig({
         'vite.config.js'
       ],
       thresholds: {
-        statements: 63,
-        branches: 50,
-        functions: 54,
-        lines: 64
+        statements: 70,
+        branches: 55,
+        functions: 60,
+        lines: 70
       }
     }
   }

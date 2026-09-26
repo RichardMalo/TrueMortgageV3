@@ -33,14 +33,15 @@ export const setupShareFunctionality = (
   shareBtn.addEventListener('click', () => {
     calculate(); // Sync latest form adjustments
     shareModal.classList.add('active');
-    if (!isPrefersReducedMotion()) {
+    const modalCard = shareModal.querySelector<HTMLElement>('.modal-card');
+    if (!isPrefersReducedMotion() && modalCard) {
       gsap.fromTo(
-        '#shareModal .modal-card',
+        modalCard,
         { scale: 0.9, y: 20 },
         { scale: 1, y: 0, duration: 0.4, ease: 'back.out(1.5)' }
       );
     }
-    cleanupShareTrap = trapFocus(shareModal, shareBtn, closeShare);
+    cleanupShareTrap = trapFocus(modalCard ?? shareModal, shareBtn, closeShare);
   });
 
   closeModalBtn.addEventListener('click', closeShare);

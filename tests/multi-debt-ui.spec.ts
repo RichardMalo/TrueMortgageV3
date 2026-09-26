@@ -7,6 +7,9 @@ import {
   loadStoredDebts,
   saveDebtsToStorage,
   updateMultiDebtCalculation,
+  getMultiDebtState,
+  setMultiDebtState,
+  resetMultiDebtToDefaults,
   DEFAULT_MULTI_DEBTS
 } from '../src/js/multi-debt-ui.js';
 
@@ -194,5 +197,54 @@ describe('Multi-Debt UI Module', () => {
 
     const section = document.getElementById('multiDebtSection');
     expect(section?.classList.contains('hidden')).toBe(true);
+  });
+
+  it('supports programmatic getMultiDebtState and setMultiDebtState', () => {
+    initMultiDebtUI(false);
+
+    const customDebts = [
+      { id: 'custom-1', name: 'Credit Line', balance: 8000, rate: 11, minPayment: 200 }
+    ];
+
+    setMultiDebtState(customDebts, 900, 'snowball');
+
+    const state = getMultiDebtState();
+    expect(state.debts.length).toBe(1);
+    expect(state.debts[0]?.name).toBe('Credit Line');
+    expect(state.budget).toBe(900);
+    expect(state.strategy).toBe('snowball');
+
+    const budgetInput = document.getElementById('multiDebtTotalBudget') as HTMLInputElement;
+    expect(budgetInput.value).toBe('900');
+
+    const snowballBtn = document.querySelector('.multi-debt-strat-btn[data-strategy="snowball"]');
+    expect(snowballBtn?.classList.contains('active')).toBe(true);
+  });
+
+  it('notifies onStateChange callback when debts or budget are updated', () => {
+    const changeSpy = vi.fn();
+    initMultiDebtUI(false, changeSpy);
+
+    addNewDebt();
+    expect(changeSpy).toHaveBeenCalled();
+    const lastCall = changeSpy.mock.calls[changeSpy.mock.calls.length - 1];
+    expect(lastCall?.[0]?.length).toBe(4);
+  });
+
+  it('resetMultiDebtToDefaults resets internal state, DOM inputs, and cleans storage', () => {
+    initMultiDebtUI(false);
+    setMultiDebtState(
+      [{ id: 'd-test', name: 'Test', balance: 500, rate: 5, minPayment: 25 }],
+      300,
+      'snowball'
+    );
+
+    resetMultiDebtToDefaults();
+
+    const state = getMultiDebtState();
+    expect(state.debts.length).toBe(3);
+    expect(state.budget).toBe(600);
+    expect(state.strategy).toBe('avalanche');
+    expect(localStorage.getItem('truemortgage_multi_debts')).toBeNull();
   });
 });

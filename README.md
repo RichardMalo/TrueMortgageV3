@@ -126,18 +126,20 @@ The Multi-Debt Engine enables borrowers with multiple liabilities (credit cards,
 
 #### UK Stamp Duty Land Tax (SDLT)
 
-- **Standard Residential Rates:**
-  - £0 to £250,000: **0%**
+- **Standard Residential Rates (Post-April 1, 2025 Statutory Schedule):**
+  - £0 to £125,000: **0%**
+  - £125,001 to £250,000: **2%**
   - £250,001 to £925,000: **5%**
   - £925,001 to £1,500,000: **10%**
   - Over £1,500,000: **12%**
-- **First-Time Buyer Relief:** 0% up to £425,000, 5% on portion from £425,001 to £625,000 (purchases over £625,000 ineligible).
-- **Additional Property Surcharge:** Automatically applies the **+3.0%** surcharge across all tiers for buy-to-let or second homes.
+- **First-Time Buyer Relief:** 0% up to £300,000, 5% on portion from £300,001 to £500,000 (purchases over £500,000 ineligible).
+- **Additional Property Surcharge:** Automatically applies the statutory **+5.0%** surcharge (Autumn Budget 2024 mandate) across all tiers for buy-to-let or second homes.
 
 #### Australian Stamp Duty (Transfer Duty)
 
-- **New South Wales (NSW):** Standard progressive residential rates from 1.25% up to 5.5% (over \$1M). Includes First Home Buyers Assistance Scheme (FHBAS) concessions and optional Foreign Purchaser Duty Surcharge (**+8%**).
-- **Victoria (VIC):** Standard progressive duty brackets from 1.4% up to 5.5% (over \$960k). Includes principal place of residence concessions and foreign purchaser surcharge (**+8%**).
+- **New South Wales (NSW):** Standard progressive residential rates from 1.25% up to 5.5% (over \$1.168M). Includes First Home Buyers Assistance Scheme (FHBAS) concessions (full exemption up to \$800k, phased to \$1M).
+- **Victoria (VIC):** Standard progressive duty brackets from 1.4% up to 5.5% (over \$960k). Includes principal place of residence concessions and first-home buyer exemptions up to \$600k (phased to \$750k).
+- **Queensland, Western Australia, South Australia, Tasmania, ACT & NT:** Progressive bracket schedules with state-specific first-home buyer concessions.
 
 ---
 

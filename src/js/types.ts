@@ -199,6 +199,9 @@ export interface ProfileInputs {
   rateShockToggle: boolean;
   goalSolverToggle?: boolean;
   multiDebtToggle?: boolean;
+  multiDebtAccounts?: MultiDebtAccount[];
+  multiDebtBudget?: number;
+  multiDebtStrategy?: 'avalanche' | 'snowball';
   mortgageRate: string;
   mortgageExtra: string;
   mortgageAmortization?: string;
@@ -217,7 +220,7 @@ export interface ProfileInputs {
   includeLtt?: boolean;
   lttProvince?: string;
   lttFirstTimeBuyer?: boolean;
-  [key: string]: string | boolean | number | LumpSumItem[] | undefined;
+  [key: string]: string | boolean | number | LumpSumItem[] | MultiDebtAccount[] | undefined;
 }
 
 export interface Profile {
@@ -320,6 +323,12 @@ export interface AppElements {
     outMarkupVal: HTMLElement | null;
     actualLifetimePaidValue: HTMLElement | null;
     concentricStack: Element | null;
+    lumpSumSavings?: HTMLElement | null;
+    extraPaymentSavings?: HTMLElement | null;
+    effectiveAprDisplay?: HTMLElement | null;
+    osfiStressTestDisplay?: HTMLElement | null;
+    cmhcStatAmount?: HTMLElement | null;
+    concentricRatioNote?: HTMLElement | null;
   };
   containers: {
     pitiSection: HTMLElement | null;
@@ -340,6 +349,18 @@ export interface AppElements {
     lttEstimateBadge?: HTMLElement | null;
     multiDebtSection?: HTMLElement | null;
     multiDebtCard?: HTMLElement | null;
+    cmhcStatBox?: HTMLElement | null;
+    cmhcProvinceWrapper?: HTMLElement | null;
+    cmhcSection?: HTMLElement | null;
+    ukAdditionalPropertyWrapper?: HTMLElement | null;
+    minDownPaymentWarning?: HTMLElement | null;
+    osfiStressTestStatBox?: HTMLElement | null;
+    effectiveAprStatBox?: HTMLElement | null;
+    loanEffectiveAprNote?: HTMLElement | null;
+    loanEffectiveAprVal?: HTMLElement | null;
+    pmiRateWrapper?: HTMLElement | null;
+    ccCustomMinSection?: HTMLElement | null;
+    bankWagesToggle?: HTMLElement | null;
   };
   modeSwitch: HTMLInputElement | null;
   masterBtns: NodeListOf<Element>;
